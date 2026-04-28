@@ -102,10 +102,7 @@ docker compose down -v
 | Username | `admin` |
 | Password | `admin` |
 
-> ⚠️ **Notes Importantes :**
-> - **Sécurité** : Ces identifiants sont uniquement pour le développement local. Ne jamais les utiliser en production. Ne pas commiter le fichier `.env`.
-> - **Keycloak** : Keycloak est démarré dans Docker mais le module Auth complet sera développé dans une tâche suivante.
-> - **MinIO** : Utilisé pour le développement local avec une image figée. Le bucket `wasel-documents` peut nécessiter une création manuelle via la console pour le moment.
+
 
 ---
 
