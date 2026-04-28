@@ -1,0 +1,149 @@
+# ══════════════════════════════════════════════════
+# Wasel — Docker Compose (Development)
+# ══════════════════════════════════════════════════
+
+services:
+  # ──────────────────────────────────────────────
+  # Wasel API (.NET 10)
+  # ──────────────────────────────────────────────
+  wasel-api:
+    build:
+      context: ./backend/Wasel.Api
+      dockerfile: Dockerfile
+    container_name: wasel-api
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__DefaultConnection=Host=wasel-postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - Redis__ConnectionString=${REDIS_CONNECTION_STRING}
+      - MinIO__Endpoint=wasel-minio:9000
+      - MinIO__AccessKey=${MINIO_ROOT_USER}
+      - MinIO__SecretKey=${MINIO_ROOT_PASSWORD}
+      - Keycloak__Authority=http://wasel-keycloak:8080/realms/${KEYCLOAK_REALM}
+      - Keycloak__Realm=${KEYCLOAK_REALM}
+      - Keycloak__ClientId=${KEYCLOAK_CLIENT_ID}
+      - Keycloak__RequireHttpsMetadata=false
+    depends_on:
+      wasel-postgres:
+        condition: service_healthy
+      wasel-redis:
+        condition: service_healthy
+      wasel-minio:
+        condition: service_healthy
+    networks:
+      - wasel-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # PostgreSQL 18.3
+  # ──────────────────────────────────────────────
+  wasel-postgres:
+    image: postgres:18.3
+    container_name: wasel-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - wasel-postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wasel-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # Redis 8.6
+  # ──────────────────────────────────────────────
+  wasel-redis:
+    image: redis:8.6
+    container_name: wasel-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wasel-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # MinIO (Object Storage)
+  # ──────────────────────────────────────────────
+  # Cette image est utilisée pour le développement local. 
+  # Pour staging/production, utiliser une image fiable (ex: quay.io/minio/minio).
+  wasel-minio:
+    image: minio/minio:RELEASE.2025-02-28T09-55-16Z
+    container_name: wasel-minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    volumes:
+      - wasel-minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wasel-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # Keycloak (IAM / Auth)
+  # ──────────────────────────────────────────────
+  wasel-keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: wasel-keycloak
+    command: start-dev
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+    volumes:
+      - wasel-keycloak-data:/opt/keycloak/data
+    networks:
+      - wasel-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # Adminer (Database UI)
+  # ──────────────────────────────────────────────
+  wasel-adminer:
+    image: adminer:latest
+    container_name: wasel-adminer
+    ports:
+      - "8081:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: wasel-postgres
+    networks:
+      - wasel-network
+    restart: unless-stopped
+
+# ──────────────────────────────────────────────
+# Volumes
+# ──────────────────────────────────────────────
+volumes:
+  wasel-postgres-data:
+  wasel-minio-data:
+  wasel-keycloak-data:
+
+# ──────────────────────────────────────────────
+# Network
+# ──────────────────────────────────────────────
+networks:
+  wasel-network:
+    driver: bridge
