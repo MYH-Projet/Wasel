@@ -110,6 +110,31 @@ public class UserService : IUserService
     }
 
 
+    public async Task<UserResponseDto?> UpdateUserProfileAsync(string keycloakId, string? cin, string? phone, string? firstName, string? lastName, string? profileObjectKey)
+    {
+        var user = await _userRepository.GetByKeycloakIdAsync(keycloakId);
+
+        if (user is null)
+        {
+            return null; // Return null to let the caller handle it (e.g., 404 Not Found)
+        }
+
+        bool updated = false;
+
+        if (cin is not null && user.Cin != cin) { user.Cin = cin; updated = true; }
+        if (phone is not null && user.Phone != phone) { user.Phone = phone; updated = true; }
+        if (firstName is not null && user.FirstName != firstName) { user.FirstName = firstName; updated = true; }
+        if (lastName is not null && user.LastName != lastName) { user.LastName = lastName; updated = true; }
+        if (profileObjectKey is not null && user.ProfileObjectKey != profileObjectKey) { user.ProfileObjectKey = profileObjectKey; updated = true; }
+
+        if (updated)
+        {
+            await _userRepository.UpdateAsync(user);
+        }
+
+        return MapToResponseDto(user);
+    }
+
     private static UserResponseDto MapToResponseDto(User user)
     {
         return new UserResponseDto
