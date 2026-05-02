@@ -110,14 +110,16 @@ services:
   wasel-keycloak:
     image: quay.io/keycloak/keycloak:latest
     container_name: wasel-keycloak
-    command: start-dev
+    command: start-dev --import-realm
     ports:
       - "8080:8080"
     environment:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HEALTH_ENABLED: "true"
     volumes:
       - wasel-keycloak-data:/opt/keycloak/data
+      - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
       interval: 15s

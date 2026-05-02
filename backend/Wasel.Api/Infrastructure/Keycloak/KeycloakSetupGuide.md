@@ -1,7 +1,31 @@
 # Configuration de Keycloak pour Wassel
 
 Keycloak est notre système de gestion des identités et des accès (IAM).
-Pour l'instant, la configuration se fait manuellement. Ce guide vous montre comment préparer Keycloak pour tester l'API localement.
+
+> [!TIP]
+> **Configuration Automatisée (Nouveau !)**
+> Keycloak est désormais **entièrement pré-configuré automatiquement** au démarrage grâce au fichier `infra/keycloak/realm-export.json` monté dans Docker.
+> Vous n'avez **plus besoin** de créer manuellement le royaume, le client, les rôles ou les utilisateurs de test !
+
+## Démarrage Rapide
+
+Pour tout réinitialiser et démarrer avec un Keycloak parfaitement configuré :
+```bash
+# Attention : down -v supprime les données de dev (Postgres, MinIO, Keycloak)
+docker compose down -v
+docker compose up -d --build
+```
+
+### Utilisateurs de test pré-configurés :
+⚠️ **NE JAMAIS utiliser ces identifiants en production.**
+- **Admin** : `admin@wasel.ma` / `admin123` (rôle : `ADMIN`)
+- **Client** : `client@wasel.ma` / `client123` (rôle : `CLIENT`)
+
+---
+
+## Configuration Manuelle (En cas de problème ou besoin spécifique)
+
+*La suite de ce document explique comment faire la configuration manuelle au cas où vous auriez besoin de comprendre comment le JSON a été généré, ou si l'import automatique échoue.*
 
 ## 1. Accéder à Keycloak
 
