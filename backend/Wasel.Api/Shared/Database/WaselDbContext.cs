@@ -32,6 +32,7 @@ public class WaselDbContext : DbContext
         {
             entity.ToTable("users");
             entity.HasIndex(e => e.Email).IsUnique();
+            entity.HasIndex(e => e.KeycloakId).IsUnique();
         });
 
         // Drivers

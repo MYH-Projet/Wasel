@@ -2,10 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using Wasel.Api.Modules.Users.Services;
 using Wasel.Api.Modules.Users.DTOs;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace Wasel.Api.Modules.Users.Controllers;
 
 [ApiController]
 [Route("api/admin/users")]
+[Authorize(Policy = "AdminOnly")]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
