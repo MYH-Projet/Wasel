@@ -424,7 +424,15 @@ Le backend gère maintenant l'authentification et les rôles avec JWT via Keyclo
 
 **Comment tester une route sécurisée ?**
 
-1. Consultez le fichier `Infrastructure/Keycloak/KeycloakSetupGuide.md` pour configurer le Realm initial (Manuel au début).
+> [!TIP]
+> **Nouveau :** Keycloak est maintenant **entièrement auto-configuré** au démarrage grâce au fichier `infra/keycloak/realm-export.json`.
+> Utilisateurs de test pré-configurés (DEV UNIQUEMENT) :
+> - `admin@wasel.ma` / `admin123` (Rôle: ADMIN)
+> - `client@wasel.ma` / `client123` (Rôle: CLIENT)
+>
+> Pour réinitialiser Keycloak : `docker compose down -v` puis `docker compose up -d --build`
+
+1. Consultez le fichier [KeycloakSetupGuide.md](./Infrastructure/Keycloak/KeycloakSetupGuide.md) pour plus de détails sur la configuration.
 2. Obtenez un jeton (token) d'authentification pour un utilisateur test (`admin@wasel.ma`) :
    ```bash
    curl --location --request POST 'http://localhost:8080/realms/wasel/protocol/openid-connect/token' \
