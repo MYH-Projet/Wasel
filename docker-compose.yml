@@ -20,7 +20,8 @@ services:
       - MinIO__Endpoint=wasel-minio:9000
       - MinIO__AccessKey=${MINIO_ROOT_USER}
       - MinIO__SecretKey=${MINIO_ROOT_PASSWORD}
-      - Keycloak__Authority=http://wasel-keycloak:8080/realms/${KEYCLOAK_REALM}
+      - Keycloak__Authority=http://localhost:8080/realms/${KEYCLOAK_REALM}
+      - Keycloak__InternalAuthority=http://wasel-keycloak:8080/realms/${KEYCLOAK_REALM}
       - Keycloak__Realm=${KEYCLOAK_REALM}
       - Keycloak__ClientId=${KEYCLOAK_CLIENT_ID}
       - Keycloak__RequireHttpsMetadata=false
@@ -30,6 +31,8 @@ services:
       wasel-redis:
         condition: service_healthy
       wasel-minio:
+        condition: service_healthy
+      wasel-keycloak:
         condition: service_healthy
     networks:
       - wasel-network
@@ -115,6 +118,12 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
     volumes:
       - wasel-keycloak-data:/opt/keycloak/data
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
     networks:
       - wasel-network
     restart: unless-stopped

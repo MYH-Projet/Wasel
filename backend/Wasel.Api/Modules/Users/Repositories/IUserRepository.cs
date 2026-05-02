@@ -5,10 +5,14 @@ namespace Wasel.Api.Modules.Users.Repositories;
 public interface IUserRepository
 {
     Task<List<User>> GetAllAsync();
-    // return await _context.Users.ToListAsync();
 
     Task<User?> GetByIdAsync(Guid id);
-    // ? Parce qu’il est possible que l’utilisateur n’existe pas.
+
+    Task<User?> GetByKeycloakIdAsync(string keycloakId);
+
+    Task<User?> GetByEmailAsync(string email);
+
+    Task<User> AddAsync(User user);
 
     Task UpdateAsync(User user);
 }
