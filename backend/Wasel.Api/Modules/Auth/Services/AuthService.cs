@@ -64,4 +64,39 @@ public class AuthService : IAuthService
             firstName ?? string.Empty, 
             lastName ?? string.Empty);
     }
+
+    public async Task<CurrentUserResponseDto?> UpdateProfileAsync(UpdateCurrentUserProfileRequestDto request)
+    {
+        var keycloakId = _currentUserService.KeycloakId;
+        if (string.IsNullOrEmpty(keycloakId))
+        {
+            throw ApiException.Unauthorized("Invalid token or missing subject claim");
+        }
+
+        var user = await _userService.UpdateUserProfileAsync(
+            keycloakId,
+            request.Cin,
+            request.Phone,
+            request.FirstName,
+            request.LastName,
+            request.ProfileObjectKey);
+
+        if (user is null)
+        {
+            return null; // Local user not found
+        }
+
+        return new CurrentUserResponseDto
+        {
+            KeycloakId = user.KeycloakId,
+            Email = user.Email,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Cin = user.Cin,
+            Phone = user.Phone,
+            Status = user.Status.ToString(),
+            Roles = _currentUserService.Roles.ToList(),
+            LocalUserId = user.Id
+        };
+    }
 }

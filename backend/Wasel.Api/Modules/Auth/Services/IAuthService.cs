@@ -7,4 +7,5 @@ public interface IAuthService
 {
     Task<CurrentUserResponseDto> GetCurrentUserAsync();
     Task<UserResponseDto> SyncCurrentUserAsync();
+    Task<CurrentUserResponseDto?> UpdateProfileAsync(UpdateCurrentUserProfileRequestDto request);
 }

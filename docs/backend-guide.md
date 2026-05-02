@@ -440,6 +440,47 @@ Le backend gère maintenant l'authentification et les rôles avec JWT via Keyclo
      -H "Authorization: Bearer VOTRE_TOKEN_ICI"
    ```
 
+## Nouveaux Endpoints de Gestion des Profils Utilisateurs
+
+### Profil local (PATCH /api/auth/me/profile)
+Une fois l'utilisateur connecté via Keycloak et synchronisé (`POST /api/auth/sync`), il peut compléter son profil métier local :
+
+```http
+PATCH /api/auth/me/profile
+Content-Type: application/json
+Authorization: Bearer <TOKEN>
+
+{
+  "cin": "AB123456",
+  "phone": "+212600000000",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+```
+*Note : L'authentification gère l'identité et les rôles via Keycloak. Ce point d'entrée modifie uniquement le profil métier local.*
+
+### Changement de statut par un admin (PATCH /api/admin/users/{id}/status)
+Seul un administrateur peut modifier le statut (Pending, Active, Inactive, Blocked) d'un utilisateur :
+
+```http
+PATCH /api/admin/users/{id}/status
+Content-Type: application/json
+Authorization: Bearer <ADMIN_TOKEN>
+
+{
+  "status": 1
+}
+```
+
+### Tests Automatiques
+Un script de test bout-en-bout couvre toute l'intégration de la sécurité (Authentification, Rôles, Profil).
+Exécutez :
+```bash
+bash scripts/test-auth.sh
+```
+
+## Structure de la Base de Données
+
 **Checklist Validation Auth :**
 - [ ] Le token permet de récupérer les claims (`/api/auth/me`)
 - [ ] Le `/api/auth/sync` crée un profil local si inexistant

@@ -177,6 +177,28 @@ print_step "Test 12 — Header sans Bearer"
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$API_BASE_URL/api/auth/me" -H "Authorization: $ADMIN_TOKEN")
 assert_status "401" "$STATUS" "Header without Bearer"
 
+# Test 14 - Admin change user status
+print_step "Test 14 — Admin change user status"
+# Get the first user ID
+FIRST_USER_ID=$(curl -s -X GET "$API_BASE_URL/api/admin/users" -H "Authorization: Bearer $ADMIN_TOKEN" | grep -o '"id":"[^"]*' | head -1 | sed 's/"id":"//')
+if [ -n "$FIRST_USER_ID" ]; then
+    STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH "$API_BASE_URL/api/admin/users/$FIRST_USER_ID/status" \
+        -H "Authorization: Bearer $ADMIN_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{"status":1}')
+    assert_status "200" "$STATUS" "Admin change user status"
+else
+    warn "No users found to test status change"
+fi
+
+# Test 15 - Update Admin Profile
+print_step "Test 15 — Update Admin Profile"
+STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH "$API_BASE_URL/api/auth/me/profile" \
+    -H "Authorization: Bearer $ADMIN_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{"cin":"TEST1234", "phone":"+212600000000"}')
+assert_status "200" "$STATUS" "Update Admin Profile"
+
 # Test 13 - Verify API logs for critical errors
 print_step "Test 13 — Vérification logs API"
 echo "Fetching recent API logs..."
