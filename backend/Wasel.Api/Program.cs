@@ -1,7 +1,8 @@
 using Scalar.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Wasel.Api.Shared.Database;
-
+using Wasel.Api.Modules.Users.Repositories;
+using Wasel.Api.Modules.Users.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -15,6 +16,10 @@ builder.Services.AddOpenApi();
 // PostgreSQL with EF Core
 builder.Services.AddDbContext<WaselDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Module Users
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 // Controllers
 builder.Services.AddControllers();
