@@ -407,7 +407,7 @@ Avant de demander à vos collègues de valider votre code, vérifiez obligatoire
 ## 19. Prochaines étapes de développement (Sprint suivant)
 
 Voici l'ordre logique conseillé pour la suite du projet :
-1. **Module Auth** : Configuration complète Keycloak (Realm, rôles) + Backend JWT Middleware.
+1. ~~**Module Auth**~~ ✅ Fait — L'API est connectée à Keycloak et sécurisée via JWT.
 2. **Module Users** : Gestion des profils de base.
 3. **Module Drivers** : Processus d'inscription et de validation de compte livreur par un Admin.
 4. **Module Documents / MinIO** : Permettre l'upload de fichiers.
@@ -418,7 +418,85 @@ Voici l'ordre logique conseillé pour la suite du projet :
 
 ---
 
-## 20. CI/CD Backend (GitHub Actions)
+## 20. Authentification Keycloak
+
+Le backend gère maintenant l'authentification et les rôles avec JWT via Keycloak. L'API est configurée pour utiliser le domaine `http://localhost:8080/realms/wasel`.
+
+**Comment tester une route sécurisée ?**
+
+> [!TIP]
+> **Nouveau :** Keycloak est maintenant **entièrement auto-configuré** au démarrage grâce au fichier `infra/keycloak/realm-export.json`.
+> Utilisateurs de test pré-configurés (DEV UNIQUEMENT) :
+> - `admin@wasel.ma` / `admin123` (Rôle: ADMIN)
+> - `client@wasel.ma` / `client123` (Rôle: CLIENT)
+>
+> Pour réinitialiser Keycloak : `docker compose down -v` puis `docker compose up -d --build`
+
+1. Consultez le fichier [KeycloakSetupGuide.md](./Infrastructure/Keycloak/KeycloakSetupGuide.md) pour plus de détails sur la configuration.
+2. Obtenez un jeton (token) d'authentification pour un utilisateur test (`admin@wasel.ma`) :
+   ```bash
+   curl --location --request POST 'http://localhost:8080/realms/wasel/protocol/openid-connect/token' \
+   --header 'Content-Type: application/x-www-form-urlencoded' \
+   --data-urlencode 'client_id=wasel-api' \
+   --data-urlencode 'username=admin@wasel.ma' \
+   --data-urlencode 'password=admin123' \
+   --data-urlencode 'grant_type=password'
+   ```
+3. Testez l'endpoint `/api/auth/me` avec le token obtenu :
+   ```bash
+   curl -X GET http://localhost:5000/api/auth/me \
+     -H "Authorization: Bearer VOTRE_TOKEN_ICI"
+   ```
+
+## Nouveaux Endpoints de Gestion des Profils Utilisateurs
+
+### Profil local (PATCH /api/auth/me/profile)
+Une fois l'utilisateur connecté via Keycloak et synchronisé (`POST /api/auth/sync`), il peut compléter son profil métier local :
+
+```http
+PATCH /api/auth/me/profile
+Content-Type: application/json
+Authorization: Bearer <TOKEN>
+
+{
+  "cin": "AB123456",
+  "phone": "+212600000000",
+  "firstName": "John",
+  "lastName": "Doe"
+}
+```
+*Note : L'authentification gère l'identité et les rôles via Keycloak. Ce point d'entrée modifie uniquement le profil métier local.*
+
+### Changement de statut par un admin (PATCH /api/admin/users/{id}/status)
+Seul un administrateur peut modifier le statut (Pending, Active, Inactive, Blocked) d'un utilisateur :
+
+```http
+PATCH /api/admin/users/{id}/status
+Content-Type: application/json
+Authorization: Bearer <ADMIN_TOKEN>
+
+{
+  "status": 1
+}
+```
+
+### Tests Automatiques
+Un script de test bout-en-bout couvre toute l'intégration de la sécurité (Authentification, Rôles, Profil).
+Exécutez :
+```bash
+bash scripts/test-auth.sh
+```
+
+## Structure de la Base de Données
+
+**Checklist Validation Auth :**
+- [ ] Le token permet de récupérer les claims (`/api/auth/me`)
+- [ ] Le `/api/auth/sync` crée un profil local si inexistant
+- [ ] `/api/admin/users` nécessite le rôle `ADMIN`
+
+---
+
+## 21. CI/CD Backend (GitHub Actions)
 
 Deux workflows GitHub Actions sont configurés dans `.github/workflows/` pour automatiser la vérification et la livraison du backend. Ils ne se déclenchent **que si des fichiers backend changent** (`backend/**`, `docker-compose.yml` ou les fichiers workflow eux-mêmes). Modifier `mobile/` ou `web/` ne déclenchera aucun pipeline backend.
 

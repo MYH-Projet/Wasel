@@ -215,6 +215,9 @@ namespace Wasel.Api.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("KeycloakId")
+                        .IsUnique();
+
                     b.ToTable("users", (string)null);
                 });
 

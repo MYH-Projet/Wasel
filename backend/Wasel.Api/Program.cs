@@ -1,12 +1,20 @@
 using Scalar.AspNetCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication;
+
 using Wasel.Api.Shared.Database;
+using Wasel.Api.Shared.Security;
+using Wasel.Api.Infrastructure.Keycloak;
 using Wasel.Api.Modules.Users.Repositories;
 using Wasel.Api.Modules.Users.Services;
 using Wasel.Api.Modules.Drivers.Repositories;
 using Wasel.Api.Modules.Drivers.Services;
 using Wasel.Api.Modules.Documents.Repositories;
 using Wasel.Api.Modules.Documents.Services;
+using Wasel.Api.Modules.Auth.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -20,6 +28,45 @@ builder.Services.AddOpenApi();
 // PostgreSQL with EF Core
 builder.Services.AddDbContext<WaselDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Keycloak JWT Authentication
+var keycloakOptions = builder.Configuration
+    .GetSection(KeycloakOptions.SectionName)
+    .Get<KeycloakOptions>()!;
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = keycloakOptions.InternalAuthority;
+        options.Audience = keycloakOptions.ClientId;
+        options.RequireHttpsMetadata = keycloakOptions.RequireHttpsMetadata;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuers = new[]
+            {
+                keycloakOptions.Authority,
+                keycloakOptions.InternalAuthority
+            },
+            ValidateAudience = false, // TODO: Audience validation can be reinforced later if needed
+            ValidateLifetime = true
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", p => p.RequireRole(KeycloakConstants.RoleAdmin));
+    options.AddPolicy("DriverOnly", p => p.RequireRole(KeycloakConstants.RoleDriver));
+    options.AddPolicy("ClientOnly", p => p.RequireRole(KeycloakConstants.RoleClient));
+});
+
+// Claims transformation (Keycloak realm_access.roles → ClaimTypes.Role)
+builder.Services.AddTransient<IClaimsTransformation, KeycloakClaimsTransformer>();
+
+// Shared Auth Services
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Module Users
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -42,8 +89,8 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
     {
         policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+               .AllowAnyMethod()
+               .AllowAnyHeader();
     });
 });
 
@@ -70,6 +117,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
+
+// Auth middlewares must be here, before MapControllers
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapControllers();
 
 // ──────────────────────────────────────────────
