@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Wasel.Api.Modules.Deliveries.Entities;
 using Wasel.Api.Modules.Drivers.Entities;
 using Wasel.Api.Modules.Users.Entities;
+using Wasel.Api.Modules.Documents.Entities;
 using Wasel.Api.Shared.Common;
 
 namespace Wasel.Api.Shared.Database;
@@ -19,9 +20,13 @@ public class WaselDbContext : DbContext
 
     // Module: Drivers
     public DbSet<Driver> Drivers => Set<Driver>();
+    public DbSet<DriverDossier> DriverDossiers => Set<DriverDossier>();
 
     // Module: Deliveries
     public DbSet<Delivery> Deliveries => Set<Delivery>();
+
+    // Module: Documents
+    public DbSet<Document> Documents => Set<Document>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -38,9 +43,36 @@ public class WaselDbContext : DbContext
         modelBuilder.Entity<Driver>(entity =>
         {
             entity.ToTable("drivers");
-            entity.HasIndex(e => e.LicenseNumber).IsUnique();
+            entity.HasIndex(e => e.PermitNumber).IsUnique();
+            entity.HasOne(d => d.User)
+            .WithOne(u => u.Driver)
+            .HasForeignKey<Driver>(d => d.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
         });
 
+        // Driver dossiers
+        modelBuilder.Entity<DriverDossier>(entity =>
+        {
+            entity.ToTable("driver_dossiers");
+
+            entity.HasOne(dossier => dossier.Driver)
+                .WithOne(driver => driver.Dossier)
+                .HasForeignKey<DriverDossier>(dossier => dossier.DriverId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Documents
+        modelBuilder.Entity<Document>(entity =>
+        {
+            entity.ToTable("documents");
+
+            entity.HasOne(document => document.DriverDossier)
+                .WithMany(dossier => dossier.Documents)
+                .HasForeignKey(document => document.DriverDossierId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        
         // Deliveries
         modelBuilder.Entity<Delivery>(entity =>
         {

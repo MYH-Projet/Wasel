@@ -3,6 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Wasel.Api.Shared.Database;
 using Wasel.Api.Modules.Users.Repositories;
 using Wasel.Api.Modules.Users.Services;
+using Wasel.Api.Modules.Drivers.Repositories;
+using Wasel.Api.Modules.Drivers.Services;
+using Wasel.Api.Modules.Documents.Repositories;
+using Wasel.Api.Modules.Documents.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -20,6 +24,14 @@ builder.Services.AddDbContext<WaselDbContext>(options =>
 // Module Users
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+// Module Drivers
+builder.Services.AddScoped<IDriverRepository, DriverRepository>();
+builder.Services.AddScoped<IDriverService, DriverService>();
+
+// Module Documents
+builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
 
 // Controllers
 builder.Services.AddControllers();
