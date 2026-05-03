@@ -1,0 +1,27 @@
+---
+import { Image } from "astro:assets";
+import heroImage from "@/assets/hero-image.png";
+---
+
+<section>
+    <div>
+        <!-- left text -->
+        <div>
+            <h1>Fast Flexible</h1>
+            <h1>Locale Delivery <span>on</span></h1>
+            <h1>Demand</h1>
+            <h3>Get your packages delivered across town in minutes.</h3>
+            <h3>Reliable, secure, and always at your fingertips.</h3>
+        </div>
+        <!-- right image -->
+        <div>
+            <Image
+                src={heroImage}
+                alt="Hero Image"
+                width={1280}
+                height={720}
+                class="w-full h-auto"
+            />
+        </div>
+    </div>
+</section>
