@@ -1,0 +1,92 @@
+---
+import { MousePointerClick, Handshake, MapPin, BadgeCheck } from "lucide-react";
+
+const steps = [
+  {
+    id: "1",
+    title: "Request",
+    description:
+      "Enter pickup and drop-off locations. Get an instant price estimate.",
+    icon: MousePointerClick,
+    iconBg: "bg-primary",
+    iconColor: "text-black",
+  },
+  {
+    id: "2",
+    title: "Match",
+    description:
+      "We instantly connect you with the nearest available trusted driver.",
+    icon: Handshake,
+    iconBg: "bg-[#D6E4FF]",
+    iconColor: "text-[#1E3A8A]",
+  },
+  {
+    id: "3",
+    title: "Track",
+    description:
+      "Follow your package in real-time on the live map until it arrives.",
+    icon: MapPin,
+    iconBg: "bg-[#6A6A6A]",
+    iconColor: "text-white",
+  },
+  {
+    id: "4",
+    title: "Confirm",
+    description:
+      "Receive proof of delivery instantly. Rate your driver seamlessly.",
+    icon: BadgeCheck,
+    iconBg: "bg-[#7A6300]",
+    iconColor: "text-white",
+  },
+];
+---
+
+<section id="how-it-works" class="w-full bg-background py-20 px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="text-center mb-16 space-y-4">
+      <h2
+        class="text-4xl md:text-5xl font-extrabold text-foreground tracking-tight"
+      >
+        How Wasel Works
+      </h2>
+      <p class="text-lg md:text-xl text-muted-foreground font-medium">
+        Four simple steps to get your items moving.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {
+        steps.map((step) => (
+          <div
+            id={step.id}
+            class="relative rounded-2xl border border-border bg-card p-8 shadow-sm overflow-hidden flex flex-col items-start min-h-80 hover:shadow-md transition-shadow"
+          >
+            {/* Background watermark number */}
+            <div class="absolute top-2 right-4 text-[160px] font-black text-muted/30 leading-none z-0 select-none">
+              {step.id}
+            </div>
+
+            {/* Content */}
+            <div class="z-10 flex flex-col h-full w-full">
+              <div
+                class={`w-14 h-14 rounded-2xl flex items-center justify-center mb-10 ${step.iconBg}`}
+              >
+                <step.icon
+                  className={`w-6 h-6 ${step.iconColor}`}
+                  strokeWidth={2}
+                />
+              </div>
+
+              <h3 class="text-2xl font-bold text-foreground mb-3">
+                {step.title}
+              </h3>
+              <p class="text-muted-foreground leading-relaxed font-medium">
+                {step.description}
+              </p>
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>

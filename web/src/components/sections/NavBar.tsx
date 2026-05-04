@@ -25,7 +25,7 @@ export function NavBar(props: NavBarProps) {
   ];
 
   return (
-    <header className="sticky top-5 z-50 mx-auto flex w-[90%] max-w-screen-xl items-center justify-between overflow-visible rounded-2xl border border-border bg-card/80 dark:bg-card/50 backdrop-blur-md p-2 shadow-sm md:w-[80%] lg:w-[75%]">
+    <header className="fixed top-5 left-1/2 -translate-x-1/2 z-50 mx-auto flex w-[90%] max-w-screen-xl items-center justify-between overflow-visible rounded-2xl border border-border bg-card/80 dark:bg-card/50 backdrop-blur-md p-2 shadow-sm md:w-[80%] lg:w-[75%]">
       {/* Logo */}
       <a
         href="/"
@@ -82,6 +82,9 @@ export function NavBar(props: NavBarProps) {
                         </a>
                       </Button>
                     ))}
+                    <Button variant="ghost" className="justify-start text-base">
+                      Contact Us
+                    </Button>
                   </div>
                 </div>
               </SheetContent>
