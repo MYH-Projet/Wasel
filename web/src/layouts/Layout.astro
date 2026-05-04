@@ -14,7 +14,7 @@ const logo = await getImage({
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
@@ -23,8 +23,12 @@ const logo = await getImage({
 		<meta name="generator" content={Astro.generator} />
 		<title>Wasel</title>
 	</head>
-	<body>
+	<body
+		class="min-h-screen bg-background font-sans text-foreground antialiased flex flex-col"
+	>
 		<NavBar client:idle logo={logo} />
-		<slot />
+		<main class="flex-1 flex flex-col">
+			<slot />
+		</main>
 	</body>
 </html>
