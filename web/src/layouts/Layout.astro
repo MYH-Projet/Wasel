@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import { NavBar } from "../components/sections/NavBar.tsx";
+import Footer from "../components/sections/Footer.astro";
 import { getImage } from "astro:assets";
 import logoImage from "../assets/images/wasel-logo.png";
 
@@ -30,5 +31,6 @@ const logo = await getImage({
 		<main class="flex-1 flex flex-col">
 			<slot />
 		</main>
+		<Footer />
 	</body>
 </html>

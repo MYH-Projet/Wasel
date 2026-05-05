@@ -11,21 +11,33 @@ interface NavBarProps {
 }
 export function NavBar(props: NavBarProps) {
   const [mounted, setMounted] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const links = [
-    { name: "Solutions", href: "#solutions" },
     { name: "How It Works", href: "#how-it-works" },
-    { name: "Benefits", href: "#benefits" },
+    { name: "Features", href: "#gps-tracking" },
     { name: "Drivers", href: "#drivers" },
     { name: "Technology", href: "#technology" },
   ];
 
   return (
-    <header className="fixed top-5 left-1/2 -translate-x-1/2 z-50 mx-auto flex w-[90%] max-w-screen-xl items-center justify-between overflow-visible rounded-2xl border border-border bg-card/80 dark:bg-card/50 backdrop-blur-md p-2 shadow-sm md:w-[80%] lg:w-[75%]">
+    <header
+      className={`sticky z-50 flex items-center justify-between bg-card/80 dark:bg-card/50 backdrop-blur-md p-2 transition-all duration-500 ease-in-out mx-auto ${isScrolled
+        ? "top-5 w-11/12 max-w-7xl rounded-2xl border border-border shadow-lg md:w-10/12 lg:w-9/12"
+        : "top-0 w-full rounded-none border-b border-border shadow-sm px-4 lg:px-8"
+        }`}
+    >
       {/* Logo */}
       <a
         href="/"
@@ -82,8 +94,8 @@ export function NavBar(props: NavBarProps) {
                         </a>
                       </Button>
                     ))}
-                    <Button variant="ghost" className="justify-start text-base">
-                      Contact Us
+                    <Button variant="ghost" className="justify-start text-base" asChild>
+                      <a href="/contact">Contact Us</a>
                     </Button>
                   </div>
                 </div>
@@ -93,8 +105,8 @@ export function NavBar(props: NavBarProps) {
 
           {/* Desktop Right Side Placeholder */}
           <div className="hidden lg:flex lg:items-center lg:gap-2">
-            <Button size="sm" className="rounded-xl">
-              Contact Us
+            <Button size="sm" className="rounded-xl" asChild>
+              <a href="/contact">Contact Us</a>
             </Button>
           </div>
         </>

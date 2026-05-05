@@ -1,0 +1,65 @@
+---
+import { Image } from "astro:assets";
+import { CreditCard, Banknote } from "lucide-react";
+import flexiblePaymentsImage from "@/assets/images/FlexiblePayments.png";
+---
+
+<section
+   id="payments"
+   class="py-20 md:py-32 px-6 lg:px-8 bg-background overflow-hidden relative"
+>
+   <div
+      class="max-w-7xl mx-auto flex flex-col-reverse md:flex-row items-center gap-12 lg:gap-20"
+   >
+      <!-- Visual -->
+      <div class="flex-1 w-full flex justify-center md:justify-start relative">
+         <!-- Decorative background blob -->
+         <div
+            class="absolute inset-0 bg-blue-600/30 rounded-3xl transform -rotate-3 scale-105 z-0"
+         >
+         </div>
+
+         <div
+            class="relative z-10 bg-secondary rounded-2xl p-2 shadow-2xl max-w-md w-full aspect-1/2 flex flex-col overflow-hidden"
+         >
+            <Image
+               src={flexiblePaymentsImage}
+               alt="flexible payments image"
+               class="w-full h-full object-cover rounded-2xl"
+            />
+         </div>
+      </div>
+
+      <!-- Text Content -->
+      <div class="flex-1 space-y-8">
+         <h2
+            class="text-4xl md:text-5xl font-extrabold text-foreground tracking-tight"
+         >
+            Flexible Payments
+         </h2>
+         <p
+            class="text-lg md:text-xl text-muted-foreground leading-relaxed font-light"
+         >
+            Pay securely online with credit cards or digital wallets, or choose
+            to pay in cash upon delivery.
+         </p>
+
+         <div class="flex gap-4 pt-4">
+            <!-- Card Button -->
+            <div
+               class="flex-1 bg-card border border-border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm hover:border-primary/50 transition-colors cursor-pointer"
+            >
+               <CreditCard size={28} className="text-primary" />
+               <span class="font-bold text-sm">Card</span>
+            </div>
+            <!-- Cash Button -->
+            <div
+               class="flex-1 bg-card border border-border rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-sm hover:border-primary/50 transition-colors cursor-pointer"
+            >
+               <Banknote size={28} className="text-primary" />
+               <span class="font-bold text-sm">Cash</span>
+            </div>
+         </div>
+      </div>
+   </div>
+</section>
