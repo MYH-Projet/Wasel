@@ -1,23 +1,36 @@
+---
+import "../styles/global.css";
+import { NavBar } from "../components/sections/NavBar.tsx";
+import Footer from "../components/sections/Footer.astro";
+import { getImage } from "astro:assets";
+import logoImage from "../assets/images/wasel-logo.png";
+
+const logo = await getImage({
+	src: logoImage,
+	alt: "wasel logo",
+	width: 200,
+	height: 150,
+	format: "webp",
+});
+---
+
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<title>Wasel</title>
 	</head>
-	<body>
-		<slot />
+	<body
+		class="min-h-screen bg-background font-sans text-foreground antialiased flex flex-col"
+	>
+		<NavBar client:idle logo={logo} />
+		<main class="flex-1 flex flex-col">
+			<slot />
+		</main>
+		<Footer />
 	</body>
 </html>
-
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>
