@@ -124,10 +124,20 @@ else
     fail "Admin token retrieval failed (Empty token)" "CRITICAL"
 fi
 
-# Test 4 - Auth me admin
-print_step "Test 4 — /api/auth/me avec ADMIN"
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$API_BASE_URL/api/auth/me" -H "Authorization: Bearer $ADMIN_TOKEN")
-assert_status "200" "$STATUS" "Auth me admin"
+# Test 4 - Auth me admin (AUTO-SYNC: user local is auto-created here, BEFORE any /api/auth/sync call)
+print_step "Test 4 — /api/auth/me avec ADMIN (auto-sync)"
+RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$API_BASE_URL/api/auth/me" -H "Authorization: Bearer $ADMIN_TOKEN")
+STATUS=$(echo "$RESPONSE" | tail -1)
+BODY=$(echo "$RESPONSE" | sed '$d')
+assert_status "200" "$STATUS" "Auth me admin (auto-sync)"
+
+# Verify that localUserId is present (proof the user was auto-created)
+LOCAL_USER_ID=$(echo "$BODY" | grep -o '"localUserId":"[^"]*' | sed 's/"localUserId":"//')
+if [ -n "$LOCAL_USER_ID" ] && [ "$LOCAL_USER_ID" != "null" ]; then
+    pass "Auth me admin returns localUserId ($LOCAL_USER_ID) — auto-sync works"
+else
+    fail "Auth me admin missing localUserId — auto-sync did not create the local user"
+fi
 
 # Test 5 - Auth claims admin
 print_step "Test 5 — /api/auth/claims avec ADMIN"
@@ -138,8 +148,8 @@ else
     warn "Auth claims admin returned $STATUS (Endpoint might be disabled in non-dev)"
 fi
 
-# Test 6 - Auth sync admin
-print_step "Test 6 — /api/auth/sync avec ADMIN"
+# Test 6 - Auth sync admin (backward compatibility — still works)
+print_step "Test 6 — /api/auth/sync avec ADMIN (backward compat)"
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$API_BASE_URL/api/auth/sync" -H "Authorization: Bearer $ADMIN_TOKEN")
 assert_status "200" "$STATUS" "Auth sync admin"
 
@@ -157,10 +167,20 @@ else
     fail "Client token retrieval failed (Empty token)"
 fi
 
-# Test 9 - Auth me client
-print_step "Test 9 — /api/auth/me avec CLIENT"
-STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "$API_BASE_URL/api/auth/me" -H "Authorization: Bearer $CLIENT_TOKEN")
-assert_status "200" "$STATUS" "Auth me client"
+# Test 9 - Auth me client (AUTO-SYNC: client user local is auto-created here too)
+print_step "Test 9 — /api/auth/me avec CLIENT (auto-sync)"
+RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "$API_BASE_URL/api/auth/me" -H "Authorization: Bearer $CLIENT_TOKEN")
+STATUS=$(echo "$RESPONSE" | tail -1)
+BODY=$(echo "$RESPONSE" | sed '$d')
+assert_status "200" "$STATUS" "Auth me client (auto-sync)"
+
+# Verify client localUserId
+CLIENT_LOCAL_ID=$(echo "$BODY" | grep -o '"localUserId":"[^"]*' | sed 's/"localUserId":"//')
+if [ -n "$CLIENT_LOCAL_ID" ] && [ "$CLIENT_LOCAL_ID" != "null" ]; then
+    pass "Auth me client returns localUserId ($CLIENT_LOCAL_ID) — auto-sync works"
+else
+    fail "Auth me client missing localUserId — auto-sync did not create the local user"
+fi
 
 # Test 10 - Admin users client
 print_step "Test 10 — /api/admin/users avec CLIENT"
@@ -191,8 +211,8 @@ else
     warn "No users found to test status change"
 fi
 
-# Test 15 - Update Admin Profile
-print_step "Test 15 — Update Admin Profile"
+# Test 15 - Update Admin Profile (no /api/auth/sync needed beforehand — auto-sync handles it)
+print_step "Test 15 — Update Admin Profile (auto-sync)"
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X PATCH "$API_BASE_URL/api/auth/me/profile" \
     -H "Authorization: Bearer $ADMIN_TOKEN" \
     -H "Content-Type: application/json" \

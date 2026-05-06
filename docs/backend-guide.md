@@ -448,10 +448,44 @@ Le backend gère maintenant l'authentification et les rôles avec JWT via Keyclo
      -H "Authorization: Bearer VOTRE_TOKEN_ICI"
    ```
 
-## Nouveaux Endpoints de Gestion des Profils Utilisateurs
+## Auto-Sync : `EnsureCurrentUserExistsAsync()`
+
+Le backend garantit automatiquement l'existence du profil local PostgreSQL dès qu'un endpoint a besoin de l'utilisateur courant. **Le frontend n'a plus besoin d'appeler `POST /api/auth/sync` avant `/api/auth/me`.**
+
+### Principe
+
+La méthode `EnsureCurrentUserExistsAsync()` dans `AuthService` :
+1. Extrait `KeycloakId` et `Email` depuis les claims JWT du token courant.
+2. Appelle `UserService.FindOrCreateFromKeycloakAsync()` (lookup par KeycloakId → fallback par Email → création).
+3. Retourne un `CurrentUserResponseDto` complet avec les données locales + les rôles JWT.
+
+### Endpoints qui utilisent l'auto-sync
+
+| Endpoint | Comportement |
+|---|---|
+| `GET /api/auth/me` | Appelle `EnsureCurrentUserExistsAsync()` — le user local est créé si absent |
+| `PATCH /api/auth/me/profile` | Appelle `EnsureCurrentUserExistsAsync()` avant la mise à jour du profil |
+| `POST /api/auth/sync` | Toujours disponible (compatibilité), utilise la même logique sous-jacente |
+
+### Pour les futurs endpoints métier
+
+Si un nouvel endpoint a besoin de l'utilisateur local courant, il suffit d'injecter `IAuthService` et d'appeler :
+
+```csharp
+// Dans votre service métier
+var currentUser = await _authService.EnsureCurrentUserExistsAsync();
+// currentUser.LocalUserId est garanti non-null
+```
+
+> [!IMPORTANT]
+> **Gestion d'erreurs** : `EnsureCurrentUserExistsAsync()` ne catch pas les exceptions DB. Les erreurs PostgreSQL (`DbException`, `DbUpdateException`, timeout) remontent naturellement via le middleware d'erreur global.
+
+---
+
+## Endpoints de Gestion des Profils Utilisateurs
 
 ### Profil local (PATCH /api/auth/me/profile)
-Une fois l'utilisateur connecté via Keycloak et synchronisé (`POST /api/auth/sync`), il peut compléter son profil métier local :
+Une fois l'utilisateur connecté via Keycloak, il peut compléter son profil métier local. **Le profil local est auto-créé si absent :**
 
 ```http
 PATCH /api/auth/me/profile
@@ -491,7 +525,8 @@ bash scripts/test-auth.sh
 
 **Checklist Validation Auth :**
 - [ ] Le token permet de récupérer les claims (`/api/auth/me`)
-- [ ] Le `/api/auth/sync` crée un profil local si inexistant
+- [ ] `GET /api/auth/me` auto-crée le profil local si inexistant (auto-sync)
+- [ ] `POST /api/auth/sync` reste fonctionnel (compatibilité)
 - [ ] `/api/admin/users` nécessite le rôle `ADMIN`
 
 ---

@@ -33,15 +33,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPatch("me/profile")]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateCurrentUserProfileRequestDto request)
+    public async Task<ActionResult<CurrentUserResponseDto>> UpdateProfile([FromBody] UpdateCurrentUserProfileRequestDto request)
     {
         var updatedProfile = await _authService.UpdateProfileAsync(request);
-
-        if (updatedProfile is null)
-        {
-            return NotFound(new { message = "User profile not found. Please sync your account first." });
-        }
-
         return Ok(updatedProfile);
     }
 

@@ -5,7 +5,8 @@ namespace Wasel.Api.Modules.Auth.Services;
 
 public interface IAuthService
 {
+    Task<CurrentUserResponseDto> EnsureCurrentUserExistsAsync();
     Task<CurrentUserResponseDto> GetCurrentUserAsync();
     Task<UserResponseDto> SyncCurrentUserAsync();
-    Task<CurrentUserResponseDto?> UpdateProfileAsync(UpdateCurrentUserProfileRequestDto request);
+    Task<CurrentUserResponseDto> UpdateProfileAsync(UpdateCurrentUserProfileRequestDto request);
 }
