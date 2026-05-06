@@ -73,9 +73,9 @@ La plupart des routes métier et toutes les routes protégées requièrent un to
 
 | Endpoint | Méthode | Protection | Utilité frontend |
 |---|---|---|---|
-| `/api/auth/me` | GET | Token requis | Récupérer l'utilisateur Wassel connecté |
-| `/api/auth/sync` | POST | Token requis | Créer/synchroniser le profil local depuis Keycloak |
-| `/api/auth/me/profile` | PATCH | Token requis | Compléter/modifier le profil local (ex: ajout CIN, téléphone) |
+| `/api/auth/me` | GET | Token requis | Récupérer l'utilisateur Wassel connecté **(auto-crée le profil local si absent)** |
+| `/api/auth/sync` | POST | Token requis | ~~Obligatoire~~ **Optionnel** — compatibilité uniquement. L'auto-sync est fait par `/api/auth/me` |
+| `/api/auth/me/profile` | PATCH | Token requis | Compléter/modifier le profil local (ex: ajout CIN, téléphone). **(auto-crée le profil local si absent)** |
 | `/api/auth/claims` | GET | Token requis (Dev Only) | Déboguer les claims contenus dans le token |
 | `/api/admin/users` | GET | Rôle ADMIN | Liste de tous les utilisateurs (Dashboard Web) |
 | `/api/admin/users/{id}` | GET | Rôle ADMIN | Détail d'un utilisateur spécifique |
@@ -105,22 +105,17 @@ Voici le flux exact que le frontend doit implémenter :
 - Keycloak retourne un `access_token` (et potentiellement un `refresh_token`).
 - Le frontend stocke ce token de façon sécurisée (Secure Storage / HttpOnly Cookie).
 
-### 5.4 Synchronisation avec Wassel
-Juste après une connexion réussie, le frontend **doit** appeler :
-```http
-POST /api/auth/sync
-Authorization: Bearer <access_token>
-```
-Ce endpoint crée l'utilisateur local dans PostgreSQL s'il n'existe pas, ou met à jour ses données de base (comme l'email).
-
-### 5.5 Récupérer le profil connecté
+### 5.4 Récupérer le profil connecté (auto-sync)
 Pour afficher les informations de l'utilisateur dans l'application, appelez :
 ```http
 GET /api/auth/me
 Authorization: Bearer <access_token>
 ```
 
-### 5.6 Compléter le profil
+> [!TIP]
+> **Auto-sync** : Cet endpoint crée automatiquement le profil local dans PostgreSQL si l'utilisateur n'existe pas encore. Il n'est plus nécessaire d'appeler `POST /api/auth/sync` avant. L'endpoint `/api/auth/sync` reste disponible pour la compatibilité, mais n'est plus obligatoire.
+
+### 5.5 Compléter le profil
 Si des informations sont manquantes (ex: téléphone, CIN), proposez un formulaire puis appelez :
 ```http
 PATCH /api/auth/me/profile
@@ -136,11 +131,14 @@ Content-Type: application/json
 }
 ```
 
-### 5.7 Utiliser les APIs protégées
+> [!NOTE]
+> Cet endpoint auto-crée le profil local si absent. Pas besoin de vérifier si l'utilisateur a été synchronisé avant.
+
+### 5.6 Utiliser les APIs protégées
 Toutes les requêtes suivantes vers le backend Wassel devront inclure l'en-tête HTTP :
 `Authorization: Bearer <access_token>`
 
-### 5.8 Déconnexion
+### 5.7 Déconnexion
 - Supprimer les tokens (access et refresh) côté stockage local du frontend.
 - *Plus tard :* Appeler l'endpoint de logout de Keycloak pour invalider la session côté serveur.
 - *Note :* Il n'existe pas d'endpoint `/api/auth/logout` côté backend Wassel, le backend est "stateless".
@@ -151,10 +149,9 @@ Toutes les requêtes suivantes vers le backend Wassel devront inclure l'en-tête
 
 L'administrateur utilise le portail Web (Astro).
 1. Login via Keycloak avec un compte ayant le rôle `ADMIN`.
-2. Appel à `POST /api/auth/sync`.
-3. Appel à `GET /api/auth/me` pour afficher son nom.
-4. Appel à `GET /api/admin/users` pour afficher la liste des clients/livreurs.
-5. Pour valider ou bloquer un compte, appel à `PATCH /api/admin/users/{id}/status` avec :
+2. Appel à `GET /api/auth/me` pour afficher son nom **(le profil local est auto-créé)**.
+3. Appel à `GET /api/admin/users` pour afficher la liste des clients/livreurs.
+4. Pour valider ou bloquer un compte, appel à `PATCH /api/admin/users/{id}/status` avec :
 ```json
 {
   "status": "Active"
@@ -168,10 +165,9 @@ L'administrateur utilise le portail Web (Astro).
 
 L'application Mobile (Flutter) pour les clients :
 1. Login/Register via le flux OIDC Keycloak (Le rôle `CLIENT` est attribué par défaut ou via la configuration Keycloak).
-2. Appel `POST /api/auth/sync` au premier lancement.
-3. Appel `GET /api/auth/me` pour récupérer ses données.
-4. Si le profil est incomplet, proposer de remplir et appeler `PATCH /api/auth/me/profile`.
-5. *Plus tard :* Création de livraisons.
+2. Appel `GET /api/auth/me` pour récupérer ses données **(le profil local est auto-créé)**.
+3. Si le profil est incomplet, proposer de remplir et appeler `PATCH /api/auth/me/profile`.
+4. *Plus tard :* Création de livraisons.
 
 ---
 
@@ -179,10 +175,9 @@ L'application Mobile (Flutter) pour les clients :
 
 L'application Mobile (Flutter) pour les livreurs :
 1. Login/Register via Keycloak (avec le rôle `DRIVER`).
-2. Appel `POST /api/auth/sync`.
-3. Appel `GET /api/auth/me`.
-4. Complétion obligatoire des données via `PATCH /api/auth/me/profile`.
-5. *Plus tard :* Dépôt du dossier livreur (module Driver/Documents) qui changera son statut métier local (ex: de Pending à Active par l'admin).
+2. Appel `GET /api/auth/me` **(le profil local est auto-créé)**.
+3. Complétion obligatoire des données via `PATCH /api/auth/me/profile`.
+4. *Plus tard :* Dépôt du dossier livreur (module Driver/Documents) qui changera son statut métier local (ex: de Pending à Active par l'admin).
 
 ---
 
@@ -214,11 +209,9 @@ final accessToken = authResult.accessToken;
 // 3. Sauvegarder le token de manière sécurisée (ex: flutter_secure_storage)
 await secureStorage.write(key: 'access_token', value: accessToken);
 
-// 4. Synchroniser avec le backend Wassel
-await api.post('/api/auth/sync', headers: {'Authorization': 'Bearer $accessToken'});
-
-// 5. Récupérer le profil
+// 4. Récupérer le profil (auto-sync : le profil local est créé automatiquement)
 final userProfile = await api.get('/api/auth/me', headers: {'Authorization': 'Bearer $accessToken'});
+// Note : POST /api/auth/sync n'est plus nécessaire, GET /api/auth/me fait l'auto-sync
 ```
 
 ---
@@ -279,7 +272,7 @@ Le frontend doit anticiper ces différents codes de retour de l'API Wassel :
 | **400** | Données invalides | Afficher un message d'erreur de validation (ex: CIN mal formaté). |
 | **401** | Token absent, invalide ou expiré | Supprimer le token local, rediriger vers l'écran de login. |
 | **403** | Rôle insuffisant | Afficher une page "Accès refusé" (ex: un Client tente d'accéder à `/api/admin`). |
-| **404** | Profil local non trouvé | Appeler silencieusement `/api/auth/sync` puis réessayer l'opération. |
+| **404** | Ressource non trouvée | Ressource métier introuvable (pas un problème de sync — le profil local est auto-créé). |
 | **500** | Erreur serveur | Afficher un message générique (ex: "Une erreur inattendue est survenue"). |
 
 ---
@@ -290,7 +283,7 @@ Le frontend doit anticiper ces différents codes de retour de l'API Wassel :
 **Non**, Keycloak gère l'authentification et la vérification des mots de passe.
 
 ### Est-ce que le backend Wassel fait l'inscription ?
-**Non**, la création de l'identité sécurisée se fait via Keycloak. Wassel crée seulement la copie du profil métier local lorsqu'on appelle `/api/auth/sync`.
+**Non**, la création de l'identité sécurisée se fait via Keycloak. Wassel crée automatiquement la copie du profil métier local lors du premier appel à `GET /api/auth/me` ou `PATCH /api/auth/me/profile` (auto-sync).
 
 ### Est-ce que le frontend doit utiliser l'Admin Console Keycloak ?
 **Non**. L'Admin Console Keycloak (sur le port 8080) est réservée aux développeurs et aux administrateurs système. Les utilisateurs de l'app mobile ou du panel Admin Web Wassel doivent passer par le flux OIDC classique.
@@ -340,8 +333,8 @@ Pour valider l'intégration auth sur chaque client (Flutter / Astro), assurez-vo
 - [ ] L'Access Token est correctement récupéré après la redirection.
 - [ ] Le Token est stocké de manière sécurisée sur l'appareil.
 - [ ] Le header `Authorization: Bearer <token>` est ajouté à toutes les requêtes vers l'API Wassel.
-- [ ] L'appel `POST /api/auth/sync` est fait au moins une fois après le login.
-- [ ] L'appel `GET /api/auth/me` permet d'afficher les informations utilisateur.
+- [ ] L'appel `GET /api/auth/me` permet d'afficher les informations utilisateur **(le profil local est auto-créé)**.
+- [ ] Le `localUserId` retourné par `/api/auth/me` est non-null (preuve de l'auto-sync).
 - [ ] Le formulaire de modification de profil appelle bien `PATCH /api/auth/me/profile` avec les bonnes données.
 - [ ] Une erreur `401 Unauthorized` de l'API déclenche une déconnexion automatique ou un refresh token.
 - [ ] Une erreur `403 Forbidden` est gérée gracieusement.
