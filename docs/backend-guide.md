@@ -44,6 +44,7 @@ La branche actuelle (`setup/backend-architecture`) a mis en place les fondations
   - `wasel-minio` (Stockage d'objets)
   - `wasel-keycloak` (Gestion des identités IAM)
   - `wasel-adminer` (Interface graphique de BDD)
+  - `wasel-nginx` (Reverse Proxy — point d'entrée unique)
 - **API Documentation** moderne via `Scalar` intégrée nativement à l'OpenAPI de .NET 10.
 - **Endpoint de santé** (`/api/health`) pour le monitoring.
 - **Entités EF Core minimales** (`User`, `Driver`, `Delivery`) avec `BaseEntity` (gestion des timestamps d'audit).
@@ -221,40 +222,49 @@ Exécutez toujours un `dotnet build` local avant de *commiter*.
 4. **Vérifier que tout tourne** :
    ```bash
    docker compose ps
-   # Vous devez voir 6 services "Up" et les bases de données "healthy".
+   # Vous devez voir 7 services "Up" et les bases de données "healthy".
    ```
 5. **Tester l'API** :
    ```bash
+   # Accès direct
    curl http://localhost:5000/api/health
-   # Doit retourner un JSON indiquant "Healthy"
+   # Accès via Nginx
+   curl http://localhost/api/health
    ```
 
 **URLs de développement local :**
-- 📖 **Documentation API (Scalar)** : `http://localhost:5000/scalar/v1`
-- 🔑 **Keycloak (Auth)** : `http://localhost:8080` (admin / admin)
-- 💾 **Adminer (Visualiser la Base de Données)** : `http://localhost:8081`
+
+| Service | Accès Direct | Accès via Nginx |
+|---|---|---|
+| 📖 **API (Scalar)** | `http://localhost:5000/scalar/v1` | `http://localhost/scalar/v1` |
+| 🔑 **Keycloak (Auth)** | `http://localhost:8080/auth` | `http://localhost/auth/` |
+| 💾 **Adminer (BDD)** | `http://localhost:8081` | — |
+| 🗂️ **MinIO (Fichiers)** | `http://localhost:9001` | — |
+
+**Adminer :**
   - Système : `PostgreSQL`
   - Serveur : `wasel-postgres`
   - Utilisateur : `wasel_user`
   - Mot de passe : *(valeur depuis .env.example)*
   - Base : `wasel_db`
-- 🗂️ **MinIO (Fichiers)** : `http://localhost:9001` (minioadmin / minioadmin123)
 
 ---
 
 ## 10. Services Docker utilisés
 
-| Service | Rôle | URL / Port local |
-|---|---|---|
-| `wasel-api` | API backend .NET | `http://localhost:5000` |
-| `wasel-postgres` | Base de données relationnelle | `localhost:5432` |
-| `wasel-redis` | Cache rapide / Tracking futur | `localhost:6379` |
-| `wasel-minio` | Stockage d'objets compatibles S3 | Console : `http://localhost:9001`<br>API : `localhost:9000` |
-| `wasel-keycloak`| Authentification IAM | `http://localhost:8080` |
-| `wasel-adminer` | Interface UI de Base de données | `http://localhost:8081` |
+| Service | Rôle | Accès Direct | Accès via Nginx |
+|---|---|---|---|
+| `wasel-nginx` | Reverse Proxy (point d'entrée) | — | `http://localhost` |
+| `wasel-api` | API backend .NET | `http://localhost:5000` | `http://localhost/api/...` |
+| `wasel-postgres` | Base de données relationnelle | `localhost:5432` | — |
+| `wasel-redis` | Cache rapide / Tracking futur | `localhost:6379` | — |
+| `wasel-minio` | Stockage d'objets compatibles S3 | Console : `http://localhost:9001`<br>API : `localhost:9000` | — |
+| `wasel-keycloak`| Authentification IAM | `http://localhost:8080/auth` | `http://localhost/auth/...` |
+| `wasel-adminer` | Interface UI de Base de données | `http://localhost:8081` | — |
 
 ```mermaid
 graph TD
+    Nginx[wasel-nginx :80]
     API[wasel-api :5000]
     DB[(wasel-postgres :5432)]
     Cache[(wasel-redis :6379)]
@@ -262,6 +272,8 @@ graph TD
     IAM[wasel-keycloak :8080]
     UI[wasel-adminer :8081]
 
+    Nginx -->|/api/*| API
+    Nginx -->|/auth/*| IAM
     API --> DB
     API --> Cache
     API --> Storage
@@ -396,9 +408,10 @@ Un commit = **Une seule intention claire**. Rédigez en anglais à l'impératif 
 
 Avant de demander à vos collègues de valider votre code, vérifiez obligatoirement :
 - [ ] Le code compile : `dotnet build backend/Wasel.Api/Wasel.Api.csproj`
-- [ ] La config Docker est valide : `docker compose config`
+- [ ] La config Docker est valide : `docker compose config --quiet`
 - [ ] Le projet démarre entièrement localement : `docker compose up -d --build`
-- [ ] Le health check API répond : `curl http://localhost:5000/api/health`
+- [ ] Le health check API direct répond : `curl http://localhost:5000/api/health`
+- [ ] Le health check API via Nginx répond : `curl http://localhost/api/health`
 - [ ] Le fichier `.env` **n'a pas été commité**.
 - [ ] S'il y a de nouveaux champs DB, j'ai créé une migration (`dotnet ef migrations add ...`).
 
@@ -435,7 +448,16 @@ Le backend gère maintenant l'authentification et les rôles avec JWT via Keyclo
 1. Consultez le fichier [KeycloakSetupGuide.md](./Infrastructure/Keycloak/KeycloakSetupGuide.md) pour plus de détails sur la configuration.
 2. Obtenez un jeton (token) d'authentification pour un utilisateur test (`admin@wasel.ma`) :
    ```bash
-   curl --location --request POST 'http://localhost:8080/realms/wasel/protocol/openid-connect/token' \
+   # Accès direct Keycloak
+   curl --location --request POST 'http://localhost:8080/auth/realms/wasel/protocol/openid-connect/token' \
+   --header 'Content-Type: application/x-www-form-urlencoded' \
+   --data-urlencode 'client_id=wasel-api' \
+   --data-urlencode 'username=admin@wasel.ma' \
+   --data-urlencode 'password=admin123' \
+   --data-urlencode 'grant_type=password'
+
+   # Ou via Nginx
+   curl --location --request POST 'http://localhost/auth/realms/wasel/protocol/openid-connect/token' \
    --header 'Content-Type: application/x-www-form-urlencoded' \
    --data-urlencode 'client_id=wasel-api' \
    --data-urlencode 'username=admin@wasel.ma' \
@@ -444,7 +466,12 @@ Le backend gère maintenant l'authentification et les rôles avec JWT via Keyclo
    ```
 3. Testez l'endpoint `/api/auth/me` avec le token obtenu :
    ```bash
+   # Accès direct
    curl -X GET http://localhost:5000/api/auth/me \
+     -H "Authorization: Bearer VOTRE_TOKEN_ICI"
+
+   # Ou via Nginx
+   curl -X GET http://localhost/api/auth/me \
      -H "Authorization: Bearer VOTRE_TOKEN_ICI"
    ```
 
@@ -589,6 +616,60 @@ Le déploiement automatique sur un serveur VPS **n'est pas encore implémenté**
 3. Exécuter `docker compose up -d wasel-api` pour relancer le service.
 
 Un fichier `backend-deploy.yml` sera créé à ce moment-là.
+
+---
+
+## 22. Nginx Reverse Proxy
+
+Nginx est le **point d'entrée unique** pour les clients (Flutter, Astro). Il route les requêtes vers les services internes.
+
+### Architecture
+
+```mermaid
+graph LR
+    Client["Frontend (Flutter / Astro)"] --> Nginx["Nginx :80"]
+    Nginx -->|/api/*| API["wasel-api :8080"]
+    Nginx -->|/auth/*| KC["wasel-keycloak :8080"]
+    Dev["Développeur (cURL)"] --> API2["Direct :5000"]
+    Dev --> KC2["Direct :8080"]
+```
+
+### Routes Nginx
+
+| Route Nginx | Service cible | Exemple d'URL |
+|---|---|---|
+| `/api/*` | Backend .NET (`wasel-api:8080`) | `http://localhost/api/health` |
+| `/auth/*` | Keycloak (`wasel-keycloak:8080`) | `http://localhost/auth/realms/wasel` |
+| `/scalar/*` | Documentation API | `http://localhost/scalar/v1` |
+
+### Configuration clé
+
+- **Fichier** : `infra/nginx/nginx.conf`
+- **Keycloak** utilise `KC_HTTP_RELATIVE_PATH=/auth` pour servir nativement sous `/auth/` (pas de rewrite Nginx)
+- **`KC_PROXY_HEADERS=xforwarded`** : Keycloak fait confiance aux headers `X-Forwarded-*` envoyés par Nginx
+- **Headers proxy** : `Host`, `X-Real-IP`, `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, `X-Forwarded-Port`
+
+### Issuer JWT et ValidIssuers
+
+Le backend accepte les tokens émis par **trois** issuers :
+
+| Issuer | Contexte |
+|---|---|
+| `http://localhost:8080/auth/realms/wasel` | Token obtenu via accès direct Keycloak |
+| `http://wasel-keycloak:8080/auth/realms/wasel` | Token obtenu en interne Docker |
+| `http://localhost/auth/realms/wasel` | Token obtenu via Nginx |
+
+Ceci est configuré dans `Program.cs` via les propriétés `Authority`, `InternalAuthority`, et `NginxAuthority`.
+
+> [!WARNING]
+> **Attention hostname Keycloak** : Si vous déployez Nginx sur un domaine (ex: `api.wasel.ma`), pensez à ajouter l'issuer correspondant dans `ValidIssuers` et à configurer `KC_HOSTNAME` dans Keycloak.
+
+### Tests via Nginx
+
+Pour tester l'intégralité du flux via Nginx :
+```bash
+API_BASE_URL=http://localhost KEYCLOAK_URL=http://localhost/auth bash scripts/test-auth.sh
+```
 
 ---
 

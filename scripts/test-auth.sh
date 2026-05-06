@@ -2,7 +2,7 @@
 
 # Configuration
 API_BASE_URL=${API_BASE_URL:-"http://localhost:5000"}
-KEYCLOAK_URL=${KEYCLOAK_URL:-"http://localhost:8080"}
+KEYCLOAK_URL=${KEYCLOAK_URL:-"http://localhost:8080/auth"}
 REALM=${REALM:-"wasel"}
 CLIENT_ID=${CLIENT_ID:-"wasel-api"}
 ADMIN_USERNAME=${ADMIN_USERNAME:-"admin@wasel.ma"}
@@ -74,6 +74,9 @@ print_summary() {
     echo -e "\n========================================================"
     echo -e " 📊 Auth Test Summary"
     echo -e "========================================================"
+    echo -e " API_BASE_URL:  $API_BASE_URL"
+    echo -e " KEYCLOAK_URL:  $KEYCLOAK_URL"
+    echo -e "--------------------------------------------------------"
     for item in "${SUMMARY[@]}"; do
         echo -e " $item"
     done
