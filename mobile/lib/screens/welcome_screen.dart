@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/widgets/wasel_logo_horizontal.dart';
 import 'package:mobile/widgets/wasel_logo_vertical.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -17,7 +18,7 @@ class WelcomeScreen extends StatelessWidget {
             children: [
               Container(
                 margin: EdgeInsets.all(24.0),
-                child: WaselLogoVertical(),
+                child: WaselLogoHorizontal(),
               ),
             ],
           ),

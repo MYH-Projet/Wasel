@@ -7,6 +7,7 @@ class WaselLogoVertical extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         WaselLogo(width: 128, height: 64),
         Text(
