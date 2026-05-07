@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/themes/colors.dart';
+import 'package:mobile/themes/text_styles.dart';
 import 'package:mobile/widgets/wasel_logo_horizontal.dart';
-import 'package:mobile/widgets/wasel_logo_vertical.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({required this.userName, super.key});
@@ -11,29 +12,30 @@ class WelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: EdgeInsets.symmetric(horizontal: 32.0, vertical: 16),
         child: Align(
           alignment: Alignment.center,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                margin: EdgeInsets.symmetric(horizontal: 24.0, vertical: 0),
-                child: WaselLogoHorizontal(),
-              ),
+              SizedBox(height: 16),
+              WaselLogoHorizontal(),
               Image.asset('./assets/welcome-image.png'),
-              Text('Move anything in minutes'),
+              Text(
+                'Move anything in minutes',
+                textAlign: TextAlign.center,
+                style: headingText,
+              ),
               Text(
                 'Reliable, fast, and secure delivery across the city. Just tap and track.',
+                textAlign: TextAlign.center,
+                style: subHeadingText,
               ),
               ElevatedButton(
                 onPressed: null,
                 style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(
-                    Color.fromARGB(255, 247, 203, 21),
-                  ),
-                  foregroundColor: WidgetStatePropertyAll(
-                    Color.fromARGB(255, 44, 62, 80),
-                  ),
+                  backgroundColor: WidgetStatePropertyAll(primaryColor),
+                  foregroundColor: WidgetStatePropertyAll(onPrimary),
                   textStyle: WidgetStatePropertyAll(
                     TextStyle(fontSize: 15, fontWeight: FontWeight(600)),
                   ),
@@ -45,7 +47,7 @@ class WelcomeScreen extends StatelessWidget {
           ),
         ),
       ),
-      backgroundColor: Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: backgroundColor,
     );
   }
 }
