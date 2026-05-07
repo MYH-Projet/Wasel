@@ -53,15 +53,15 @@ export function LoginForm() {
     }
 
     return (
-        <Card className="w-full">
-            <CardHeader>
-                <CardTitle>Login</CardTitle>
+        <Card className="w-full border-0 shadow-none sm:border sm:shadow-sm bg-transparent sm:bg-card p-4">
+            <CardHeader className="px-0 sm:px-6">
+                <CardTitle className="text-3xl font-bold">Login</CardTitle>
                 <CardDescription>
                     Enter your credentials to login to your account
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <form id="login-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <CardContent className="px-0 sm:px-6">
+                <form id="login-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <FieldGroup>
                         <Controller
                             name="email"
@@ -70,13 +70,9 @@ export function LoginForm() {
                                 <Field aria-invalid={fieldState.invalid}>
                                     <FieldLabel>Email</FieldLabel>
                                     <Input
-                                        placeholder="Enter your email"
+                                        placeholder="name@example.com"
                                         type="email"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        onBlur={field.onBlur}
-                                        id={field.name}
-                                        ref={field.ref}
+                                        {...field}
                                         aria-invalid={fieldState.invalid}
                                     />
                                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -88,15 +84,11 @@ export function LoginForm() {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field aria-invalid={fieldState.invalid}>
-                                    <FieldLabel>password</FieldLabel>
+                                    <FieldLabel>Password</FieldLabel>
                                     <Input
                                         placeholder="Enter your password"
                                         type="password"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        onBlur={field.onBlur}
-                                        id={field.name}
-                                        ref={field.ref}
+                                        {...field}
                                         aria-invalid={fieldState.invalid}
                                     />
                                     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -104,7 +96,9 @@ export function LoginForm() {
                             )}
                         />
                     </FieldGroup>
-                    <Button type="submit" form="login-form">
+
+                    {/* w-full makes the button stretch across the form */}
+                    <Button type="submit" form="login-form" className="w-full text-lg">
                         Login
                     </Button>
                 </form>
