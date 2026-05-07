@@ -23,9 +23,11 @@ Dans l'architecture Wassel, la gestion des identités est séparée de la logiqu
 
 ```mermaid
 graph LR
-    A[Mobile/Web] -->|Login / Register| K[Keycloak]
+    A[Mobile/Web] -->|Login / Register| N[Nginx :80]
+    N -->|/auth/*| K[Keycloak]
     K -->|Access Token| A
-    A -->|API Call + Access Token| B[Backend Wassel]
+    A -->|API Call + Token| N
+    N -->|/api/*| B[Backend Wassel]
     B -->|Données Métier| P[(PostgreSQL)]
 ```
 
@@ -243,7 +245,16 @@ Pour les tests de développement backend, vous pouvez utiliser le flux direct (R
 
 **1. Récupérer un token de test :**
 ```bash
-curl --location --request POST 'http://localhost:8080/realms/wasel/protocol/openid-connect/token' \
+# Via accès direct Keycloak
+curl --location --request POST 'http://localhost:8080/auth/realms/wasel/protocol/openid-connect/token' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'client_id=wasel-api' \
+--data-urlencode 'username=admin@wasel.ma' \
+--data-urlencode 'password=admin123' \
+--data-urlencode 'grant_type=password'
+
+# Ou via Nginx
+curl --location --request POST 'http://localhost/auth/realms/wasel/protocol/openid-connect/token' \
 --header 'Content-Type: application/x-www-form-urlencoded' \
 --data-urlencode 'client_id=wasel-api' \
 --data-urlencode 'username=admin@wasel.ma' \
@@ -255,9 +266,12 @@ curl --location --request POST 'http://localhost:8080/realms/wasel/protocol/open
 ```bash
 TOKEN="ey..." # Remplacer par l'access_token récupéré
 
+# Via accès direct
 curl -X GET http://localhost:5000/api/auth/me -H "Authorization: Bearer $TOKEN"
-curl -X POST http://localhost:5000/api/auth/sync -H "Authorization: Bearer $TOKEN"
-curl -X GET http://localhost:5000/api/admin/users -H "Authorization: Bearer $TOKEN"
+
+# Via Nginx (recommandé)
+curl -X GET http://localhost/api/auth/me -H "Authorization: Bearer $TOKEN"
+curl -X GET http://localhost/api/admin/users -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
