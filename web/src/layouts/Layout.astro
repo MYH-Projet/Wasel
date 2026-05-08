@@ -8,9 +8,10 @@ import logoImage from "../assets/images/wasel-logo.png";
 const logo = await getImage({
 	src: logoImage,
 	alt: "wasel logo",
-	width: 200,
-	height: 150,
+	width: 60,
+	height: 45,
 	format: "webp",
+	quality: 80,
 });
 ---
 
@@ -22,7 +23,8 @@ const logo = await getImage({
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Wasel</title>
+		<title>Wasel — Fast, Flexible Local Delivery on Demand</title>
+		<meta name="description" content="Get your packages delivered across town in minutes with Wasel. Reliable, secure, and always at your fingertips. Track in real-time, pay flexibly, and trust our drivers." />
 	</head>
 	<body
 		class="min-h-screen bg-background font-sans text-foreground antialiased flex flex-col"

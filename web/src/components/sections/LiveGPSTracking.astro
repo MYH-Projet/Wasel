@@ -59,8 +59,10 @@ import { Image } from "astro:assets";
         <!-- Phone Top Notch -->
         <Image
           src={LiveTrackingImage}
-          alt="Live Tracking"
+          alt="Live GPS tracking map view on a mobile app"
           class="w-full h-full object-cover rounded-2xl"
+          loading="lazy"
+          quality={75}
         />
       </div>
     </div>

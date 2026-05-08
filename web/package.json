@@ -16,8 +16,6 @@
     "@astrojs/react": "^5.0.4",
     "@fontsource-variable/figtree": "^5.2.10",
     "@hookform/resolvers": "^5.2.2",
-    "@hugeicons/core-free-icons": "^4.1.1",
-    "@hugeicons/react": "^1.1.6",
     "@tailwindcss/vite": "^4.2.4",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
