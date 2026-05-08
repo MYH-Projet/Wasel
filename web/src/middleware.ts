@@ -1,5 +1,13 @@
 import { defineMiddleware } from "astro:middleware";
 import { jwtVerify, createRemoteJWKSet } from "jose";
+import type { JWTPayload } from "jose";
+
+interface KeycloakPayload extends JWTPayload {
+    realm_access?: {
+        roles: string[];
+    };
+    azp?: string;
+}
 
 // 1. Point to your Keycloak 'certs' endpoint (JWKS URL)
 // Use the internal container name if running inside Podman
@@ -17,11 +25,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
         try {
             // 3. Verify the token
-            const { payload } = await jwtVerify(token, JWKS, {
+            const { payload } = await jwtVerify<KeycloakPayload>(token, JWKS, {
                 issuer: "http://localhost/auth/realms/wasel"
             });
 
-            if (payload.realm_access?.roles?.includes("ADMIN")) {
+            if (payload.realm_access?.roles.includes("ADMIN")) {
                 context.locals.user = payload;
             } else {
                 throw new Error("You are not authorized to access this page");
