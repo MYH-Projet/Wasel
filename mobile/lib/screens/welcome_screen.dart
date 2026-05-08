@@ -3,7 +3,6 @@ import 'package:mobile/screens/register_screen.dart';
 import 'package:mobile/themes/colors.dart';
 import 'package:mobile/themes/text_styles.dart';
 import 'package:mobile/widgets/wasel_logo_horizontal.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({required this.userName, super.key});
