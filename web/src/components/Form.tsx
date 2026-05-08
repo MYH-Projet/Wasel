@@ -47,9 +47,32 @@ export function LoginForm() {
         console.log("the js is loaded successfully")
     }, [])
 
-    function onSubmit(data: LoginFormValues) {
-        console.log(data)
-        toast.success("Logged in successfully")
+    async function onSubmit(data: LoginFormValues) {
+        try {
+            const params = new URLSearchParams();
+            params.append("client_id", "wasel-api");
+            params.append("grant_type", "password");
+            params.append("username", data.email);
+            params.append("password", data.password);
+            const response = await fetch("http://localhost:8000/auth/realms/wasel/protocol/openid-connect/token", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: params
+            })
+            if (!response.ok) {
+                throw new Error("Login failed")
+            }
+            const result = await response.json()
+            console.log(result)
+            document.cookie = `access_token=${result.access_token}; path=/; max-age=${result.expires_in}; SameSite=Lax`;
+            toast.success("Logged in successfully")
+            window.location.href = "/admin/dashboard"
+        } catch (error) {
+            console.error(error)
+            toast.error("Failed to login")
+        }
     }
 
     return (
