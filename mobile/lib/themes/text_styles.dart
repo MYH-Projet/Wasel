@@ -18,7 +18,12 @@ final bodyText = GoogleFonts.inter(
 );
 
 final labelText = GoogleFonts.inter(
-  textStyle: TextStyle(fontSize: 15, fontWeight: FontWeight(500), height: 1.4),
+  textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight(500), height: 1.4),
+);
+
+// For buttons
+final bolderLabelText = GoogleFonts.inter(
+  textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight(600), height: 1.4),
 );
 
 final captionText = GoogleFonts.inter(
