@@ -4,9 +4,7 @@ class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  _RegisterState createState() {
-    return _RegisterState();
-  }
+  State<RegisterScreen> createState() => _RegisterState();
 }
 
 class _RegisterState extends State<RegisterScreen> {
