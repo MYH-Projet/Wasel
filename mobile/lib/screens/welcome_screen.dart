@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/screens/register_screen.dart';
-import 'package:mobile/themes/colors.dart';
-import 'package:mobile/themes/text_styles.dart';
-import 'package:mobile/widgets/wasel_logo_horizontal.dart';
+import 'package:wasel/api/auth.dart';
+import 'package:wasel/themes/colors.dart';
+import 'package:wasel/themes/text_styles.dart';
+import 'package:wasel/widgets/wasel_logo_horizontal.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({required this.userName, super.key});
@@ -37,14 +37,7 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (context) => const RegisterScreen(),
-                    ),
-                  );
-                },
+                onPressed: null,
                 style: ButtonStyle(
                   shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
                     RoundedRectangleBorder(
@@ -61,7 +54,9 @@ class WelcomeScreen extends StatelessWidget {
                 child: Text('Join now'),
               ),
               ElevatedButton(
-                onPressed: null,
+                onPressed: () {
+                  login();
+                },
                 style: ButtonStyle(
                   shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
                     RoundedRectangleBorder(

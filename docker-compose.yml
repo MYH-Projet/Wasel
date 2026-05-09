@@ -22,7 +22,7 @@ services:
       - MinIO__SecretKey=${MINIO_ROOT_PASSWORD}
       - Keycloak__Authority=http://localhost:8080/auth/realms/${KEYCLOAK_REALM}
       - Keycloak__InternalAuthority=http://wasel-keycloak:8080/auth/realms/${KEYCLOAK_REALM}
-      - Keycloak__NginxAuthority=http://localhost/auth/realms/${KEYCLOAK_REALM}
+      - Keycloak__NginxAuthority=http://localhost:8000/auth/realms/${KEYCLOAK_REALM}
       - Keycloak__Realm=${KEYCLOAK_REALM}
       - Keycloak__ClientId=${KEYCLOAK_CLIENT_ID}
       - Keycloak__RequireHttpsMetadata=false
@@ -121,8 +121,8 @@ services:
       KC_HTTP_RELATIVE_PATH: /auth
       KC_PROXY_HEADERS: xforwarded
     volumes:
-      - wasel-keycloak-data:/opt/keycloak/data:z
-      - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro,z
+      - wasel-keycloak-data:/opt/keycloak/data
+      - ./infra/keycloak/realm-import.json:/opt/keycloak/data/import/realm-import.json:ro
     healthcheck:
       test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080" ]
       interval: 15s

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/widgets/wasel_logo.dart';
+import 'package:wasel/widgets/wasel_logo.dart';
 
 class WaselLogoHorizontal extends StatelessWidget {
   const WaselLogoHorizontal({super.key});

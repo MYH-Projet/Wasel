@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/screens/welcome_screen.dart';
+import 'package:wasel/screens/welcome_screen.dart';
 
 void main() {
   runApp(const MainApp());

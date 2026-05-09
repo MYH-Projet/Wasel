@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/widgets/wasel_logo.dart';
-import 'package:mobile/themes/text_styles.dart';
+import 'package:wasel/widgets/wasel_logo.dart';
+import 'package:wasel/themes/text_styles.dart';
 
 class WaselLogoVertical extends StatelessWidget {
   const WaselLogoVertical({super.key});
