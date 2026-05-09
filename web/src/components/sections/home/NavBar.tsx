@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "../ui/sheet";
-import { Button } from "../ui/button";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from "../../ui/sheet";
+import { Button } from "../../ui/button";
 import type { GetImageResult } from "astro";
 import { Menu } from "lucide-react";
 
