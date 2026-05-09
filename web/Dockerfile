@@ -1,15 +1,38 @@
-FROM node:22-alpine
+# ══════════════════════════════════════════════════
+# Stage 1: Build the Astro Project
+# ══════════════════════════════════════════════════
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# 1. Copy everything from your 'web' folder into the container
+# Copy package files first to cache dependencies
+COPY package*.json ./
+RUN npm ci
+
+# Copy the rest of the frontend code (including tsconfig.json, src, etc.)
 COPY . .
 
-# 2. Install dependencies (Simple and direct)
-RUN npm install
+# Build the Astro project for SSR/Hybrid
+RUN npm run build
 
-# 3. Open the port
+# ══════════════════════════════════════════════════
+# Stage 2: Production Runtime
+# ══════════════════════════════════════════════════
+FROM node:22-alpine AS runtime
+
+WORKDIR /app
+
+# Copy only the necessary files from the builder
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
+# Environment variables for Astro Node server
+ENV HOST=0.0.0.0
+ENV PORT=4321
+ENV NODE_ENV=dev
+
 EXPOSE 4321
 
-# 4. Run the dev server on host 0.0.0.0 so it's accessible outside the container
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Start the Node server
+CMD ["node", "./dist/server/entry.mjs"]
