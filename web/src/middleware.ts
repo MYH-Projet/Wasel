@@ -2,11 +2,16 @@ import { defineMiddleware } from "astro:middleware";
 import { jwtVerify, createRemoteJWKSet } from "jose";
 import type { JWTPayload } from "jose";
 
-interface KeycloakPayload extends JWTPayload {
+export interface KeycloakPayload extends JWTPayload {
     realm_access?: {
         roles: string[];
     };
     azp?: string;
+    preferred_username?: string;
+    email?: string;
+    name?: string;
+    given_name?: string;
+    family_name?: string;
 }
 
 // 1. Point to your Keycloak 'certs' endpoint (JWKS URL)
