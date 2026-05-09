@@ -1,5 +1,14 @@
 ---
 import { Activity, ShieldCheck, Cloud } from "lucide-react";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 const features = [
   {
@@ -28,8 +37,14 @@ const features = [
   class="py-24 px-6 lg:px-8 bg-background relative overflow-hidden"
 >
   <!-- Decorative Glow Blobs -->
-  <div class="absolute top-0 left-1/4 w-4xl h-4xl bg-primary/10 rounded-full blur-[120px] z-0"></div>
-  <div class="absolute bottom-0 right-1/4 w-4xl h-4xl bg-secondary/10 rounded-full blur-[120px] z-0"></div>
+  <div
+    class="absolute top-0 left-1/4 w-4xl h-4xl bg-primary/10 rounded-full blur-[120px] z-0"
+  >
+  </div>
+  <div
+    class="absolute bottom-0 right-1/4 w-4xl h-4xl bg-secondary/10 rounded-full blur-[120px] z-0"
+  >
+  </div>
 
   <!-- Background Grid Pattern -->
   <div
@@ -40,13 +55,18 @@ const features = [
   <div class="relative z-10 max-w-7xl mx-auto">
     <!-- Header -->
     <div class="text-center mb-16 relative z-10">
-      <h2 class="text-3xl md:text-5xl font-extrabold text-foreground tracking-tight">
+      <h2
+        class="text-3xl md:text-5xl font-extrabold text-foreground tracking-tight"
+      >
         Built on <span class="text-primary relative inline-block">
           Trust & Technology
         </span>
       </h2>
-      <p class="text-lg text-muted-foreground mt-6 max-w-2xl mx-auto font-light">
-        A state-of-the-art logistics engine designed to handle thousands of concurrent deliveries effortlessly.
+      <p
+        class="text-lg text-muted-foreground mt-6 max-w-2xl mx-auto font-light"
+      >
+        A state-of-the-art logistics engine designed to handle thousands of
+        concurrent deliveries effortlessly.
       </p>
     </div>
 
@@ -56,20 +76,22 @@ const features = [
         features.map((feature) => {
           const Icon = feature.icon;
           return (
-            <div class="bg-card/80 backdrop-blur-sm border border-border p-8 rounded-[2.5rem] shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:border-primary/50 transition-all duration-300 relative overflow-hidden group">
-              <!-- Decorative background element for the card -->
-              <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10 group-hover:scale-125 transition-transform duration-500"></div>
-
-              <div class="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-primary transition-all duration-300 shadow-sm">
-                <Icon size={28} className="text-primary group-hover:text-primary-foreground transition-colors" />
-              </div>
-              <h3 class="text-xl font-bold text-foreground mb-3">
-                {feature.title}
-              </h3>
-              <p class="text-muted-foreground text-sm leading-relaxed">
-                {feature.description}
-              </p>
-            </div>
+            <Card className="bg-card/80 backdrop-blur-sm border border-border p-8 rounded-[2.5rem] shadow-lg hover:shadow-2xl hover:-translate-y-2 hover:border-primary/50 transition-all duration-300 relative overflow-hidden group">
+              <CardHeader>
+                <div class="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-primary transition-all duration-300 shadow-sm">
+                  <Icon
+                    size={28}
+                    className="text-primary group-hover:text-primary-foreground transition-colors"
+                  />
+                </div>
+                <CardTitle className="text-xl font-bold text-foreground mb-3">
+                  {feature.title}
+                </CardTitle>
+                <CardDescription className="text-muted-foreground text-sm leading-relaxed">
+                  {feature.description}
+                </CardDescription>
+              </CardHeader>
+            </Card>
           );
         })
       }

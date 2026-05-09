@@ -10,10 +10,13 @@ import heroImage from "@/assets/images/hero.png";
     <div class="absolute inset-0 z-0">
         <Image
             src={heroImage}
-            alt="Hero Background"
-            width={1920}
-            height={1080}
+            alt="Hero Background — delivery courier on a city street"
+            width={1440}
+            height={900}
             class="w-full h-full object-cover object-center"
+            loading="eager"
+            fetchpriority="high"
+            quality={75}
         />
         <!-- Dark Gradient Overlay for text readability -->
         <div
