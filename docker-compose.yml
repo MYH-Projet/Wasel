@@ -150,18 +150,21 @@ services:
     # Astro Frontend (Web)
     # ──────────────────────────────────────────────
   wasel-frontend:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-      target: builder # 1. Stop at the 'builder' stage
+    build: ./web
     container_name: wasel-frontend
-    command: npm run dev -- --host 0.0.0.0 # 2. Force the Dev Server to run
-    environment:
-      - HOST=0.0.0.0
-      - PORT=4321
+
+    # Map the Astro port to your host machine
+    ports:
+      - "4321:4321"
+
+    # Automatically load variables from your .env file
+    env_file:
+      - .env
+
+    # Live-sync your code so changes on Fedora show up instantly in the container
     volumes:
-      - ./web:/app:z # 3. Live-sync your code
-      - /app/node_modules:z # Prevent local node_modules from breaking Linux
+      - ./web:/app:z
+
     networks:
       - wasel-network
     restart: unless-stopped
