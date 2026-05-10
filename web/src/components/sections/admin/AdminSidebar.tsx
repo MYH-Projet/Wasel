@@ -8,12 +8,13 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    SidebarRail
 } from "@/components/ui/sidebar"
 import type { KeycloakPayload } from "@/middleware"
 import {
     LayoutDashboard,
     Inbox,
-    Building2,
+    MessageSquareWarning,
     Users,
     LineChart,
     Settings,
@@ -24,7 +25,7 @@ import {
 const mainNavItems = [
     { title: "Overview", icon: LayoutDashboard, url: "/admin", isActive: false },
     { title: "Requests", icon: Inbox, url: "/admin/requests", isActive: true },
-    { title: "Companies", icon: Building2, url: "/admin/companies", isActive: false },
+    { title: "Complains", icon: MessageSquareWarning, url: "/admin/complains", isActive: false },
     { title: "Users", icon: Users, url: "/admin/users", isActive: false },
     { title: "Analytics", icon: LineChart, url: "/admin/analytics", isActive: false },
 ]
@@ -42,6 +43,7 @@ export function AdminSidebar({ admin }: { admin: KeycloakPayload }) {
     return (
         <Sidebar
             className="border-none"
+            collapsible="icon"
             style={{
                 '--sidebar': 'var(--secondary)',
                 '--sidebar-foreground': 'var(--secondary-foreground)',
@@ -49,18 +51,18 @@ export function AdminSidebar({ admin }: { admin: KeycloakPayload }) {
                 '--sidebar-accent-foreground': 'white',
             } as React.CSSProperties}
         >
-            <SidebarHeader className="p-4 md:p-6 mb-2">
-                <div className="flex items-center gap-3 px-2">
-                    <div className="flex aspect-square size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm font-bold text-lg">
+            <SidebarHeader className="p-4 md:p-6 mb-2 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:mt-4">
+                <div className="flex items-center gap-3 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
+                    <div className="flex aspect-square size-10 group-data-[collapsible=icon]:size-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm font-bold text-lg group-data-[collapsible=icon]:text-sm">
                         {initials}
                     </div>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
+                    <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                         <span className="truncate font-bold text-[15px] tracking-wide text-white">{adminName}</span>
                         <span className="truncate text-xs text-slate-400 font-medium">{adminEmail}</span>
                     </div>
                 </div>
             </SidebarHeader>
-            <SidebarContent className="px-3">
+            <SidebarContent className="px-3 group-data-[collapsible=icon]:px-0">
                 <SidebarGroup>
                     <SidebarGroupContent>
                         <SidebarMenu className="gap-2">
@@ -85,7 +87,7 @@ export function AdminSidebar({ admin }: { admin: KeycloakPayload }) {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="p-4 px-3 mb-2">
+            <SidebarFooter className="p-4 mb-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:mx-auto">
                 <SidebarMenu className="gap-2">
                     {bottomNavItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
@@ -103,6 +105,7 @@ export function AdminSidebar({ admin }: { admin: KeycloakPayload }) {
                     ))}
                 </SidebarMenu>
             </SidebarFooter>
+            <SidebarRail />
         </Sidebar>
     )
 }
