@@ -1,100 +1,53 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
-import 'package:wasel/screens/client-screens/home_page.dart' as client;
+import 'package:wasel/main.dart';
+import 'package:wasel/screens/client-screens/home_page.dart';
 import 'package:wasel/themes/colors.dart';
 import 'package:wasel/themes/text_styles.dart';
 import 'package:wasel/widgets/wasel_logo_horizontal.dart';
 
-class WelcomeScreen extends StatefulWidget {
+class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
   @override
-  State<WelcomeScreen> createState() => _AuthState();
-}
+  Widget build(BuildContext context) {
+    final authService = InheritedAuth.of(context).authService;
 
-class _AuthState extends State<WelcomeScreen> {
-  late String accessToken;
-  late String refreshToken;
-  late String idToken;
-
-  Future<bool> registerUser() async {
-    return await authAction(['create']);
-  }
-
-  Future<bool> loginUser() async {
-    return await authAction(['login']);
-  }
-
-  Future<bool> authAction(List<String> actions) async {
-    FlutterAppAuth appAuth = FlutterAppAuth();
-
-    final AuthorizationTokenResponse
-    result = await appAuth.authorizeAndExchangeCode(
-      AuthorizationTokenRequest(
-        // Refactor to variables
-        'wasel-mobile',
-        // no idea what to name the callback, this will do for now hh
-        'com.example.wasel://oauthredirect',
-        discoveryUrl:
-            'http://localhost:8000/auth/realms/wasel/.well-known/openid-configuration',
-        promptValues: actions,
-        scopes: ['openid', 'profile', 'email'],
-        // this shouldn't be used in prod
-        allowInsecureConnections: true,
-      ),
-    );
-
-    setState(() {
-      accessToken = result.accessToken!;
-      // Technically this is not needed since our mobile app belongs to the same app provider, so we don't need the idToken to
-      // authenticate the user and register him in our user stores and we only need the access token to speak to the api
-      idToken = result.idToken!;
-
-      refreshToken = result.refreshToken!;
-    });
-
-    print(refreshToken);
-
-    await storeSensitiveTokens('access-token', accessToken);
-    await storeSensitiveTokens('refresh-token', refreshToken);
-    return true;
-  }
-
-  Future<void> storeSensitiveTokens(String name, String token) async {
-    final storage = FlutterSecureStorage();
-
-    await storage.write(key: name, value: token);
-  }
-
-  void navigateHome(BuildContext context) {
-    if (context.mounted) {
-      Navigator.push(
+    void navigateHome() {
+      if (!context.mounted) return;
+      Navigator.pushReplacement(
         context,
-        MaterialPageRoute<void>(builder: (context) => const client.HomePage()),
+        MaterialPageRoute(builder: (context) => const HomePage()),
       );
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 32.0, vertical: 16),
-        child: Align(
-          alignment: Alignment.center,
+      backgroundColor: backgroundColor,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0),
           child: Column(
-            spacing: 16,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(height: 16),
-              WaselLogoHorizontal(),
-              Image.asset('./assets/welcome-image.png'),
+              const SizedBox(height: 48),
+              const WaselLogoHorizontal(),
+              const SizedBox(height: 48),
+              // Image centered, takes available space
+              Expanded(
+                child: Center(
+                  child: Image.asset(
+                    'assets/welcome-image.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
               Text(
-                'Move anything in minutes',
+                'Move anything\nin minutes',
                 textAlign: TextAlign.center,
                 style: displayText.copyWith(fontSize: 28),
               ),
+              const SizedBox(height: 12),
               Opacity(
                 opacity: 0.5,
                 child: Text(
@@ -103,60 +56,62 @@ class _AuthState extends State<WelcomeScreen> {
                   style: labelText,
                 ),
               ),
+              const SizedBox(height: 40),
               ElevatedButton(
                 onPressed: () async {
                   try {
-                    await registerUser();
-                    navigateHome(context);
+                    await authService.register();
+                    navigateHome();
                   } on FlutterAppAuthPlatformException catch (e) {
                     print(e.details);
                   }
                 },
                 style: ButtonStyle(
-                  shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
+                  shape: WidgetStatePropertyAll(
                     RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  padding: WidgetStatePropertyAll(
-                    EdgeInsets.symmetric(vertical: 12),
+                  padding: const WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(vertical: 14),
                   ),
                   backgroundColor: WidgetStatePropertyAll(primaryColor),
                   foregroundColor: WidgetStatePropertyAll(onPrimary),
                   textStyle: WidgetStatePropertyAll(bolderLabelText),
                 ),
-                child: Text('Join now'),
+                child: const Text('Join now'),
               ),
+              const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: () async {
                   try {
-                    await loginUser();
-                    navigateHome(context);
+                    await authService.login();
+                    navigateHome();
                   } on FlutterAppAuthPlatformException catch (e) {
                     print(e.details);
                   }
                 },
                 style: ButtonStyle(
-                  shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
+                  shape: WidgetStatePropertyAll(
                     RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
                       side: BorderSide(color: primaryColorw600),
                     ),
                   ),
-                  padding: WidgetStatePropertyAll(
-                    EdgeInsets.symmetric(vertical: 12),
+                  padding: const WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(vertical: 14),
                   ),
                   backgroundColor: WidgetStatePropertyAll(surfaceColor),
                   foregroundColor: WidgetStatePropertyAll(onSurface),
                   textStyle: WidgetStatePropertyAll(bolderLabelText),
                 ),
-                child: Text('Sign in'),
+                child: const Text('Sign in'),
               ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
       ),
-      backgroundColor: backgroundColor,
     );
   }
 }
