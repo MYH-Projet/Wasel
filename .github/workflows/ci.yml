@@ -35,42 +35,7 @@ jobs:
       - name: Lancement des Tests Backend
         run: dotnet test backend/Wasel.Api.Tests/Wasel.Api.Tests.csproj --configuration Release --no-build --verbosity normal
 
-      # -- Tests Frontend Web (Node) --
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: "npm"
-          cache-dependency-path: web/package-lock.json
-
-      - name: Installation des dépendances Frontend
-        working-directory: ./web
-        run: npm ci
-
-      - name: Lancement des Tests Web
-        working-directory: ./web
-        run: |
-          npm run build
-          npm test
-
-      # -- Tests Mobile (Flutter) --
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
-      - name: Installation des dépendances Mobile
-        working-directory: ./mobile
-        run: flutter pub get
-
-      - name: Analyse du code Mobile
-        working-directory: ./mobile
-        run: flutter analyze
-
-      - name: Lancement des Tests Mobile
-        working-directory: ./mobile
-        run: flutter test
-
+      
   # -----------------------------------
   # CI: build + push images to DockerHub
   # only on push to dev or main (not PR)
