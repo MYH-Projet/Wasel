@@ -54,7 +54,8 @@ export function LoginForm() {
             params.append("grant_type", "password");
             params.append("username", data.email);
             params.append("password", data.password);
-            const response = await fetch("http://localhost:8000/auth/realms/wasel/protocol/openid-connect/token", {
+            const keycloakUrl = import.meta.env.PUBLIC_KEYCLOAK_URL || "http://localhost:8000/auth";
+            const response = await fetch(`${keycloakUrl}/realms/wasel/protocol/openid-connect/token`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",
