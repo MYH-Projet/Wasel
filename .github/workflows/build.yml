@@ -66,6 +66,7 @@ jobs:
           build-args: |
             VITE_API_URL=/api
             NODE_ENV=production
+            PUBLIC_KEYCLOAK_URL=/auth
           tags: |
             ${{ env.IMAGE_FRONTEND }}:latest
             ${{ env.IMAGE_FRONTEND }}:${{ github.sha }}
