@@ -1,0 +1,101 @@
+---
+const socialLinks = [
+  { 
+    name: "Twitter", 
+    href: "#", 
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>` 
+  },
+  { 
+    name: "Facebook", 
+    href: "#", 
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>` 
+  },
+  { 
+    name: "Instagram", 
+    href: "#", 
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg>` 
+  },
+  { 
+    name: "LinkedIn", 
+    href: "#", 
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>` 
+  },
+];
+
+const footerColumns = [
+  {
+    title: "Platform",
+    links: [
+      { name: "How it Works", href: "#how-it-works" },
+      { name: "Features", href: "#gps-tracking" },
+      { name: "Drive with Us", href: "#drivers" },
+      { name: "Technology", href: "#technology" },
+    ]
+  },
+  {
+    title: "Company",
+    links: [
+      { name: "About Us", href: "#" },
+      { name: "Careers", href: "#" },
+      { name: "Blog", href: "#" },
+      { name: "Contact", href: "/contact" },
+    ]
+  },
+  {
+    title: "Legal",
+    links: [
+      { name: "Privacy Policy", href: "#" },
+      { name: "Terms of Service", href: "#" },
+      { name: "Cookie Policy", href: "#" },
+    ]
+  }
+];
+---
+
+<footer class="bg-secondary text-secondary-foreground py-16 px-6 lg:px-8 border-t border-border mt-auto">
+  <div class="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-12 md:gap-8">
+    
+    <!-- Brand / Info -->
+    <div class="space-y-4 md:col-span-1">
+      <p class="text-2xl font-black text-primary tracking-tight">Wasel</p>
+      <p class="text-secondary-foreground/70 text-sm leading-relaxed max-w-xs">
+        Fast, flexible, and secure local delivery on demand. Connecting you with independent drivers across the city.
+      </p>
+      <div class="flex items-center gap-4 pt-2">
+        {socialLinks.map((social) => (
+          <a 
+            href={social.href} 
+            aria-label={social.name} 
+            class="text-secondary-foreground/60 hover:text-primary transition-colors"
+            set:html={social.icon}
+          />
+        ))}
+      </div>
+    </div>
+
+    <!-- Dynamic Columns -->
+    {footerColumns.map((column) => (
+      <div>
+        <h4 class="font-bold mb-4 text-secondary-foreground">{column.title}</h4>
+        <ul class="space-y-3 text-sm text-secondary-foreground/70">
+          {column.links.map((link) => (
+            <li>
+              <a href={link.href} class="hover:text-primary transition-colors">
+                {link.name}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+
+  </div>
+
+  <div class="max-w-7xl mx-auto mt-12 pt-8 border-t border-secondary-foreground/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-secondary-foreground/50">
+    <p>&copy; {new Date().getFullYear()} Wasel Logistics. All rights reserved.</p>
+    <div class="flex items-center gap-6">
+      <a href="#" class="hover:text-secondary-foreground transition-colors">Support Center</a>
+      <a href="#" class="hover:text-secondary-foreground transition-colors">System Status</a>
+    </div>
+  </div>
+</footer>

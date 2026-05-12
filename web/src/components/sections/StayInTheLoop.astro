@@ -1,0 +1,80 @@
+---
+import { User, Bell } from "lucide-react";
+---
+
+<section
+  id="notifications"
+  class="py-20 md:py-32 px-6 lg:px-8 bg-background overflow-hidden"
+>
+  <div
+    class="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12 lg:gap-20"
+  >
+    <!-- Text Content -->
+    <div class="flex-1 space-y-8">
+      <h2
+        class="text-4xl md:text-5xl font-extrabold text-foreground tracking-tight"
+      >
+        Stay in the Loop
+      </h2>
+      <p
+        class="text-lg md:text-xl text-muted-foreground leading-relaxed font-light"
+      >
+        Automated notifications keep you informed on driver assignment, ETA
+        updates, and delivery completion every step of the way.
+      </p>
+
+      <div class="pt-2">
+        <a
+          href="#notifications"
+          class="inline-flex items-center text-primary font-bold hover:text-primary/80 transition-colors"
+          aria-label="Learn about Wasel delivery notifications"
+        >
+          Learn about notifications <span class="ml-1 text-xl" aria-hidden="true">&rsaquo;</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Mockup / Visual -->
+    <div class="flex-1 w-full flex justify-center md:justify-end">
+      <div
+        class="relative w-full max-w-md aspect-square bg-gray-200/50 rounded-[2.5rem] p-8 flex items-center justify-center shadow-inner"
+      >
+        <!-- Abstract Notification UI -->
+        <div
+          class="w-full max-w-sm space-y-4 transform hover:-translate-y-2 transition-transform duration-500"
+        >
+          <!-- Main Notification Bubble -->
+          <div
+            class="bg-white rounded-2xl p-4 shadow-xl flex items-center gap-4 relative z-10"
+          >
+            <div
+              class="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0"
+            >
+              <User size={20} className="text-primary-foreground" />
+            </div>
+            <div class="flex-1">
+              <h4 class="font-bold text-gray-900 text-sm">
+                Driver Arriving Soon
+              </h4>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Your driver, Ahmed, is 2 mins away.
+              </p>
+            </div>
+            <div class="text-gray-400 text-xs font-medium">Now</div>
+          </div>
+
+          <!-- Secondary Alert Bubble -->
+          <div
+            class="bg-[#8B7355] rounded-xl p-4 shadow-lg ml-6 relative z-0 flex items-start gap-3"
+          >
+            <Bell size={16} className="text-[#E8D4A2] mt-0.5" />
+            <p class="text-sm text-white/90 leading-snug">
+              Please make sure someone is available to receive the package at
+              the drop-off location.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
