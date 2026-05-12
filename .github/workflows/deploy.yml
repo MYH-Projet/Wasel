@@ -24,7 +24,7 @@ jobs:
         run: |
           ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} << EOF
             set -e
-            cd ~/wasel
+            cd /opt/wasel-staging
 
             # Login to Docker Hub
             echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
