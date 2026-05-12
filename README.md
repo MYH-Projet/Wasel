@@ -95,15 +95,28 @@ curl http://localhost:5000/api/health   # accès direct
 
 ---
 
-## 🧪 Tests
+## 🧪 Tests et CI/CD
+
+> 📖 Documentation complète : [docs/testing-and-ci.md](docs/testing-and-ci.md)
 
 ```bash
-# Tests d'intégration auth (accès direct)
-bash scripts/test-auth.sh
+# Tests unitaires backend (rapides, sans Docker)
+dotnet test backend/Wasel.Api.Tests/Wasel.Api.Tests.csproj --verbosity normal
 
-# Tests via Nginx
-API_BASE_URL=http://localhost KEYCLOAK_URL=http://localhost/auth bash scripts/test-auth.sh
+# Tests frontend web
+cd web && npm ci && npm test
+
+# Tests mobile Flutter
+cd mobile && flutter pub get && flutter test
+
+# Validation Docker Compose
+docker compose config --quiet
+
+# Tests d'intégration manuels (nécessite Docker + Keycloak)
+bash scripts/test-auth.sh
 ```
+
+La CI GitHub Actions exécute automatiquement les tests backend, web, mobile et valide Docker Compose sur chaque pull request.
 
 ---
 
@@ -132,6 +145,7 @@ Wasel/
 |---|---|
 | [backend-guide.md](docs/backend-guide.md) | Architecture, règles, endpoints backend |
 | [frontend-auth-guide.md](docs/frontend-auth-guide.md) | Intégration auth Flutter / Astro |
+| [testing-and-ci.md](docs/testing-and-ci.md) | Stratégie de tests et CI/CD |
 
 ---
 
