@@ -1,0 +1,89 @@
+---
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card.tsx";
+import {
+    ClipboardList,
+    CheckCircle2,
+    Clock,
+    TrendingUp,
+    Timer,
+} from "lucide-react";
+
+const metrics = [
+    {
+        title: "Pending Review",
+        value: "24",
+        label: "Requests",
+        icon: ClipboardList,
+        footerIcon: ClipboardList,
+        color: "text-[#F97316]",
+        iconBg: "bg-[#FFF7ED]",
+    },
+    {
+        title: "Approved Today",
+        value: "12",
+        label: "Drivers",
+        icon: CheckCircle2,
+        footerIcon: TrendingUp,
+        color: "text-[#22C55E]",
+        iconBg: "bg-[#F0FDF4]",
+    },
+    {
+        title: "Average Time",
+        value: "4.2",
+        unit: "hrs",
+        label: "Processing speed",
+        icon: Clock,
+        footerIcon: Timer,
+        color: "text-[#3B82F6]",
+        iconBg: "bg-[#EFF6FF]",
+    },
+];
+---
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {
+        metrics.map((item) => (
+            <Card className="shadow-md rounded-xl overflow-hidden group hover:translate-y-0.5 hover:shadow-xl transition-all duration-300">
+                <CardHeader className="flex flex-row items-start justify-between pb-0 pt-7 px-7">
+                    <CardTitle className="text-md font-semibold text-slate-500/90">
+                        {item.title}
+                    </CardTitle>
+                    <div
+                        class={`p-4 rounded-2xl ${item.iconBg} transition-transform duration-300 group-hover:scale-110`}
+                    >
+                        <item.icon
+                            className={`size-6 ${item.color}`}
+                            strokeWidth={2.5}
+                        />
+                    </div>
+                </CardHeader>
+                <CardContent className="px-7 pb-7 pt-1">
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-bold tracking-tight text-slate-900 leading-tight">
+                            {item.value}
+                        </span>
+                        {item.unit && (
+                            <span class="text-lg font-medium text-slate-400/80 mb-1">
+                                {item.unit}
+                            </span>
+                        )}
+                    </div>
+                    <div
+                        class={`flex items-center gap-2 mt-5 text-md font-bold ${item.color}`}
+                    >
+                        <item.footerIcon
+                            className="size-4.5"
+                            strokeWidth={2.5}
+                        />
+                        <span class="tracking-tight">{item.label}</span>
+                    </div>
+                </CardContent>
+            </Card>
+        ))
+    }
+</div>
