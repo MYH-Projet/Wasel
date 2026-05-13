@@ -122,6 +122,7 @@ services:
       KC_PROXY_HEADERS: xforwarded
     volumes:
       - wasel-keycloak-data:/opt/keycloak/data:z
+      - ./infra/keycloak/my-theme:/opt/keycloak/themes/my-theme:ro,z
       - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro,z
     healthcheck:
       test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080" ]
@@ -159,6 +160,12 @@ services:
     environment:
       - HOST=0.0.0.0
       - PORT=4321
+      - PUBLIC_KEYCLOAK_URL=http://localhost:8000/auth
+      - INTERNAL_API_URL=http://wasel-api:8080
+      - PUBLIC_KEYCLOAK_REALM=wasel
+      - PUBLIC_KEYCLOAK_CLIENT_ID=wasel-front
+      - PUBLIC_APP_URL=http://localhost:8000
+      - KEYCLOAK_INTERNAL_URL=http://wasel-keycloak:8080/auth
     volumes:
       - ./web:/app:z
       - /app/node_modules
