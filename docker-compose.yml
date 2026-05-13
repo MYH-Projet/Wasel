@@ -46,7 +46,7 @@ services:
     image: postgres:18.3
     container_name: wasel-postgres
     ports:
-      - "5431:5432"
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -161,6 +161,7 @@ services:
       - HOST=0.0.0.0
       - PORT=4321
       - PUBLIC_KEYCLOAK_URL=http://localhost:8000/auth
+      - INTERNAL_API_URL=http://wasel-api:8080
       - PUBLIC_KEYCLOAK_REALM=wasel
       - PUBLIC_KEYCLOAK_CLIENT_ID=wasel-front
       - PUBLIC_APP_URL=http://localhost:8000

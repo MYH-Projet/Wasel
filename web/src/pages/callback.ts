@@ -16,6 +16,7 @@ export const GET: APIRoute = async ({ request, cookies, redirect }) => {
     const TOKEN_ENDPOINT = `${KEYCLOAK_INTERNAL_URL}/realms/${REALM}/protocol/openid-connect/token`;
     const CLIENT_ID = import.meta.env.PUBLIC_KEYCLOAK_CLIENT_ID || "wasel-front";
     const APP_URL = import.meta.env.PUBLIC_APP_URL || "http://localhost:8000";
+    const INTERNAL_API_URL = import.meta.env.INTERNAL_API_URL || "http://wasel-api:8080";
     const REDIRECT_URI = `${APP_URL}/callback`; // Must match exactly
 
     try {
@@ -54,6 +55,13 @@ export const GET: APIRoute = async ({ request, cookies, redirect }) => {
             secure: false,
             sameSite: "lax",
             maxAge: data.refresh_expires_in
+        });
+
+        await fetch(`${INTERNAL_API_URL}/api/auth/me`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${data.access_token}`
+            }
         });
 
         // 5. Send the user to the dashboard. They are now officially logged in!
