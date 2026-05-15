@@ -11,7 +11,55 @@ interface Driver {
     dossierStatus: "SUBMITTED" | "UNDER_REVIEW";
 }
 
-export function PendingDriversTable({ data }: { data: any }) {
+
+const driversRequestsData = {
+    totalPages: 3,
+    totalCount: 24,
+    items: [
+        {
+            id: "REQ-8942A",
+            fullName: "Youssef Alaoui",
+            cin: "KB123456",
+            licenseNumber: "12/345678",
+            submissionDate: "2026-05-15T08:30:00Z",
+            dossierStatus: "SUBMITTED",
+        },
+        {
+            id: "REQ-8943B",
+            fullName: "Fatima Zahra Mansouri",
+            cin: "CD98765",
+            licenseNumber: "09/112233",
+            submissionDate: "2026-05-14T14:15:00Z",
+            dossierStatus: "UNDER_REVIEW",
+        },
+        {
+            id: "REQ-8944C",
+            fullName: "Omar Chraibi",
+            cin: "BJ554433",
+            licenseNumber: "15/998877",
+            submissionDate: "2026-05-14T09:00:00Z",
+            dossierStatus: "SUBMITTED",
+        },
+        {
+            id: "REQ-8945D",
+            fullName: "Mehdi El Fassi",
+            cin: "A12345",
+            licenseNumber: "05/667788",
+            submissionDate: "2026-05-13T16:45:00Z",
+            dossierStatus: "UNDER_REVIEW",
+        },
+        {
+            id: "REQ-8946E",
+            fullName: "Amina Bennani",
+            cin: "Z998877",
+            licenseNumber: "22/445566",
+            submissionDate: "2026-05-13T10:20:00Z",
+            dossierStatus: "SUBMITTED",
+        },
+    ],
+};
+
+export function PendingDriversTable() {
     const [drivers, setDrivers] = useState<Driver[]>([]);
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
@@ -19,17 +67,17 @@ export function PendingDriversTable({ data }: { data: any }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (page === 1 && search === "") return;
-
         async function fetchDrivers() {
             setIsLoading(true);
             try {
-                const response = await fetch(`/endpoint/requests/DriversRequest?search=${search}&page=${page}`);
-                if (response.ok) {
-                    const newData = await response.json();
-                    setDrivers(newData.items || newData);
-                    setTotalPages(newData.totalPages || 1);
-                }
+                // const response = await fetch(`/endpoint/requests/DriversRequest?search=${search}&page=${page}`);
+                // if (response.ok) {
+                //     const newData = await response.json();
+                //     setDrivers(newData.items || newData);
+                //     setTotalPages(newData.totalPages || 1);
+                // }
+                setDrivers(driversRequestsData.items);
+                setTotalPages(driversRequestsData.totalPages);
             } catch (error) {
                 console.error("Fetch failed", error);
             } finally {
@@ -51,7 +99,7 @@ export function PendingDriversTable({ data }: { data: any }) {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border p-4 space-y-4">
+        <div className="bg-white rounded-xl shadow-sm border p-4 space-y-4 w-full">
             {/* Header & Search */}
             <div className="flex justify-between items-center">
                 <h2 className="text-lg font-bold text-slate-800">Drivers Requests</h2>
@@ -130,7 +178,7 @@ export function PendingDriversTable({ data }: { data: any }) {
             {/* Pagination Controls */}
             <div className="flex items-center justify-between border-t pt-4">
                 <div className="text-sm text-slate-500">
-                    Page {page} sur {totalPages}
+                    Page {page} of {totalPages}
                 </div>
                 <div className="flex gap-2">
                     <button
