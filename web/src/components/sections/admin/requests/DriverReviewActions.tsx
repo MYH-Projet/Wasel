@@ -29,18 +29,18 @@ export function DriverReviewActions({ driverId, currentStatus }: Props) {
             });
 
             if (response.ok) {
-                toast.success(`Action réussie : dossier mis à jour.`);
+                toast.success(`Operation seccesufuly`);
                 // Retour automatique à la liste après un court délai pour voir le toast
                 setTimeout(() => {
-                    window.location.href = "/admin/drivers/pending";
+                    window.location.href = "/admin/requests";
                 }, 1000);
             } else {
                 const errorData = await response.json();
-                toast.error(errorData.message || "Une erreur est survenue.");
+                toast.error(errorData.message || "error in operation");
                 setIsSubmitting(false);
             }
         } catch (error) {
-            toast.error("Erreur de connexion au serveur.");
+            toast.error("error in connection with server.");
             setIsSubmitting(false);
         }
     };
@@ -59,7 +59,7 @@ export function DriverReviewActions({ driverId, currentStatus }: Props) {
                     <CheckCircle className="w-4 h-4" /> Approuver le dossier
                 </button>
 
-                {/* Bouton Mettre en révision */}
+                {/* Bouton Mettre en révision
                 {currentStatus !== "UNDER_REVIEW" && (
                     <button
                         onClick={() => handleAction("under-review")}
@@ -68,7 +68,7 @@ export function DriverReviewActions({ driverId, currentStatus }: Props) {
                     >
                         <Clock className="w-4 h-4" /> Mettre en révision
                     </button>
-                )}
+                )} */}
 
                 {/* Bouton Rejeter */}
                 <button

@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import Slidebar from "@/components/sections/admin/Sidebar";
+import { Toaster } from "@/components/ui/sonner";
 const admin = Astro.locals.user;
 ---
 
@@ -14,6 +15,7 @@ const admin = Astro.locals.user;
     <body>
         <Slidebar admin={admin} client:load>
             <slot />
+            <Toaster client:load position="bottom-right" />
         </Slidebar>
     </body>
 </html>

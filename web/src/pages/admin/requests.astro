@@ -3,9 +3,24 @@ import AdminLayout from "@/layouts/AdminLayout.astro";
 import MetricsOverview from "@/components/sections/admin/requests/MetricsOverview.astro";
 import { PendingDriversTable } from "@/components/sections/admin/requests/PendingDriversTable";
 
-const driversRequestsData = await fetch(
-    "/endpoint/requests/DriversRequest",
-).then((res) => res.json());
+const INTERNAL_API_URL = import.meta.env.INTERNAL_API_URL;
+let driversRequestsData: any[] = [];
+try {
+    const user = Astro.locals.user;
+    const DriversRequests = await fetch(
+        `${INTERNAL_API_URL}/api/admin/drivers/requests`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${user?.token}`,
+            },
+        },
+    );
+    driversRequestsData = await DriversRequests.json();
+    console.log(driversRequestsData);
+} catch (error) {
+    console.log(error);
+}
 ---
 
 <AdminLayout>
@@ -23,7 +38,7 @@ const driversRequestsData = await fetch(
         </header>
 
         <section>
-            <MetricsOverview />
+            <!-- <MetricsOverview /> -->
             <PendingDriversTable
                 data={driversRequestsData}
                 client:only="react"
