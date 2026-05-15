@@ -148,20 +148,20 @@ export function PendingDriversTable() {
                                     <td className="px-4 py-3 text-slate-600">{driver.cin}</td>
                                     <td className="px-4 py-3 text-slate-600">{driver.licenseNumber}</td>
                                     <td className="px-4 py-3 text-slate-600">
-                                        {new Date(driver.submissionDate).toLocaleDateString('fr-FR')}
+                                        {new Date(driver.submissionDate).toLocaleDateString('mor-MA')}
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${driver.dossierStatus === 'SUBMITTED'
                                             ? 'bg-blue-100 text-blue-700'
                                             : 'bg-yellow-100 text-yellow-700'
                                             }`}>
-                                            {driver.dossierStatus === 'SUBMITTED' ? 'Soumis' : 'En cours'}
+                                            {driver.dossierStatus === 'SUBMITTED' ? 'Submitted' : 'Under review'}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-right">
                                         {/* Link to your Document Review Portal! */}
                                         <a
-                                            href={`/admin/requests/${driver.id}`}
+                                            href={`/admin/drivers/${driver.id}`}
                                             className="inline-flex items-center justify-center gap-2 px-3 py-1.5 bg-slate-900 text-white rounded-md text-xs font-semibold hover:bg-slate-800 transition-colors"
                                         >
                                             <Eye className="h-3.5 w-3.5" />

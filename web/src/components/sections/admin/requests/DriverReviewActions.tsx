@@ -59,7 +59,7 @@ export function DriverReviewActions({ driverId, currentStatus }: Props) {
                     <CheckCircle className="w-4 h-4" /> Approuver le dossier
                 </button>
 
-                {/* Bouton Mettre en révision
+                {/* Bouton Mettre en révision */}
                 {currentStatus !== "UNDER_REVIEW" && (
                     <button
                         onClick={() => handleAction("under-review")}
@@ -68,7 +68,7 @@ export function DriverReviewActions({ driverId, currentStatus }: Props) {
                     >
                         <Clock className="w-4 h-4" /> Mettre en révision
                     </button>
-                )} */}
+                )}
 
                 {/* Bouton Rejeter */}
                 <button
