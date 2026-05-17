@@ -70,7 +70,7 @@ export function PendingDriversTable() {
         async function fetchDrivers() {
             setIsLoading(true);
             try {
-                // const response = await fetch(`/endpoint/requests/DriversRequest?search=${search}&page=${page}`);
+                // const response = await fetch(`/endpoint/drivers/DriversRequest?search=${search}&page=${page}`);
                 // if (response.ok) {
                 //     const newData = await response.json();
                 //     setDrivers(newData.items || newData);
@@ -161,7 +161,7 @@ export function PendingDriversTable() {
                                     <td className="px-4 py-3 text-right">
                                         {/* Link to your Document Review Portal! */}
                                         <a
-                                            href={`/admin/drivers/${driver.id}`}
+                                            href={`/admin/requests/${driver.id}`}
                                             className="inline-flex items-center justify-center gap-2 px-3 py-1.5 bg-slate-900 text-white rounded-md text-xs font-semibold hover:bg-slate-800 transition-colors"
                                         >
                                             <Eye className="h-3.5 w-3.5" />

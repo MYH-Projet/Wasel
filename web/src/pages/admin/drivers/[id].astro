@@ -1,195 +1,77 @@
 ---
-import Layout from "@/layouts/AdminLayout.astro";
-import { DriverReviewActions } from "@/components/sections/admin/requests/DriverReviewActions";
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import DriverHeader from "@/components/sections/admin/drivers/DriverHeader.astro";
+import PersonalInfoCard from "@/components/sections/admin/drivers/PersonalInfoCard.astro";
+import VehicleInfoCard from "@/components/sections/admin/drivers/VehicleInfoCard.astro";
+import PerformanceCard from "@/components/sections/admin/drivers/PerformanceCard.astro";
+import ComplianceDocuments from "@/components/sections/admin/drivers/ComplianceDocuments.astro";
+import ActivityFeed from "@/components/sections/admin/drivers/ActivityFeed.astro";
 
-interface Documant {
-    docId: string;
-    documentType: string;
-    minioUrl: string;
-}
-
-interface DriverData {
-    id: string;
-    personalInfo: {
-        fullName: string;
-        cin: string;
-        phone: string;
-        email: string;
-    };
-    vehicle: {
-        type: string;
-        licensePlate: string;
-        brand: string;
-        model: string;
-    };
-    documents: Documant[];
-}
-
-// const INTERNAL_API_URL = import.meta.env.INTERNAL_API_URL;
 const { id } = Astro.params;
-// const user = Astro.locals.user;
-
-// const response = await fetch(`${INTERNAL_API_URL}/api/admin/drivers/${id}`, {
-//     headers: { Authorization: `Bearer ${user.token}` },
-// });
-
-// if (!response.ok) return Astro.redirect("/admin/requests?error=not_found");
-// const driverData = await response.json();
-
-const driverData = {
-    id: id || "REQ-8942A",
-    status: "SUBMITTED",
-    personalInfo: {
-        fullName: "Youssef Alaoui",
-        cin: "KB123456",
-        phone: "+212 6 11 22 33 44",
-        email: "youssef.alaoui@gmail.com",
-    },
-    vehicle: {
-        type: "Moto",
-        licensePlate: "12345 | A | 1",
-        brand: "Honda",
-        model: "SH125i",
-    },
-    documents: [
-        {
-            docId: "doc-1",
-            documentType: "CIN (Recto)",
-            // Using placeholder.co to generate real images for your UI
-            minioUrl:
-                "https://placehold.co/600x400/e2e8f0/475569?text=Carte+Nationale+(Recto)",
-        },
-        {
-            docId: "doc-2",
-            documentType: "Permis de Conduire",
-            minioUrl:
-                "https://placehold.co/600x400/e2e8f0/475569?text=Permis+de+Conduire",
-        },
-        {
-            docId: "doc-3",
-            documentType: "Assurance Véhicule",
-            minioUrl:
-                "https://placehold.co/600x400/e2e8f0/475569?text=Attestation+Assurance",
-        },
-    ],
-};
 ---
 
-<Layout title={`Révision - ${driverData.personalInfo.fullName}`}>
-    <div class="px-6 py-4 border-b bg-white flex justify-between items-center">
-        <div class="flex items-center text-sm">
-            <a href="/admin/requests" class="text-slate-500 hover:text-black"
-                >← go back to drivers
-            </a>
-            <span class="mx-3 text-slate-300">/</span>
-            <span class="font-medium text-slate-900"
-                >{driverData.personalInfo.fullName}</span
-            >
-            <span
-                class="ml-3 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800"
-            >
-                {driverData.status}
-            </span>
-        </div>
+<AdminLayout title="Détails du Livreur">
+    <div class="px-6 py-4 text-sm text-slate-500 font-medium">
+        <a href="/admin/users" class="hover:text-white">Users</a> &gt;
+        <a href="/admin/drivers" class="hover:text-white">Driver Details</a> &gt;
+        <span class="text-slate-300">Julian Rossi</span>
     </div>
 
-    <div class="flex h-[calc(100vh-4rem)]">
-        <div class="w-3/5 bg-slate-100 border-r overflow-y-auto p-8">
-            <h2 class="text-xl font-bold mb-6 text-slate-800">
-                Submitted Documents
-            </h2>
-
-            <div class="space-y-8">
-                {
-                    driverData.documents.map((doc: Documant) => (
-                        <div class="bg-white p-4 rounded-xl shadow-sm border">
-                            <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 border-b pb-2">
-                                {doc.documentType}{" "}
-                                {/* ex: "Permis de conduire", "CIN Recto" */}
-                            </h3>
-                            <img
-                                src={doc.minioUrl}
-                                alt={doc.documentType}
-                                class="w-full h-auto rounded-md object-contain max-h-[500px]"
-                            />
-                        </div>
-                    ))
-                }
+    <div class="p-6 max-w-7xl mx-auto space-y-6">
+        <DriverHeader server:defer driverId={id}>
+            <div
+                slot="fallback"
+                class="h-32 bg-slate-800 animate-pulse rounded-xl"
+            >
             </div>
+        </DriverHeader>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <PersonalInfoCard server:defer driverId={id}>
+                <div
+                    slot="fallback"
+                    class="h-64 bg-slate-800 animate-pulse rounded-xl"
+                >
+                </div>
+            </PersonalInfoCard>
+
+            <VehicleInfoCard server:defer driverId={id}>
+                <div
+                    slot="fallback"
+                    class="h-64 bg-slate-800 animate-pulse rounded-xl"
+                >
+                </div>
+            </VehicleInfoCard>
+
+            <PerformanceCard server:defer driverId={id}>
+                <div
+                    slot="fallback"
+                    class="h-64 bg-slate-800 animate-pulse rounded-xl"
+                >
+                </div>
+            </PerformanceCard>
         </div>
 
-        <div class="w-2/5 bg-white overflow-y-auto flex flex-col">
-            <div class="p-8 flex-grow">
-                <div class="mb-8">
-                    <h3 class="font-semibold text-slate-800 mb-4 border-b pb-2">
-                        Personal Information
-                    </h3>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <p class="text-slate-500">Full Name</p>
-                            <p class="font-medium">
-                                {driverData.personalInfo.fullName}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-slate-500">CIN</p>
-                            <p class="font-medium">
-                                {driverData.personalInfo.cin}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-slate-500">Phone</p>
-                            <p class="font-medium">
-                                {driverData.personalInfo.phone}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-slate-500">Email</p>
-                            <p class="font-medium">
-                                {driverData.personalInfo.email}
-                            </p>
-                        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2">
+                <ComplianceDocuments server:defer driverId={id}>
+                    <div
+                        slot="fallback"
+                        class="h-80 bg-slate-800 animate-pulse rounded-xl"
+                    >
                     </div>
-                </div>
-
-                <div class="mb-8">
-                    <h3 class="font-semibold text-slate-800 mb-4 border-b pb-2">
-                        Vehicle Information
-                    </h3>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <p class="text-slate-500">Type</p>
-                            <p class="font-medium">{driverData.vehicle.type}</p>
-                        </div>
-                        <div>
-                            <p class="text-slate-500">License Plate</p>
-                            <p class="font-medium uppercase">
-                                {driverData.vehicle.licensePlate}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-slate-500">Marque</p>
-                            <p class="font-medium">
-                                {driverData.vehicle.brand}
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-slate-500">Modèle</p>
-                            <p class="font-medium">
-                                {driverData.vehicle.model}
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                </ComplianceDocuments>
             </div>
 
-            <div class="border-t bg-slate-50 p-6 sticky bottom-0">
-                <DriverReviewActions
-                    client:load
-                    driverId={id!}
-                    currentStatus={driverData.status}
-                />
+            <div class="md:col-span-1">
+                <ActivityFeed server:defer driverId={id}>
+                    <div
+                        slot="fallback"
+                        class="h-80 bg-slate-800 animate-pulse rounded-xl"
+                    >
+                    </div>
+                </ActivityFeed>
             </div>
         </div>
     </div>
-</Layout>
+</AdminLayout>

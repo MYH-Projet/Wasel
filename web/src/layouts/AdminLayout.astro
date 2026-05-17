@@ -16,9 +16,9 @@ const admin = Astro.locals.user;
         <title>Admin Panel | Wasel</title>
     </head>
     <body>
+        <Toaster client:load position="bottom-right" />
         <Slidebar admin={admin} client:load>
             <slot />
-            <Toaster client:load position="bottom-right" />
         </Slidebar>
     </body>
 </html>
