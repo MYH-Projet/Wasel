@@ -1,22 +1,42 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:wasel/config.dart';
-
 import 'package:wasel/api/auth_service.dart';
 
-class UserService {
-  static Future<Map<String, dynamic>?> getUserInfo(
-    AuthService authService,
-  ) async {
-    final token = await authService.getAccessToken();
+enum UserServiceError { unauthorized, network, server }
 
-    final response = await http.get(
-      Uri.parse('$API/api/auth/me'),
-      headers: {'Authorization': 'Bearer $token'},
-    );
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+class UserResult {
+  final Map<String, dynamic>? data;
+  final UserServiceError? error;
+
+  const UserResult.success(this.data) : error = null;
+  const UserResult.failure(this.error) : data = null;
+
+  bool get isSuccess => error == null;
+}
+
+class UserService {
+  static Future<UserResult> getUserInfo(AuthService authService) async {
+    final token = await authService.getAccessToken();
+    if (token == null) return UserResult.failure(UserServiceError.unauthorized);
+
+    try {
+      final response = await http.get(
+        Uri.parse('$API/api/auth/me'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      switch (response.statusCode) {
+        case 200:
+          return UserResult.success(jsonDecode(response.body));
+        case 401:
+        case 403:
+          return UserResult.failure(UserServiceError.unauthorized);
+        default:
+          return UserResult.failure(UserServiceError.server);
+      }
+    } catch (_) {
+      return UserResult.failure(UserServiceError.network);
     }
-    return null;
   }
 }

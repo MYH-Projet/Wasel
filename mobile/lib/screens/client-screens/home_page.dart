@@ -15,7 +15,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _loadUser();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadUser());
   }
 
   Future<void> _loadUser() async {

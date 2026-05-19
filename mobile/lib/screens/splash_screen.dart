@@ -14,13 +14,14 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuth();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAuth());
   }
 
   Future<void> _checkAuth() async {
     final authService = InheritedAuth.of(context).authService;
     final authenticated = await authService.isAuthenticated();
     if (!context.mounted) return;
+    print('we passed check with $authenticated');
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(

@@ -1,65 +1,132 @@
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:wasel/config.dart';
 
 class AuthService {
   String? _accessToken;
   String? _refreshToken;
 
-  final appAuth = FlutterAppAuth();
-  final storageService = FlutterSecureStorage();
+  final _appAuth = FlutterAppAuth();
+  final _storage = FlutterSecureStorage();
 
-  Future<bool> isAuthenticated() async {
-    // Need to add refresh token logic later
-    String? accessToken = await getAccessToken();
-    if (accessToken == null) {
-      return false;
-    } else {
-      return true;
-    }
-  }
+  // ── token persistence ──────────────────────────────────────────
 
   Future<String?> getAccessToken() async {
-    _accessToken =
-        _accessToken ?? await storageService.read(key: 'access-token');
+    _accessToken ??= await _storage.read(key: 'access-token');
     return _accessToken;
   }
 
-  Future<void> login() async {
-    await authActions(['login']);
+  Future<String?> _getRefreshToken() async {
+    _refreshToken ??= await _storage.read(key: 'refresh-token');
+    return _refreshToken;
   }
 
-  Future<void> register() async {
-    await authActions(['create']);
+  Future<void> _persistTokens(String access, String refresh) async {
+    _accessToken = access;
+    _refreshToken = refresh;
+    await Future.wait([
+      _storage.write(key: 'access-token', value: access),
+      _storage.write(key: 'refresh-token', value: refresh),
+    ]);
   }
 
-  Future<void> authActions(List<String> actions) async {
-    final clientId = 'wasel-mobile';
-    final redirectUrl = 'com.example.wasel://oauthredirect';
-    final discoveryUrl =
-        '$API/auth/realms/wasel/.well-known/openid-configuration';
+  Future<void> clearTokens() async {
+    _accessToken = null;
+    _refreshToken = null;
+    await Future.wait([
+      _storage.delete(key: 'access-token'),
+      _storage.delete(key: 'refresh-token'),
+    ]);
+  }
 
-    final AuthorizationTokenResponse result = await appAuth
-        .authorizeAndExchangeCode(
-          AuthorizationTokenRequest(
-            clientId,
-            redirectUrl,
-            discoveryUrl: discoveryUrl,
-            promptValues: actions,
-            scopes: ['openid', 'profile', 'email'],
-            // this shouldn't be used in prod
-            allowInsecureConnections: true,
-          ),
-        );
+  // ── auth check ─────────────────────────────────────────────────
 
-    _accessToken = result.accessToken!;
+  Future<bool> isAuthenticated() async {
+    final token = await getAccessToken();
+    if (token == null) return false;
 
-    _refreshToken = result.refreshToken!;
+    // 1. try with current token
+    if (await _pingAuthMe(token)) return true;
 
-    await storageService.write(key: 'access-token', value: _accessToken);
-    print('\nStored access token\n');
+    // 2. token rejected — attempt refresh
+    final refreshed = await _tryRefresh();
+    if (!refreshed) {
+      await clearTokens();
+      return false;
+    }
 
-    storageService.write(key: 'refresh-token', value: _refreshToken);
-    print('\nStored refresh token\n');
+    // 3. retry with new token
+    final newToken = await getAccessToken();
+    if (newToken != null && await _pingAuthMe(newToken)) return true;
+
+    await clearTokens();
+    return false;
+  }
+
+  Future<bool> _pingAuthMe(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$API/api/auth/me'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      return response.statusCode == 200;
+    } catch (_) {
+      // network error — don't clear tokens, might be offline
+      return false;
+    }
+  }
+
+  Future<bool> _tryRefresh() async {
+    final refreshToken = await _getRefreshToken();
+    if (refreshToken == null) return false;
+
+    try {
+      final response = await http.post(
+        Uri.parse('$API/auth/realms/wasel/protocol/openid-connect/token'),
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {
+          'grant_type': 'refresh_token',
+          'client_id': 'wasel-mobile',
+          'refresh_token': refreshToken,
+        },
+      );
+
+      if (response.statusCode != 200) return false;
+
+      final data = jsonDecode(response.body);
+      await _persistTokens(
+        data['access_token'] as String,
+        data['refresh_token'] as String,
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ── login / register ───────────────────────────────────────────
+
+  Future<void> login() async => _authActions(['login']);
+  Future<void> register() async => _authActions(['create']);
+
+  Future<void> _authActions(List<String> actions) async {
+    final result = await _appAuth.authorizeAndExchangeCode(
+      AuthorizationTokenRequest(
+        'wasel-mobile',
+        'com.example.wasel://oauthredirect',
+        discoveryUrl: '$API/auth/realms/wasel/.well-known/openid-configuration',
+        promptValues: actions,
+        scopes: ['openid', 'profile', 'email'],
+        allowInsecureConnections: true,
+      ),
+    );
+
+    if (result.accessToken == null || result.refreshToken == null) {
+      throw Exception('Incomplete token response from Keycloak');
+    }
+
+    await _persistTokens(result.accessToken!, result.refreshToken!);
   }
 }
