@@ -8,7 +8,7 @@ class WaselLogoVertical extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         WaselLogo(width: 128, height: 64),
         Text('Wasel', style: headingText),

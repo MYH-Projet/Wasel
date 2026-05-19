@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:wasel/themes/text_styles.dart';
 import 'package:wasel/widgets/wasel_logo.dart';
 
 class WaselLogoHorizontal extends StatelessWidget {
@@ -6,14 +7,11 @@ class WaselLogoHorizontal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         WaselLogo(width: 64, height: 64),
-        Text(
-          'Wasel',
-          style: TextStyle(fontWeight: FontWeight(700), fontSize: 24),
-        ),
+        Text('Wasel', style: headingText),
       ],
     );
   }
