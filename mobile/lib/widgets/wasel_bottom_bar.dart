@@ -2,21 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:wasel/themes/colors.dart';
 import 'package:wasel/themes/text_styles.dart';
 
-class WaselBottomBar extends StatefulWidget {
-  const WaselBottomBar({super.key});
+class WaselBottomBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTabSelected;
 
-  @override
-  State<WaselBottomBar> createState() => _WaselBottomBarState();
-}
-
-class _WaselBottomBarState extends State<WaselBottomBar> {
-  int _currentIndex = 0;
+  const WaselBottomBar({
+    super.key,
+    required this.currentIndex,
+    required this.onTabSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      currentIndex: _currentIndex,
-      onTap: (index) => setState(() => _currentIndex = index),
+      currentIndex: currentIndex,
+      onTap: onTabSelected,
       backgroundColor: surfaceColor,
       selectedItemColor: primaryColor,
       unselectedItemColor: secondaryColor.withValues(alpha: 0.5),
