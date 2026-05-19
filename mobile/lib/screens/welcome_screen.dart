@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:wasel/main.dart';
-import 'package:wasel/screens/client-screens/home_page.dart';
+import 'package:wasel/screens/client/home_screen.dart';
 import 'package:wasel/themes/colors.dart';
 import 'package:wasel/themes/text_styles.dart';
 import 'package:wasel/widgets/wasel_logo_horizontal.dart';
