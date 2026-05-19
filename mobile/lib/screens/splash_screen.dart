@@ -19,16 +19,33 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkAuth() async {
     final authService = InheritedAuth.of(context).authService;
-    final authenticated = await authService.isAuthenticated();
-    if (!context.mounted) return;
-    print('we passed check with $authenticated');
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            authenticated ? const HomePage() : const WelcomeScreen(),
-      ),
-    );
+
+    try {
+      final authenticated = await authService.isAuthenticated();
+      if (!context.mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              authenticated ? const HomePage() : const WelcomeScreen(),
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not reach the server, please try again'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+      );
+    }
   }
 
   @override
