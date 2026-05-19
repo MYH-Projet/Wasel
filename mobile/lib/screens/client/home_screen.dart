@@ -3,14 +3,14 @@ import 'package:wasel/api/user_service.dart';
 import 'package:wasel/main.dart';
 import 'package:wasel/screens/welcome_screen.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class ClientHomeScreen extends StatefulWidget {
+  const ClientHomeScreen({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<ClientHomeScreen> createState() => _ClientHomeScreenState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _ClientHomeScreenState extends State<ClientHomeScreen> {
   Map<String, dynamic>? _user;
   bool _loading = true;
 
@@ -48,7 +48,7 @@ class _HomePageState extends State<HomePage> {
       );
 
       if (result.error == UserServiceError.unauthorized) {
-        await InheritedAuth.of(context).authService.clearTokens();
+        await authService.clearTokens();
         if (!context.mounted) return;
         Navigator.pushReplacement(
           context,
@@ -67,11 +67,10 @@ class _HomePageState extends State<HomePage> {
             : _user == null
             ? const Text('Could not load profile')
             : Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Center(child: Text('Name: ${_user!['name']}')),
-                  Center(child: Text('Email: ${_user!['email']}')),
+                  Text('Name: ${_user!['name']}'),
+                  Text('Email: ${_user!['email']}'),
                 ],
               ),
       ),
