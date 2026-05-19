@@ -24,23 +24,23 @@ class WelcomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 48),
+              const SizedBox(height: 24),
               const WaselLogoHorizontal(),
-              const SizedBox(height: 48),
-              Expanded(
-                child: Center(
-                  child: Image.asset(
-                    'assets/welcome-image.png',
-                    fit: BoxFit.contain,
-                  ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.only(right: 32),
+                child: Image.asset(
+                  'assets/welcome-image.png',
+                  fit: BoxFit.contain,
+                  height: 260,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
               Text(
                 'Move anything\nin minutes',
                 textAlign: TextAlign.center,
