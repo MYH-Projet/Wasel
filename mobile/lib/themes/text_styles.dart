@@ -1,46 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-final _base = GoogleFonts.inter();
-
-final displayText = _base.copyWith(
+final displayText = GoogleFonts.inter(
   fontSize: 32,
   fontWeight: FontWeight.w700,
   height: 1.2,
 );
 
-final headingText = _base.copyWith(
+final headingText = GoogleFonts.inter(
   fontSize: 24,
   fontWeight: FontWeight.w600,
   height: 1.3,
 );
 
-final subHeadingText = _base.copyWith(
+final subHeadingText = GoogleFonts.inter(
   fontSize: 18,
   fontWeight: FontWeight.w500,
   height: 1.4,
 );
 
-final bodyText = _base.copyWith(
+final bodyText = GoogleFonts.inter(
   fontSize: 16,
   fontWeight: FontWeight.w400,
   height: 1.5,
 );
 
-final labelText = _base.copyWith(
+final labelText = GoogleFonts.inter(
   fontSize: 16,
   fontWeight: FontWeight.w500,
   height: 1.4,
 );
 
-// For buttons
-final bolderLabelText = _base.copyWith(
+final bolderLabelText = GoogleFonts.inter(
   fontSize: 16,
   fontWeight: FontWeight.w600,
   height: 1.4,
 );
 
-final captionText = _base.copyWith(
+final captionText = GoogleFonts.inter(
   fontSize: 12,
   fontWeight: FontWeight.w400,
   height: 1.5,

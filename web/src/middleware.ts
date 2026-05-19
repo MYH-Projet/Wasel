@@ -26,7 +26,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
         try {
             // 3. Verify the token
             const { payload } = await jwtVerify<KeycloakPayload>(token, JWKS, {
-                issuer: "http://localhost/auth/realms/wasel"
+                issuer: "http://localhost:8000/auth/realms/wasel"
             });
 
             if (payload.realm_access?.roles.includes("ADMIN")) {

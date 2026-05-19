@@ -1,6 +1,7 @@
 {
   "realm": "wasel",
   "enabled": true,
+  "registrationAllowed": true,
   "clients": [
     {
       "clientId": "wasel-api",
