@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:wasel/main.dart';
-import 'package:wasel/screens/client/home_screen.dart';
+import 'package:wasel/screens/main_screen.dart';
 import 'package:wasel/screens/welcome_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -28,7 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
         context,
         MaterialPageRoute(
           builder: (context) =>
-              authenticated ? const HomePage() : const WelcomeScreen(),
+              authenticated ? const MainScreen() : const WelcomeScreen(),
         ),
       );
     } catch (e) {

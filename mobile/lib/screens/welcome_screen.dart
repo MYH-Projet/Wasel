@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:wasel/main.dart';
-import 'package:wasel/screens/client/home_screen.dart';
+import 'package:wasel/screens/main_screen.dart';
 import 'package:wasel/themes/colors.dart';
 import 'package:wasel/themes/text_styles.dart';
 import 'package:wasel/widgets/wasel_logo_horizontal.dart';
@@ -17,7 +17,7 @@ class WelcomeScreen extends StatelessWidget {
       if (!context.mounted) return;
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
+        MaterialPageRoute(builder: (context) => const MainScreen()),
       );
     }
 
@@ -32,7 +32,6 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 48),
               const WaselLogoHorizontal(),
               const SizedBox(height: 48),
-              // Image centered, takes available space
               Expanded(
                 child: Center(
                   child: Image.asset(
@@ -63,7 +62,12 @@ class WelcomeScreen extends StatelessWidget {
                     await authService.register();
                     navigateHome();
                   } on FlutterAppAuthPlatformException catch (e) {
-                    print(e.details);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(e.message ?? 'Registration failed'),
+                      ),
+                    );
                   }
                 },
                 style: ButtonStyle(
@@ -88,7 +92,10 @@ class WelcomeScreen extends StatelessWidget {
                     await authService.login();
                     navigateHome();
                   } on FlutterAppAuthPlatformException catch (e) {
-                    print(e.details);
+                    if (!context.mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.message ?? 'Login failed')),
+                    );
                   }
                 },
                 style: ButtonStyle(
