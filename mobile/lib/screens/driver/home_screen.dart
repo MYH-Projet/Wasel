@@ -3,14 +3,14 @@ import 'package:wasel/api/user_service.dart';
 import 'package:wasel/main.dart';
 import 'package:wasel/screens/welcome_screen.dart';
 
-class ClientHomeScreen extends StatefulWidget {
-  const ClientHomeScreen({super.key});
+class DriverHomeScreen extends StatefulWidget {
+  const DriverHomeScreen({super.key});
 
   @override
-  State<ClientHomeScreen> createState() => _ClientHomeScreenState();
+  State<DriverHomeScreen> createState() => _DriverHomeScreenState();
 }
 
-class _ClientHomeScreenState extends State<ClientHomeScreen> {
+class _DriverHomeScreenState extends State<DriverHomeScreen> {
   Map<String, dynamic>? _user;
   bool _loading = true;
 
@@ -23,7 +23,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   Future<void> _loadUser() async {
     final authService = InheritedAuth.of(context).authService;
     final result = await UserService.getUserInfo(authService);
-
     if (!context.mounted) return;
 
     if (result.isSuccess) {
@@ -69,7 +68,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text('Client Screen'),
+                  Text('Driver Screen'),
                   Text('Name: ${_user!['name']}'),
                   Text('Email: ${_user!['email']}'),
                 ],

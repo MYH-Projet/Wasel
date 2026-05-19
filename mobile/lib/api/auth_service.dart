@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:wasel/config.dart';
 
+enum UserMode { client, driver }
+
 class AuthService {
   String? _accessToken;
   String? _refreshToken;
@@ -41,23 +43,34 @@ class AuthService {
     ]);
   }
 
+  // ── mode ───────────────────────────────────────────────────────
+
+  Future<UserMode> getMode() async {
+    final stored = await _storage.read(key: 'user-mode');
+    return stored == 'driver' ? UserMode.driver : UserMode.client;
+  }
+
+  Future<void> setMode(UserMode mode) async {
+    await _storage.write(
+      key: 'user-mode',
+      value: mode == UserMode.driver ? 'driver' : 'client',
+    );
+  }
+
   // ── auth check ─────────────────────────────────────────────────
 
   Future<bool> isAuthenticated() async {
     final token = await getAccessToken();
     if (token == null) return false;
 
-    // 1. try with current token
     if (await _pingAuthMe(token)) return true;
 
-    // 2. token rejected — attempt refresh
     final refreshed = await _tryRefresh();
     if (!refreshed) {
       await clearTokens();
       return false;
     }
 
-    // 3. retry with new token
     final newToken = await getAccessToken();
     if (newToken != null && await _pingAuthMe(newToken)) return true;
 
@@ -73,7 +86,6 @@ class AuthService {
       );
       return response.statusCode == 200;
     } catch (_) {
-      // network error — don't clear tokens, might be offline
       return false;
     }
   }
