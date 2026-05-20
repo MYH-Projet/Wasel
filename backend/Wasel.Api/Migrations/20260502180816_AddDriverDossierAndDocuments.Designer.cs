@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Wasel.Api.Shared.Database;
@@ -11,9 +12,11 @@ using Wasel.Api.Shared.Database;
 namespace Wasel.Api.Migrations
 {
     [DbContext(typeof(WaselDbContext))]
-    partial class WaselDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260502180816_AddDriverDossierAndDocuments")]
+    partial class AddDriverDossierAndDocuments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -215,36 +218,7 @@ namespace Wasel.Api.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("KeycloakId")
-                        .IsUnique();
-
                     b.ToTable("users", (string)null);
-                });
-
-            modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.UserPreference", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ActiveAppMode")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("UserPreferences");
                 });
 
             modelBuilder.Entity("Wasel.Api.Modules.Documents.Entities.Document", b =>
@@ -280,17 +254,6 @@ namespace Wasel.Api.Migrations
                     b.Navigation("Driver");
                 });
 
-            modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.UserPreference", b =>
-                {
-                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "User")
-                        .WithOne("Preference")
-                        .HasForeignKey("Wasel.Api.Modules.Users.Entities.UserPreference", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.Driver", b =>
                 {
                     b.Navigation("Dossier");
@@ -304,8 +267,6 @@ namespace Wasel.Api.Migrations
             modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.User", b =>
                 {
                     b.Navigation("Driver");
-
-                    b.Navigation("Preference");
                 });
 #pragma warning restore 612, 618
         }

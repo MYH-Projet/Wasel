@@ -9,7 +9,12 @@ using Wasel.Api.Shared.Security;
 using Wasel.Api.Infrastructure.Keycloak;
 using Wasel.Api.Modules.Users.Repositories;
 using Wasel.Api.Modules.Users.Services;
+using Wasel.Api.Modules.Drivers.Repositories;
+using Wasel.Api.Modules.Drivers.Services;
+using Wasel.Api.Modules.Documents.Repositories;
+using Wasel.Api.Modules.Documents.Services;
 using Wasel.Api.Modules.Auth.Services;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,6 +73,16 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // Module Users
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+// Module Drivers
+builder.Services.AddScoped<IDriverRepository, DriverRepository>();
+builder.Services.AddScoped<IDriverService, DriverService>();
+builder.Services.AddScoped<IDriverDossierRepository, DriverDossierRepository>();
+builder.Services.AddScoped<IDriverDossierService, DriverDossierService>();
+
+// Module Documents
+builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
 
 // Controllers
 builder.Services.AddControllers();
