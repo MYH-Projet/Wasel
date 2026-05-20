@@ -15,6 +15,7 @@ using Wasel.Api.Modules.Documents.Repositories;
 using Wasel.Api.Modules.Documents.Services;
 using Wasel.Api.Modules.Auth.Services;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -75,6 +76,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 // Module Drivers
 builder.Services.AddScoped<IDriverRepository, DriverRepository>();
 builder.Services.AddScoped<IDriverService, DriverService>();
+builder.Services.AddScoped<IDriverDossierRepository, DriverDossierRepository>();
+builder.Services.AddScoped<IDriverDossierService, DriverDossierService>();
 
 // Module Documents
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();

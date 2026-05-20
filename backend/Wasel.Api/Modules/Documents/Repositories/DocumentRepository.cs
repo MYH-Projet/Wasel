@@ -14,16 +14,12 @@ public class DocumentRepository : IDocumentRepository
         _context = context;
     }
 
-   
-    public async Task<Document?> GetByIdWithDossierAsync(Guid documentId)
+    public async Task<Document?> GetByIdAsync(Guid documentId)
     {
         return await _context.Documents
-            .Include(d => d.DriverDossier)
-                .ThenInclude(dossier => dossier.Driver)
             .FirstOrDefaultAsync(d => d.Id == documentId);
     }
 
-   
     public async Task<bool> AreAllDocumentsApprovedAsync(Guid driverDossierId)
     {
         return await _context.Documents
@@ -31,7 +27,6 @@ public class DocumentRepository : IDocumentRepository
             .AllAsync(d => d.Status == DocumentStatus.Approved);
     }
 
-   
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();

@@ -8,7 +8,3 @@ namespace Wasel.Api.Modules.Drivers.Enums;
         Suspended
     }
 
-    /*PendingVerification : livreur en attente de validation
-    Approved            : livreur validé par l’admin
-    Rejected            : livreur refusé
-    Suspended           : livreur suspendu après validation*/

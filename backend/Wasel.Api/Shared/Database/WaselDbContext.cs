@@ -17,6 +17,7 @@ public class WaselDbContext : DbContext
 
     // Module: Users
     public DbSet<User> Users => Set<User>();
+    public DbSet<UserPreference> UserPreferences => Set<UserPreference>();
 
     // Module: Drivers
     public DbSet<Driver> Drivers => Set<Driver>();
@@ -40,6 +41,12 @@ public class WaselDbContext : DbContext
             entity.HasIndex(e => e.KeycloakId).IsUnique();
         });
 
+        modelBuilder.Entity<User>()
+        .HasOne(u => u.Preference)
+        .WithOne(p => p.User)
+        .HasForeignKey<UserPreference>(p => p.UserId)
+        .OnDelete(DeleteBehavior.Cascade);
+        
         // Drivers
         modelBuilder.Entity<Driver>(entity =>
         {

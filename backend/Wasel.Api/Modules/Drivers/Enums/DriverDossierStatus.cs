@@ -2,7 +2,9 @@ namespace Wasel.Api.Modules.Drivers.Enums;
 
 public enum DriverDossierStatus
 {
-    Pending,
+    Draft,
+    Submitted,
+    UnderReview,
     Approved,
     Rejected
 }

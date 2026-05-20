@@ -22,4 +22,6 @@ public class User : BaseEntity
     public string? ProfileObjectKey { get; set; }
 
     public Driver? Driver { get; set; }
+
+    public UserPreference? Preference { get; set; }
 }

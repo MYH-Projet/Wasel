@@ -6,3 +6,11 @@ public class ChangeUserStatusRequestDto
 {
     public UserStatus Status { get; set; }
 }
+
+
+
+
+
+
+
+

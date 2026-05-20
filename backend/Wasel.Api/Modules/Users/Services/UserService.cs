@@ -3,6 +3,7 @@ using Wasel.Api.Modules.Users.Entities;
 using Wasel.Api.Modules.Users.Enums;
 using Wasel.Api.Modules.Users.Repositories;
 
+
 namespace Wasel.Api.Modules.Users.Services;
 
 public class UserService : IUserService
@@ -45,44 +46,83 @@ public class UserService : IUserService
         return MapToResponseDto(user);
     }
 
-    public async Task<UserResponseDto> FindOrCreateFromKeycloakAsync(string keycloakId, string email, string firstName, string lastName)
+    public async Task<UserResponseDto> FindOrCreateFromKeycloakAsync(
+    string keycloakId,
+    string email,
+    string firstName,
+    string lastName)
     {
         var user = await _userRepository.GetByKeycloakIdAsync(keycloakId);
 
         if (user is null)
         {
-            // Check if a user with this email already exists (fallback)
             user = await _userRepository.GetByEmailAsync(email);
 
             if (user is not null)
             {
-                // Update existing user with KeycloakId
                 user.KeycloakId = keycloakId;
                 user.FirstName = firstName;
                 user.LastName = lastName;
+
+                if (user.Preference is null)
+                {
+                    user.Preference = new UserPreference
+                    {
+                        ActiveAppMode = ActiveAppMode.CLIENT
+                    };
+                }
+
                 await _userRepository.UpdateAsync(user);
             }
             else
             {
-                // Create new user
                 user = new User
                 {
                     KeycloakId = keycloakId,
                     Email = email,
                     FirstName = firstName,
                     LastName = lastName,
-                    Status = UserStatus.Pending // Require manual approval for drivers, clients might be active by default depending on logic
+                    Status = UserStatus.Pending,
+                    Preference = new UserPreference
+                    {
+                        ActiveAppMode = ActiveAppMode.CLIENT
+                    }
                 };
+
                 await _userRepository.AddAsync(user);
             }
         }
         else
         {
-            // Update details if they changed in Keycloak
             bool updated = false;
-            if (user.Email != email) { user.Email = email; updated = true; }
-            if (user.FirstName != firstName) { user.FirstName = firstName; updated = true; }
-            if (user.LastName != lastName) { user.LastName = lastName; updated = true; }
+
+            if (user.Email != email)
+            {
+                user.Email = email;
+                updated = true;
+            }
+
+            if (user.FirstName != firstName)
+            {
+                user.FirstName = firstName;
+                updated = true;
+            }
+
+            if (user.LastName != lastName)
+            {
+                user.LastName = lastName;
+                updated = true;
+            }
+
+            if (user.Preference is null)
+            {
+                user.Preference = new UserPreference
+                {
+                    ActiveAppMode = ActiveAppMode.CLIENT
+                };
+
+                updated = true;
+            }
 
             if (updated)
             {
@@ -116,7 +156,7 @@ public class UserService : IUserService
 
         if (user is null)
         {
-            return null; // Return null to let the caller handle it (e.g., 404 Not Found)
+            return null; 
         }
 
         bool updated = false;
@@ -147,6 +187,7 @@ public class UserService : IUserService
             Email = user.Email,
             Phone = user.Phone,
             Status = user.Status,
+            ActiveAppMode = user.Preference?.ActiveAppMode,
             ProfileObjectKey = user.ProfileObjectKey,
             CreatedAt = user.CreatedAt,
             UpdatedAt = user.UpdatedAt

@@ -12,7 +12,7 @@ public class DriverDossier : BaseEntity
 
     public DateTime? VerificationDate { get; set; }
 
-    public DriverDossierStatus Status { get; set; } = DriverDossierStatus.Pending;
+    public DriverDossierStatus Status { get; set; } = DriverDossierStatus.Draft;
 
     public string? RejectionReason { get; set; }
 
