@@ -1,0 +1,67 @@
+---
+import { User } from "lucide-react";
+
+interface Props {
+    driverId: string | undefined;
+}
+const { driverId } = Astro.props;
+
+// Simulate API Fetch
+await new Promise((r) => setTimeout(r, 600));
+
+const personalInfo = {
+    fullName: "Julian Alexander Rossi",
+    email: "j.rossi@logistics.com",
+    phone: "+1 (555) 234-5678",
+    address: "4522 Sunset Blvd, Los Angeles, CA 90027",
+};
+---
+
+<div class="bg-white rounded-xl shadow-sm p-6 h-full">
+    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-3 mb-8">
+        <span class="p-2 bg-slate-100 text-slate-700 rounded-lg">
+            <User className="w-5 h-5" />
+        </span>
+        Personal Info
+    </h2>
+
+    <div class="space-y-6">
+        <div>
+            <p
+                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+            >
+                Full Name
+            </p>
+            <p class="text-slate-800 font-medium">{personalInfo.fullName}</p>
+        </div>
+
+        <div>
+            <p
+                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+            >
+                Email Address
+            </p>
+            <p class="text-slate-800 font-medium">{personalInfo.email}</p>
+        </div>
+
+        <div>
+            <p
+                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+            >
+                Phone Number
+            </p>
+            <p class="text-slate-800 font-medium">{personalInfo.phone}</p>
+        </div>
+
+        <div>
+            <p
+                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+            >
+                Residential Address
+            </p>
+            <p class="text-slate-800 font-medium leading-relaxed max-w-[200px]">
+                {personalInfo.address}
+            </p>
+        </div>
+    </div>
+</div>

@@ -17,7 +17,7 @@ export const GET: APIRoute = async ({ request, cookies, redirect }) => {
     const CLIENT_ID = import.meta.env.PUBLIC_KEYCLOAK_CLIENT_ID || "wasel-front";
     const APP_URL = import.meta.env.PUBLIC_APP_URL || "http://localhost:8000";
     const INTERNAL_API_URL = import.meta.env.INTERNAL_API_URL || "http://wasel-api:8080";
-    const REDIRECT_URI = `${APP_URL}/callback`; // Must match exactly
+    const REDIRECT_URI = `${APP_URL}/endpoint/callback`; // Must match exactly
 
     try {
         // 3. Make the Back-Channel request to swap the code for the JWT
