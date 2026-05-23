@@ -3,6 +3,7 @@ import "../styles/global.css";
 import Slidebar from "@/components/sections/admin/Sidebar";
 import { Toaster } from "@/components/ui/sonner";
 const admin = Astro.locals.user;
+const pathname = Astro.url.pathname;
 ---
 
 <!doctype html>
@@ -17,7 +18,7 @@ const admin = Astro.locals.user;
     </head>
     <body>
         <Toaster client:load position="bottom-right" />
-        <Slidebar admin={admin} client:load>
+        <Slidebar admin={admin} client:load url={pathname}>
             <slot />
         </Slidebar>
     </body>

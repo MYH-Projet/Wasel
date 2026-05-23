@@ -73,16 +73,23 @@ const driverData = {
         },
     ],
 };
+
+const doc = driverData.documents.map((doc: Documant) => ({
+    id: doc.docId,
+    type: doc.documentType,
+}));
 ---
 
 <Layout title={`Révision - ${driverData.personalInfo.fullName}`}>
-    <div class="px-6 py-4 border-b bg-white flex justify-between items-center">
+    <div class="px-6 py-4 border-b bg-card flex justify-between items-center">
         <div class="flex items-center text-sm">
-            <a href="/admin/requests" class="text-slate-500 hover:text-black"
+            <a
+                href="/admin/requests"
+                class="text-muted-foreground hover:text-black"
                 >go back to drivers
             </a>
-            <span class="mx-3 text-slate-300">/</span>
-            <span class="font-medium text-slate-900"
+            <span class="mx-3 text-muted-foreground">/</span>
+            <span class="font-medium text-foreground"
                 >{driverData.personalInfo.fullName}</span
             >
             <span
@@ -94,16 +101,16 @@ const driverData = {
     </div>
 
     <div class="flex h-[calc(100vh-4rem)]">
-        <div class="w-3/5 bg-slate-100 border-r overflow-y-auto p-8">
-            <h2 class="text-xl font-bold mb-6 text-slate-800">
+        <div class="w-3/5 bg-muted border-r overflow-y-auto p-8">
+            <h2 class="text-xl font-bold mb-6 text-foreground">
                 Submitted Documents
             </h2>
 
             <div class="space-y-8">
                 {
                     driverData.documents.map((doc: Documant) => (
-                        <div class="bg-white p-4 rounded-xl shadow-sm border">
-                            <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 border-b pb-2">
+                        <div class="bg-card p-4 rounded-xl shadow-sm border">
+                            <h3 class="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4 border-b pb-2">
                                 {doc.documentType}{" "}
                                 {/* ex: "Permis de conduire", "CIN Recto" */}
                             </h3>
@@ -118,33 +125,35 @@ const driverData = {
             </div>
         </div>
 
-        <div class="w-2/5 bg-white overflow-y-auto flex flex-col">
+        <div class="w-2/5 bg-card overflow-y-auto flex flex-col">
             <div class="p-8 flex-grow">
                 <div class="mb-8">
-                    <h3 class="font-semibold text-slate-800 mb-4 border-b pb-2">
+                    <h3
+                        class="font-semibold text-foreground mb-4 border-b pb-2"
+                    >
                         Personal Information
                     </h3>
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <p class="text-slate-500">Full Name</p>
+                            <p class="text-muted-foreground">Full Name</p>
                             <p class="font-medium">
                                 {driverData.personalInfo.fullName}
                             </p>
                         </div>
                         <div>
-                            <p class="text-slate-500">CIN</p>
+                            <p class="text-muted-foreground">CIN</p>
                             <p class="font-medium">
                                 {driverData.personalInfo.cin}
                             </p>
                         </div>
                         <div>
-                            <p class="text-slate-500">Phone</p>
+                            <p class="text-muted-foreground">Phone</p>
                             <p class="font-medium">
                                 {driverData.personalInfo.phone}
                             </p>
                         </div>
                         <div>
-                            <p class="text-slate-500">Email</p>
+                            <p class="text-muted-foreground">Email</p>
                             <p class="font-medium">
                                 {driverData.personalInfo.email}
                             </p>
@@ -153,28 +162,30 @@ const driverData = {
                 </div>
 
                 <div class="mb-8">
-                    <h3 class="font-semibold text-slate-800 mb-4 border-b pb-2">
+                    <h3
+                        class="font-semibold text-foreground mb-4 border-b pb-2"
+                    >
                         Vehicle Information
                     </h3>
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <p class="text-slate-500">Type</p>
+                            <p class="text-muted-foreground">Type</p>
                             <p class="font-medium">{driverData.vehicle.type}</p>
                         </div>
                         <div>
-                            <p class="text-slate-500">License Plate</p>
+                            <p class="text-muted-foreground">License Plate</p>
                             <p class="font-medium uppercase">
                                 {driverData.vehicle.licensePlate}
                             </p>
                         </div>
                         <div>
-                            <p class="text-slate-500">Marque</p>
+                            <p class="text-muted-foreground">Marque</p>
                             <p class="font-medium">
                                 {driverData.vehicle.brand}
                             </p>
                         </div>
                         <div>
-                            <p class="text-slate-500">Modèle</p>
+                            <p class="text-muted-foreground">Modèle</p>
                             <p class="font-medium">
                                 {driverData.vehicle.model}
                             </p>
@@ -183,11 +194,12 @@ const driverData = {
                 </div>
             </div>
 
-            <div class="border-t bg-slate-50 p-6 sticky bottom-0">
+            <div class="border-t bg-muted p-6 sticky bottom-0">
                 <DriverReviewActions
                     client:load
                     driverId={id!}
                     currentStatus={driverData.status}
+                    docs={doc}
                 />
             </div>
         </div>

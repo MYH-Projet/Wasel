@@ -29,8 +29,8 @@ const docs = [
 ];
 ---
 
-<div class="bg-white rounded-xl shadow-sm p-6 h-full">
-    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2 mb-6">
+<div class="bg-card rounded-xl shadow-sm p-6 h-full">
+    <h2 class="text-lg font-bold text-foreground flex items-center gap-2 mb-6">
         <span class="p-2 bg-teal-100 text-teal-700 rounded-lg">
             <FileText className="w-5 h-5" />
         </span>
@@ -39,7 +39,7 @@ const docs = [
 
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
-            <thead class="text-xs font-bold text-slate-400 uppercase border-b">
+            <thead class="text-xs font-bold text-muted-foreground uppercase border-b">
                 <tr>
                     <th class="pb-3">Document Name</th>
                     <th class="pb-3">Status</th>
@@ -51,8 +51,8 @@ const docs = [
                 {
                     docs.map((doc) => (
                         <tr>
-                            <td class="py-4 font-medium text-slate-800 flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-slate-400" />{" "}
+                            <td class="py-4 font-medium text-foreground flex items-center gap-2">
+                                <FileText className="w-4 h-4 text-muted-foreground" />{" "}
                                 {/* FIXED: Used doc.documentType instead of doc.name */}
                                 {doc.documentType}
                             </td>
@@ -67,7 +67,7 @@ const docs = [
                                     {doc.status}
                                 </span>
                             </td>
-                            <td class="py-4 text-slate-500">{doc.expiry}</td>
+                            <td class="py-4 text-muted-foreground">{doc.expiry}</td>
                             <td class="py-4 text-right">
                                 {/* 2. Use the React Island with client:load! */}
                                 <DocumentViewerModal

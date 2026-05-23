@@ -18,9 +18,9 @@ const vehicleInfo = {
 };
 ---
 
-<div class="bg-white rounded-xl shadow-sm p-6 h-full flex flex-col">
-    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-3 mb-8">
-        <span class="p-2 bg-slate-100 text-slate-700 rounded-lg">
+<div class="bg-card rounded-xl shadow-sm p-6 h-full flex flex-col">
+    <h2 class="text-lg font-bold text-foreground flex items-center gap-3 mb-8">
+        <span class="p-2 bg-muted text-foreground rounded-lg">
             <Bike className="w-5 h-5" />
         </span>
         Vehicle Info
@@ -29,29 +29,29 @@ const vehicleInfo = {
     <div class="space-y-6 flex-grow">
         <div>
             <p
-                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+                class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1"
             >
                 Vehicle Type
             </p>
-            <p class="text-slate-800 font-medium">{vehicleInfo.type}</p>
+            <p class="text-foreground font-medium">{vehicleInfo.type}</p>
         </div>
 
         <div>
             <p
-                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+                class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1"
             >
                 License Plate
             </p>
-            <p class="text-slate-900 font-bold">{vehicleInfo.plate}</p>
+            <p class="text-foreground font-bold">{vehicleInfo.plate}</p>
         </div>
 
         <div>
             <p
-                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+                class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1"
             >
                 Registration Status
             </p>
-            <p class="text-slate-800 font-medium flex items-center gap-2">
+            <p class="text-foreground font-medium flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full bg-yellow-600"></span>
                 {vehicleInfo.status}
             </p>
@@ -59,7 +59,7 @@ const vehicleInfo = {
     </div>
 
     <!-- <div
-        class="mt-6 rounded-xl overflow-hidden h-32 bg-slate-900 flex-shrink-0"
+        class="mt-6 rounded-xl overflow-hidden h-32 bg-secondary flex-shrink-0"
     >
         <img
             src={vehicleInfo.imageUrl}

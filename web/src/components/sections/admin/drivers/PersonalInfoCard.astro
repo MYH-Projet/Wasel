@@ -17,9 +17,9 @@ const personalInfo = {
 };
 ---
 
-<div class="bg-white rounded-xl shadow-sm p-6 h-full">
-    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-3 mb-8">
-        <span class="p-2 bg-slate-100 text-slate-700 rounded-lg">
+<div class="bg-card rounded-xl shadow-sm p-6 h-full">
+    <h2 class="text-lg font-bold text-foreground flex items-center gap-3 mb-8">
+        <span class="p-2 bg-muted text-foreground rounded-lg">
             <User className="w-5 h-5" />
         </span>
         Personal Info
@@ -28,38 +28,38 @@ const personalInfo = {
     <div class="space-y-6">
         <div>
             <p
-                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+                class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1"
             >
                 Full Name
             </p>
-            <p class="text-slate-800 font-medium">{personalInfo.fullName}</p>
+            <p class="text-foreground font-medium">{personalInfo.fullName}</p>
         </div>
 
         <div>
             <p
-                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+                class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1"
             >
                 Email Address
             </p>
-            <p class="text-slate-800 font-medium">{personalInfo.email}</p>
+            <p class="text-foreground font-medium">{personalInfo.email}</p>
         </div>
 
         <div>
             <p
-                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+                class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1"
             >
                 Phone Number
             </p>
-            <p class="text-slate-800 font-medium">{personalInfo.phone}</p>
+            <p class="text-foreground font-medium">{personalInfo.phone}</p>
         </div>
 
         <div>
             <p
-                class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+                class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1"
             >
                 Residential Address
             </p>
-            <p class="text-slate-800 font-medium leading-relaxed max-w-[200px]">
+            <p class="text-foreground font-medium leading-relaxed max-w-[200px]">
                 {personalInfo.address}
             </p>
         </div>

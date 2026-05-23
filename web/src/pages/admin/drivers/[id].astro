@@ -11,17 +11,17 @@ const { id } = Astro.params;
 ---
 
 <AdminLayout title="Détails du Livreur">
-    <div class="px-6 py-4 text-sm text-slate-500 font-medium">
-        <a href="/admin/users" class="hover:text-white">Users</a> &gt;
-        <a href="/admin/drivers" class="hover:text-white">Driver Details</a> &gt;
-        <span class="text-slate-300">Julian Rossi</span>
+    <div class="px-6 py-4 text-sm text-muted-foreground font-medium">
+        <a href="/admin/users" class="hover:text-secondary-foreground">Users</a> &gt;
+        <a href="/admin/drivers" class="hover:text-secondary-foreground">Driver Details</a> &gt;
+        <span class="text-muted-foreground">Julian Rossi</span>
     </div>
 
     <div class="p-6 max-w-7xl mx-auto space-y-6">
         <DriverHeader server:defer driverId={id}>
             <div
                 slot="fallback"
-                class="h-32 bg-slate-800 animate-pulse rounded-xl"
+                class="h-32 bg-secondary animate-pulse rounded-xl"
             >
             </div>
         </DriverHeader>
@@ -30,7 +30,7 @@ const { id } = Astro.params;
             <PersonalInfoCard server:defer driverId={id}>
                 <div
                     slot="fallback"
-                    class="h-64 bg-slate-800 animate-pulse rounded-xl"
+                    class="h-64 bg-secondary animate-pulse rounded-xl"
                 >
                 </div>
             </PersonalInfoCard>
@@ -38,7 +38,7 @@ const { id } = Astro.params;
             <VehicleInfoCard server:defer driverId={id}>
                 <div
                     slot="fallback"
-                    class="h-64 bg-slate-800 animate-pulse rounded-xl"
+                    class="h-64 bg-secondary animate-pulse rounded-xl"
                 >
                 </div>
             </VehicleInfoCard>
@@ -46,7 +46,7 @@ const { id } = Astro.params;
             <PerformanceCard server:defer driverId={id}>
                 <div
                     slot="fallback"
-                    class="h-64 bg-slate-800 animate-pulse rounded-xl"
+                    class="h-64 bg-secondary animate-pulse rounded-xl"
                 >
                 </div>
             </PerformanceCard>
@@ -57,7 +57,7 @@ const { id } = Astro.params;
                 <ComplianceDocuments server:defer driverId={id}>
                     <div
                         slot="fallback"
-                        class="h-80 bg-slate-800 animate-pulse rounded-xl"
+                        class="h-80 bg-secondary animate-pulse rounded-xl"
                     >
                     </div>
                 </ComplianceDocuments>
@@ -67,7 +67,7 @@ const { id } = Astro.params;
                 <ActivityFeed server:defer driverId={id}>
                     <div
                         slot="fallback"
-                        class="h-80 bg-slate-800 animate-pulse rounded-xl"
+                        class="h-80 bg-secondary animate-pulse rounded-xl"
                     >
                     </div>
                 </ActivityFeed>

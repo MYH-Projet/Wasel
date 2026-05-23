@@ -16,18 +16,19 @@ import {
     Inbox,
     MessageSquareWarning,
     Users,
-    LineChart,
+    Car,
     Settings,
     LogOut,
-    Store
+    Map
 } from "lucide-react"
 
+// Updated icons and labels to match the image exactly
 const mainNavItems = [
-    { title: "Overview", icon: LayoutDashboard, url: "/admin", isActive: false },
-    { title: "Requests", icon: Inbox, url: "/admin/requests", isActive: true },
-    { title: "Complains", icon: MessageSquareWarning, url: "/admin/complains", isActive: false },
-    { title: "Users", icon: Users, url: "/admin/users", isActive: false },
-    { title: "Analytics", icon: LineChart, url: "/admin/analytics", isActive: false },
+    { title: "Dashboard", icon: LayoutDashboard, nav_url: "/admin" },
+    { title: "Map View", icon: Map, nav_url: "/admin/map" },
+    { title: "Drivers", icon: Users, nav_url: "/admin/drivers" },
+    { title: "Vehicles", icon: Car, nav_url: "/admin/vehicles" },
+    { title: "Requests", icon: Inbox, nav_url: "/admin/requests" },
 ]
 
 const bottomNavItems = [
@@ -35,30 +36,32 @@ const bottomNavItems = [
     { title: "Logout", icon: LogOut, url: "/logout" },
 ]
 
-export function AdminSidebar({ admin }: { admin: KeycloakPayload }) {
-    const adminName = admin?.name || admin?.preferred_username || "System Admin";
+export function AdminSidebar({ admin, url }: { admin: KeycloakPayload, url: string }) {
+    const adminName = admin?.name || admin?.preferred_username || "Dispatcher Admin";
     const initials = adminName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
-    const adminEmail = admin?.email || "admin@wasel.local";
+    const adminEmail = admin?.email || "Super Admin";
+
+
 
     return (
         <Sidebar
-            className="border-none"
+            className="border-r border-sidebar-border"
             collapsible="icon"
             style={{
-                '--sidebar': 'var(--secondary)',
-                '--sidebar-foreground': 'var(--secondary-foreground)',
-                '--sidebar-accent': 'rgba(255,255,255,0.1)',
-                '--sidebar-accent-foreground': 'white',
+                '--sidebar': 'var(--sidebar)',
+                '--sidebar-foreground': 'var(--sidebar-foreground)',
+                '--sidebar-accent': 'var(--sidebar-accent)',
+                '--sidebar-accent-foreground': 'var(--sidebar-accent-foreground)',
             } as React.CSSProperties}
         >
-            <SidebarHeader className="p-4 md:p-6 mb-2 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:mt-4">
+            <SidebarHeader className="p-4 md:p-6 mb-4 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:mt-4">
                 <div className="flex items-center gap-3 px-2 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
-                    <div className="flex aspect-square size-10 group-data-[collapsible=icon]:size-8 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm font-bold text-lg group-data-[collapsible=icon]:text-sm">
+                    <div className="flex aspect-square size-10 group-data-[collapsible=icon]:size-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm font-bold text-sm group-data-[collapsible=icon]:text-xs">
                         {initials}
                     </div>
                     <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                        <span className="truncate font-bold text-[15px] tracking-wide text-white">{adminName}</span>
-                        <span className="truncate text-xs text-slate-400 font-medium">{adminEmail}</span>
+                        <span className="truncate font-bold text-[15px] tracking-wide text-sidebar-foreground">{adminName}</span>
+                        <span className="truncate text-xs text-sidebar-foreground/70 font-medium">{adminEmail}</span>
                     </div>
                 </div>
             </SidebarHeader>
@@ -70,15 +73,18 @@ export function AdminSidebar({ admin }: { admin: KeycloakPayload }) {
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton
                                         asChild
-                                        isActive={item.isActive}
+                                        isActive={
+                                            item.nav_url === "/admin" ? url === "/admin" : url.startsWith(item.nav_url)
+                                        }
                                         tooltip={item.title}
-                                        className={`transition-all duration-300 h-11 px-4 ${item.isActive
-                                            ? "!bg-primary !text-primary-foreground font-bold shadow-md hover:!bg-primary/90 hover:!text-primary-foreground scale-[1.02]"
-                                            : "text-slate-300 hover:text-white font-medium hover:scale-[1.02]"}`}
+                                        className={`transition-all duration-200 h-11 px-4 rounded-md ${(item.nav_url === "/admin" ? url === "/admin" : url.startsWith(item.nav_url))
+                                            ? "bg-primary! text-primary-foreground font-bold hover:text-primary-foreground"
+                                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium"
+                                            }`}
                                     >
-                                        <a href={item.url}>
-                                            <item.icon className={`size-5 mr-1 ${item.isActive ? 'text-primary-foreground' : 'text-slate-400 group-hover:text-white transition-colors'}`} />
-                                            <span className="text-sm tracking-wide">{item.title}</span>
+                                        <a href={item.nav_url}>
+                                            <item.icon className={`size-5 mr-3 ${(item.nav_url === "/admin" ? url === "/admin" : url.startsWith(item.nav_url)) ? 'text-primary-foreground' : 'text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground transition-colors'}`} />
+                                            <span className="text-[15px]">{item.title}</span>
                                         </a>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
@@ -87,18 +93,18 @@ export function AdminSidebar({ admin }: { admin: KeycloakPayload }) {
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter className="p-4 mb-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:mx-auto">
+            <SidebarFooter className="p-4 mb-2 border-t border-sidebar-border group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:border-none group-data-[collapsible=icon]:mx-auto">
                 <SidebarMenu className="gap-2">
                     {bottomNavItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton
                                 asChild
                                 tooltip={item.title}
-                                className="h-11 px-4 text-slate-300 hover:bg-white/10 hover:text-white font-medium transition-all duration-300 hover:scale-[1.02]"
+                                className="h-11 px-4 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium transition-all duration-200 rounded-md"
                             >
                                 <a href={item.url}>
-                                    <item.icon className="size-5 mr-1 text-slate-400 group-hover:text-white transition-colors" />
-                                    <span className="text-sm tracking-wide">{item.title}</span>
+                                    <item.icon className="size-5 mr-3 text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground transition-colors" />
+                                    <span className="text-[15px]">{item.title}</span>
                                 </a>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
