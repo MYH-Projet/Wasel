@@ -1,0 +1,79 @@
+---
+import { Check } from "lucide-react";
+
+interface Props {
+    deliveryId: string;
+}
+const { deliveryId } = Astro.props;
+
+await new Promise((r) => setTimeout(r, 1100));
+
+const timeline = [
+    {
+        title: "Delivery Requested",
+        date: "Oct 24, 2023 • 09:12 AM",
+        desc: "Order received and processed via automated dispatcher.",
+        status: "completed",
+    },
+    {
+        title: "Driver Assigned",
+        date: "Oct 24, 2023 • 09:45 AM",
+        desc: "Michael Scott (ID: #DR-992) accepted the request.",
+        status: "completed",
+    },
+    {
+        title: "Package Picked Up",
+        date: "Oct 24, 2023 • 10:20 AM",
+        desc: "Pickup verified at South Hub Terminal A.",
+        status: "completed",
+    },
+    {
+        title: "In Transit",
+        date: "Oct 24, 2023 • 10:45 AM",
+        desc: "On the way to the delivery destination. Estimated arrival: 11:30 AM.",
+        status: "current",
+    },
+];
+---
+
+<div class="bg-card rounded-xl shadow-sm p-6 lg:p-8 border border-border">
+    <h2 class="text-xl font-bold text-foreground mb-8">Delivery Timeline</h2>
+
+    <div class="relative border-l-[3px] border-primary/20 ml-4 space-y-10">
+        {
+            timeline.map((step) => (
+                <div class="relative pl-8">
+                    <span
+                        class={`absolute -left-[15px] top-0 w-[27px] h-[27px] rounded-full border-4 border-card flex items-center justify-center shadow-sm ${
+                            step.status === "completed"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-card border-[3px] !border-primary text-primary"
+                        }`}
+                    >
+                        {step.status === "completed" ? (
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        ) : (
+                            <span class="w-2 h-2 bg-primary rounded-full" />
+                        )}
+                    </span>
+
+                    <div class="-mt-1.5">
+                        <div class="flex flex-col sm:flex-row sm:items-baseline sm:gap-3">
+                            <h3
+                                class={`text-base font-bold ${step.status === "current" ? "text-primary" : "text-foreground"}`}
+                            >
+                                {step.title}
+                            </h3>
+                            <span class="text-xs font-medium text-muted-foreground mt-1 sm:mt-0">
+                                {step.date}
+                            </span>
+                        </div>
+                        <p class="text-sm text-muted-foreground/90 mt-2 leading-relaxed">
+                            {step.desc}
+                        </p>
+                    </div>
+                </div>
+            ))
+        }
+    </div>
+</div>

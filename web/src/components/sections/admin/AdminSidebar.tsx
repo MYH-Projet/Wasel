@@ -25,7 +25,7 @@ import {
 // Updated icons and labels to match the image exactly
 const mainNavItems = [
     { title: "Dashboard", icon: LayoutDashboard, nav_url: "/admin" },
-    { title: "Map View", icon: Map, nav_url: "/admin/map" },
+    { title: "Deliveries", icon: Map, nav_url: "/admin/deliveries" },
     { title: "Drivers", icon: Users, nav_url: "/admin/drivers" },
     { title: "Vehicles", icon: Car, nav_url: "/admin/vehicles" },
     { title: "Requests", icon: Inbox, nav_url: "/admin/requests" },

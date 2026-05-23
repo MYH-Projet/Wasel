@@ -1,0 +1,185 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import LiveTrackingMap from "@/components/sections/admin/deliveries/LiveTrackingMap.astro";
+import DeliveryTimeline from "@/components/sections/admin/deliveries/DeliveryTimeline.astro";
+import ContactInfo from "@/components/sections/admin/deliveries/ContactInfo.astro";
+import RouteInfo from "@/components/sections/admin/deliveries/RouteInfo.astro";
+
+const { id } = Astro.params;
+---
+
+<AdminLayout title={`Delivery Details - ${id}`}>
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-foreground">Delivery Details</h1>
+        </div>
+        <div class="flex gap-3">
+            <button class="px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/90 transition-colors rounded-md"
+                >Print Manifest</button
+            >
+            <button
+                class="px-4 py-2 bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors rounded-md"
+                >Cancel Delivery</button
+            >
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <LiveTrackingMap server:defer deliveryId={id!}>
+                <div
+                    slot="fallback"
+                    class="bg-card rounded-xl shadow-sm overflow-hidden h-[400px] border border-border flex flex-col relative"
+                >
+                    <div class="p-4 border-b border-border flex justify-between">
+                        <div
+                            class="h-6 w-48 bg-muted rounded animate-pulse"
+                        >
+                        </div>
+                        <div
+                            class="h-4 w-24 bg-muted rounded animate-pulse"
+                        >
+                        </div>
+                    </div>
+                    <div class="flex-grow bg-muted/30 animate-pulse"></div>
+                    <div
+                        class="absolute bottom-6 left-6 w-64 h-24 bg-card rounded-lg shadow-md border border-border animate-pulse"
+                    >
+                    </div>
+                </div>
+            </LiveTrackingMap>
+
+            <DeliveryTimeline server:defer deliveryId={id!}>
+                <div
+                    slot="fallback"
+                    class="bg-card rounded-xl shadow-sm p-6 border border-border"
+                >
+                    <div
+                        class="h-6 w-48 bg-muted rounded animate-pulse mb-8"
+                    >
+                    </div>
+                    <div
+                        class="space-y-8 pl-4 border-l-2 border-border ml-2"
+                    >
+                        {/* Generate 3 fake timeline steps */}
+                        {
+                            [1, 2, 3].map(() => (
+                                <div class="relative pl-6">
+                                    <div class="absolute -left-[33px] top-0 w-6 h-6 rounded-full bg-muted animate-pulse border-4 border-card" />
+                                    <div class="h-4 w-40 bg-muted rounded animate-pulse mb-2" />
+                                    <div class="h-3 w-3/4 bg-muted/50 rounded animate-pulse" />
+                                </div>
+                            ))
+                        }
+                    </div>
+                </div>
+            </DeliveryTimeline>
+        </div>
+
+        <div class="space-y-6">
+            <ContactInfo server:defer deliveryId={id!}>
+                <div
+                    slot="fallback"
+                    class="bg-card rounded-xl shadow-sm p-6 border border-border"
+                >
+                    <div
+                        class="h-4 w-40 bg-muted rounded animate-pulse mb-6"
+                    >
+                    </div>
+
+                    {/* Driver Skeleton Card */}
+                    <div
+                        class="p-4 bg-muted/20 rounded-xl mb-4 flex items-center gap-4"
+                    >
+                        <div
+                            class="w-12 h-12 rounded-full bg-muted animate-pulse"
+                        >
+                        </div>
+                        <div class="space-y-2 flex-1">
+                            <div
+                                class="h-3 w-16 bg-muted rounded animate-pulse"
+                            >
+                            </div>
+                            <div
+                                class="h-4 w-32 bg-muted/80 rounded animate-pulse"
+                            >
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Customer Skeleton Card */}
+                    <div
+                        class="p-4 bg-muted/20 rounded-xl flex items-center gap-4"
+                    >
+                        <div
+                            class="w-12 h-12 rounded-full bg-muted animate-pulse"
+                        >
+                        </div>
+                        <div class="space-y-2 flex-1">
+                            <div
+                                class="h-3 w-16 bg-muted rounded animate-pulse"
+                            >
+                            </div>
+                            <div
+                                class="h-4 w-32 bg-muted/80 rounded animate-pulse"
+                            >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </ContactInfo>
+
+            <RouteInfo server:defer deliveryId={id!}>
+                <div
+                    slot="fallback"
+                    class="bg-card rounded-xl shadow-sm p-6 border border-border"
+                >
+                    <div
+                        class="h-4 w-40 bg-muted rounded animate-pulse mb-6"
+                    >
+                    </div>
+                    <div
+                        class="space-y-6 pl-2 border-l-2 border-dashed border-border ml-2"
+                    >
+                        <div class="relative pl-6">
+                            <div
+                                class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-muted animate-pulse border-2 border-card"
+                            >
+                            </div>
+                            <div
+                                class="h-3 w-16 bg-muted rounded animate-pulse mb-2"
+                            >
+                            </div>
+                            <div
+                                class="h-4 w-32 bg-muted/80 rounded animate-pulse mb-1"
+                            >
+                            </div>
+                            <div
+                                class="h-3 w-48 bg-muted/50 rounded animate-pulse"
+                            >
+                            </div>
+                        </div>
+                        <div class="relative pl-6">
+                            <div
+                                class="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-muted animate-pulse border-2 border-card"
+                            >
+                            </div>
+                            <div
+                                class="h-3 w-16 bg-muted rounded animate-pulse mb-2"
+                            >
+                            </div>
+                            <div
+                                class="h-4 w-32 bg-muted/80 rounded animate-pulse mb-1"
+                            >
+                            </div>
+                            <div
+                                class="h-3 w-48 bg-muted/50 rounded animate-pulse"
+                            >
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </RouteInfo>
+        </div>
+    </div>
+</AdminLayout>

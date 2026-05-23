@@ -1,0 +1,66 @@
+---
+import { Phone, MessageSquare, Mail } from "lucide-react";
+
+interface Props {
+    deliveryId: string;
+}
+const { deliveryId } = Astro.props;
+
+await new Promise((r) => setTimeout(r, 600));
+---
+
+<div class="bg-card rounded-xl shadow-sm p-6 border border-border">
+    <h3 class="text-xs font-bold text-foreground uppercase tracking-wider mb-6">
+        Contact Information
+    </h3>
+
+    <div class="space-y-4">
+        <div class="bg-muted/30 rounded-xl p-4 flex items-center gap-4">
+            <img
+                src="https://i.pravatar.cc/150?u=michael"
+                alt="Driver"
+                class="w-12 h-12 rounded-full object-cover shadow-sm border border-border"
+            />
+            <div class="flex-1">
+                <p
+                    class="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5"
+                >
+                    Driver
+                </p>
+                <p class="font-bold text-foreground">Michael Scott</p>
+                <div class="flex gap-3 mt-1.5 text-muted-foreground">
+                    <Phone
+                        className="w-4 h-4 hover:text-foreground cursor-pointer transition-colors"
+                    />
+                    <MessageSquare
+                        className="w-4 h-4 hover:text-foreground cursor-pointer transition-colors"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-muted/30 rounded-xl p-4 flex items-center gap-4">
+            <img
+                src="https://i.pravatar.cc/150?u=pam"
+                alt="Customer"
+                class="w-12 h-12 rounded-full object-cover shadow-sm border border-border"
+            />
+            <div class="flex-1">
+                <p
+                    class="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5"
+                >
+                    Customer
+                </p>
+                <p class="font-bold text-foreground">Pam Beesly</p>
+                <div class="flex gap-3 mt-1.5 text-muted-foreground">
+                    <Phone
+                        className="w-4 h-4 hover:text-foreground cursor-pointer transition-colors"
+                    />
+                    <Mail
+                        className="w-4 h-4 hover:text-foreground cursor-pointer transition-colors"
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
