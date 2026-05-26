@@ -22,10 +22,12 @@ public class WaselDbContext : DbContext
     // Module: Drivers
     public DbSet<Driver> Drivers => Set<Driver>();
     public DbSet<DriverDossier> DriverDossiers => Set<DriverDossier>();
-
+    public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     // Module: Deliveries
+    public DbSet<Address> Addresses => Set<Address>();
+    public DbSet<Parcel> Parcels => Set<Parcel>();
     public DbSet<Delivery> Deliveries => Set<Delivery>();
-
+    public DbSet<DeliveryStatusHistory> DeliveryStatusHistories => Set<DeliveryStatusHistory>();
     // Module: Documents
     public DbSet<Document> Documents => Set<Document>();
 
@@ -48,15 +50,24 @@ public class WaselDbContext : DbContext
         .OnDelete(DeleteBehavior.Cascade);
         
         // Drivers
-        modelBuilder.Entity<Driver>(entity =>
-        {
-            entity.ToTable("drivers");
-            entity.HasIndex(e => e.PermitNumber).IsUnique();
-            entity.HasOne(d => d.User)
+        // Drivers
+    modelBuilder.Entity<Driver>(entity =>
+    {
+        entity.ToTable("drivers");
+        entity.HasIndex(e => e.PermitNumber).IsUnique();
+
+        // Relation 1 : Driver → User (1-1)
+        entity.HasOne(d => d.User)
             .WithOne(u => u.Driver)
             .HasForeignKey<Driver>(d => d.UserId)
             .OnDelete(DeleteBehavior.Cascade);
-        });
+
+        // Relation 2 : Driver → Vehicle (1-1)
+        entity.HasOne(d => d.Vehicle)
+            .WithOne(v => v.Driver)
+            .HasForeignKey<Vehicle>(v => v.DriverId)
+            .OnDelete(DeleteBehavior.Cascade);
+    });
 
         // Driver dossiers
         modelBuilder.Entity<DriverDossier>(entity =>
@@ -82,9 +93,128 @@ public class WaselDbContext : DbContext
 
         
         // Deliveries
+        modelBuilder.Entity<Delivery>()
+        .Property(d => d.Status)
+        .HasConversion<string>();
+
+        modelBuilder.Entity<Delivery>()
+            .Property(d => d.PaymentMethod)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<DeliveryStatusHistory>()
+            .Property(h => h.Status)
+            .HasConversion<string>();
+        
+        modelBuilder.Entity<Address>(entity =>
+        {
+            entity.ToTable("addresses");
+
+            entity.HasKey(a => a.Id);
+
+            entity.Property(a => a.Label)
+                .HasMaxLength(100);
+
+            entity.Property(a => a.Street)
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(a => a.City)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(a => a.PostalCode)
+                .HasMaxLength(30);
+
+            entity.Property(a => a.Country)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(a => a.AdditionalInfo)
+                .HasMaxLength(500);
+
+            entity.HasOne(a => a.Client)
+                .WithMany()
+                .HasForeignKey(a => a.ClientId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+        modelBuilder.Entity<Parcel>(entity =>
+        {
+            entity.ToTable("parcels");
+
+            entity.HasKey(p => p.Id);
+
+            entity.Property(p => p.Description)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            entity.Property(p => p.Weight)
+                .HasColumnType("decimal(10,2)")
+                .IsRequired();
+
+            entity.Property(p => p.Volume)
+                .HasColumnType("decimal(10,2)")
+                .IsRequired();
+
+            entity.Property(p => p.Instructions)
+                .HasMaxLength(500);
+        });
+
         modelBuilder.Entity<Delivery>(entity =>
         {
             entity.ToTable("deliveries");
+
+            entity.HasKey(d => d.Id);
+
+            entity.Property(d => d.Status)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(d => d.PaymentMethod)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.HasOne(d => d.Client)
+                .WithMany()
+                .HasForeignKey(d => d.ClientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(d => d.PickupAddress)
+                .WithMany()
+                .HasForeignKey(d => d.PickupAddressId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(d => d.DropoffAddress)
+                .WithMany()
+                .HasForeignKey(d => d.DropoffAddressId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(d => d.Parcel)
+                .WithOne()
+                .HasForeignKey<Delivery>(d => d.ParcelId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+
+        modelBuilder.Entity<DeliveryStatusHistory>(entity =>
+        {
+            entity.ToTable("delivery_status_histories");
+
+            entity.HasKey(h => h.Id);
+
+            entity.Property(h => h.Status)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(h => h.Note)
+                .HasMaxLength(500);
+
+            entity.HasOne(h => h.Delivery)
+                .WithMany(d => d.StatusHistories)
+                .HasForeignKey(h => h.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 
@@ -93,6 +223,7 @@ public class WaselDbContext : DbContext
     /// </summary>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        
         var entries = ChangeTracker.Entries<BaseEntity>();
 
         foreach (var entry in entries)

@@ -6,4 +6,5 @@ public interface IDriverRepository
 {
     Task<List<Driver>> GetPendingDriversAsync();
     Task<Driver?> GetDriverDossierAsync(Guid driverId);
+    Task<Driver?> GetByUserIdAsync(Guid userId);
 }
