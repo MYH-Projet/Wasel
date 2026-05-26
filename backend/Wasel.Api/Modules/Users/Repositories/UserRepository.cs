@@ -15,23 +15,29 @@ public class UserRepository : IUserRepository
 
     public async Task<List<User>> GetAllAsync()
     {
-        return await _context.Users.ToListAsync();
+        return await _context.Users
+            .Include(u => u.Preference)
+            .ToListAsync();
     }
 
     public async Task<User?> GetByIdAsync(Guid id)
     {
-        return await _context.Users.FindAsync(id);
+        return await _context.Users
+            .Include(u => u.Preference)
+            .FirstOrDefaultAsync(u => u.Id == id);
     }
 
     public async Task<User?> GetByKeycloakIdAsync(string keycloakId)
     {
         return await _context.Users
+            .Include(u => u.Preference)
             .FirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
     }
 
     public async Task<User?> GetByEmailAsync(string email)
     {
         return await _context.Users
+            .Include(u => u.Preference)
             .FirstOrDefaultAsync(u => u.Email == email);
     }
 

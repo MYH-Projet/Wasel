@@ -59,6 +59,47 @@ namespace Wasel.Api.Migrations
                     b.ToTable("deliveries", (string)null);
                 });
 
+            modelBuilder.Entity("Wasel.Api.Modules.Documents.Entities.Document", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DocumentType")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("DriverDossierId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverDossierId");
+
+                    b.ToTable("documents", (string)null);
+                });
+
             modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.Driver", b =>
                 {
                     b.Property<Guid>("Id")
@@ -68,10 +109,7 @@ namespace Wasel.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsAvailable")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LicenseNumber")
+                    b.Property<string>("PermitNumber")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -84,16 +122,50 @@ namespace Wasel.Api.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("VehicleType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("LicenseNumber")
+                    b.HasIndex("PermitNumber")
+                        .IsUnique();
+
+                    b.HasIndex("UserId")
                         .IsUnique();
 
                     b.ToTable("drivers", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.DriverDossier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("SubmissionDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("VerificationDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId")
+                        .IsUnique();
+
+                    b.ToTable("driver_dossiers", (string)null);
                 });
 
             modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.User", b =>
@@ -147,6 +219,93 @@ namespace Wasel.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.UserPreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ActiveAppMode")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("UserPreferences");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Documents.Entities.Document", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Drivers.Entities.DriverDossier", "DriverDossier")
+                        .WithMany("Documents")
+                        .HasForeignKey("DriverDossierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DriverDossier");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.Driver", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "User")
+                        .WithOne("Driver")
+                        .HasForeignKey("Wasel.Api.Modules.Drivers.Entities.Driver", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.DriverDossier", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Drivers.Entities.Driver", "Driver")
+                        .WithOne("Dossier")
+                        .HasForeignKey("Wasel.Api.Modules.Drivers.Entities.DriverDossier", "DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.UserPreference", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "User")
+                        .WithOne("Preference")
+                        .HasForeignKey("Wasel.Api.Modules.Users.Entities.UserPreference", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.Driver", b =>
+                {
+                    b.Navigation("Dossier");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.DriverDossier", b =>
+                {
+                    b.Navigation("Documents");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.User", b =>
+                {
+                    b.Navigation("Driver");
+
+                    b.Navigation("Preference");
                 });
 #pragma warning restore 612, 618
         }

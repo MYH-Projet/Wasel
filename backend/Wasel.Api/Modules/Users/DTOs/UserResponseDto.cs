@@ -15,4 +15,5 @@ public class UserResponseDto
     public string? ProfileObjectKey { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public ActiveAppMode? ActiveAppMode { get; set; }
 }

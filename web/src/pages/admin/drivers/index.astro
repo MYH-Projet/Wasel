@@ -1,0 +1,25 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { AllDriversTable } from "@/components/sections/admin/drivers/AllDriversTable";
+---
+
+<AdminLayout>
+    <div class="p-6 md:p-10 max-w-7xl mx-auto space-y-10">
+        <header class="space-y-2">
+            <h1
+                class="text-4xl font-black tracking-tight text-slate-900 sm:text-5xl uppercase"
+            >
+                All Drivers
+            </h1>
+            <p class="text-lg text-slate-500 font-medium max-w-2xl">
+                Manage and review incoming fleet applications with real-time
+                metrics and detailed insights.
+            </p>
+        </header>
+
+        <section class="flex justify-center">
+            <!-- <MetricsOverview /> -->
+            <AllDriversTable client:only="react" />
+        </section>
+    </div>
+</AdminLayout>

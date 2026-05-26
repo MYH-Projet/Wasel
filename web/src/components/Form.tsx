@@ -50,11 +50,13 @@ export function LoginForm() {
     async function onSubmit(data: LoginFormValues) {
         try {
             const params = new URLSearchParams();
-            params.append("client_id", "wasel-api");
+            params.append("client_id", import.meta.env.PUBLIC_KEYCLOAK_CLIENT_ID || "wasel-api");
             params.append("grant_type", "password");
             params.append("username", data.email);
             params.append("password", data.password);
-            const response = await fetch("http://localhost:8000/auth/realms/wasel/protocol/openid-connect/token", {
+            const keycloakUrl = import.meta.env.PUBLIC_KEYCLOAK_URL || "http://localhost:8000/auth";
+            const realm = import.meta.env.PUBLIC_KEYCLOAK_REALM || "wasel";
+            const response = await fetch(`${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/x-www-form-urlencoded",

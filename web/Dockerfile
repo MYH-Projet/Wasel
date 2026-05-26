@@ -12,6 +12,12 @@ RUN npm ci
 # Copy the rest of the frontend code (including tsconfig.json, src, etc.)
 COPY . .
 
+# Pass environment variables for the build process
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+ARG PUBLIC_KEYCLOAK_URL
+ENV PUBLIC_KEYCLOAK_URL=$PUBLIC_KEYCLOAK_URL
+
 # Build the Astro project for SSR/Hybrid
 RUN npm run build
 

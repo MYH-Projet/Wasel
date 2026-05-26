@@ -1,0 +1,26 @@
+name: CI — Backend Tests
+
+on:
+  pull_request:
+    branches: ["dev"]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Installation des dépendances Backend
+        run: dotnet restore Wasel.sln
+
+      - name: Build solution (Release)
+        run: dotnet build Wasel.sln --configuration Release --no-restore
+
+      - name: Lancement des Tests Backend
+        run: dotnet test backend/Wasel.Api.Tests/Wasel.Api.Tests.csproj --configuration Release --no-build --verbosity normal
