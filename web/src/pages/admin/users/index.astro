@@ -1,0 +1,22 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { AllUsersTable } from "@/components/sections/admin/users/AllUsersTable";
+---
+
+<AdminLayout title="User Management">
+    <div class="p-6 md:p-10 max-w-[1600px] mx-auto space-y-8">
+        <header>
+            <h1 class="text-3xl font-black tracking-tight text-slate-900">
+                User <span class="text-yellow-500">Management</span>
+            </h1>
+            <p class="text-slate-500 mt-2 text-sm md:text-base max-w-2xl">
+                View, filter, and manage all registered users across the
+                platform, including customers, drivers, and dispatchers.
+            </p>
+        </header>
+
+        <section>
+            <AllUsersTable client:load />
+        </section>
+    </div>
+</AdminLayout>

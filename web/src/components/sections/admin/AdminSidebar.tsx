@@ -26,8 +26,8 @@ import {
 const mainNavItems = [
     { title: "Dashboard", icon: LayoutDashboard, nav_url: "/admin" },
     { title: "Deliveries", icon: Map, nav_url: "/admin/deliveries" },
-    { title: "Drivers", icon: Users, nav_url: "/admin/drivers" },
-    { title: "Vehicles", icon: Car, nav_url: "/admin/vehicles" },
+    { title: "Users", icon: Users, nav_url: "/admin/users" },
+    { title: "Drivers", icon: Car, nav_url: "/admin/Drivers" },
     { title: "Requests", icon: Inbox, nav_url: "/admin/requests" },
 ]
 

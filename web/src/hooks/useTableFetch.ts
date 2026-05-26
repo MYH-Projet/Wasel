@@ -55,5 +55,6 @@ export function useTableFetch<T>({ endpoint, filters }: UseTableFetchProps) {
         totalPages,
         isLoading,
         setPage,
+        setData
     }
 }
