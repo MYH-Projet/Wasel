@@ -28,15 +28,6 @@ export const GET: APIRoute = async (context) => {
                 createdAt: "2026-01-15T14:20:00Z"
             },
             {
-                id: "USR-1003",
-                fullName: "Sara Mansouri",
-                email: "s.mansouri@wasel.ma",
-                phone: "+212 6 55 44 33 22",
-                status: "INACTIVE",
-                activeRole: "DISPATCHER",
-                createdAt: "2026-03-10T09:15:00Z"
-            },
-            {
                 id: "USR-1004",
                 fullName: "Karim Idrissi",
                 email: "karim.idrissi@gmail.com",

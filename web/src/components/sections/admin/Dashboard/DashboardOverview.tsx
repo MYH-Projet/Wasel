@@ -76,7 +76,7 @@ export function DashboardOverview() {
                 {/* Left Area (Takes up 2/3 space) */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Placeholder for future Chart component */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center justify-center">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200">
                         <DeliveryVolumeChart />
                     </div>
 

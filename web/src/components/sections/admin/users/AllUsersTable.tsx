@@ -71,7 +71,6 @@ export function AllUsersTable() {
         const styles: Record<string, string> = {
             CUSTOMER: "bg-blue-50 text-blue-700 border-blue-200",
             DRIVER: "bg-yellow-50 text-yellow-700 border-yellow-200",
-            DISPATCHER: "bg-purple-50 text-purple-700 border-purple-200",
         };
         return <span className={`px-2 py-1 text-xs font-semibold rounded border ${styles[role] || "bg-slate-50"}`}>{role}</span>;
     };
@@ -98,9 +97,6 @@ export function AllUsersTable() {
                 const isBlocked = row.status === "BLOCKED";
                 return (
                     <div className="flex gap-2 justify-end items-center">
-                        <a href={`/admin/users/${row.id}`} className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors" title="View Profile">
-                            <Eye className="w-4 h-4" />
-                        </a>
                         <button
                             onClick={() => setActionModalData({ isOpen: true, userId: row.id, currentStatus: row.status })}
                             className={`p-1.5 rounded-md transition-colors ${isBlocked
@@ -148,7 +144,6 @@ export function AllUsersTable() {
                             <option value="">All Roles</option>
                             <option value="CUSTOMER">Customers</option>
                             <option value="DRIVER">Drivers</option>
-                            <option value="DISPATCHER">Dispatchers</option>
                         </select>
                     </div>
 

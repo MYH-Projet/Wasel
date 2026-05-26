@@ -77,7 +77,7 @@ export function DeliveryVolumeChart() {
                 </div>
             </CardHeader>
 
-            <CardContent className="flex-grow min-h-[350px]">
+            <CardContent className="flex-grow min-h-[350px] overflow-x-auto">
                 {isLoading && normalizedData.length === 0 ? (
                     <div className="w-full h-full flex items-center justify-center min-h-[300px]">
                         <div className="animate-pulse flex space-x-4 items-end h-[200px] w-full px-10">
@@ -88,35 +88,37 @@ export function DeliveryVolumeChart() {
                         </div>
                     </div>
                 ) : (
-                    <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
-                        <BarChart data={normalizedData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                    <div className="min-w-[700px] h-full pb-2">
+                        <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+                            <BarChart data={normalizedData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
 
-                            <XAxis
-                                dataKey="label"
-                                tickLine={false}
-                                tickMargin={10}
-                                axisLine={false}
-                                tick={{ fontSize: 12, fill: '#64748b' }}
-                            />
+                                <XAxis
+                                    dataKey="label"
+                                    tickLine={false}
+                                    tickMargin={10}
+                                    axisLine={false}
+                                    tick={{ fontSize: 12, fill: '#64748b' }}
+                                />
 
-                            {/* The beautiful Shadcn Tooltip */}
-                            <ChartTooltip
-                                cursor={{ fill: '#f8f9fa' }}
-                                content={<ChartTooltipContent />}
-                            />
+                                {/* The beautiful Shadcn Tooltip */}
+                                <ChartTooltip
+                                    cursor={{ fill: '#f8f9fa' }}
+                                    content={<ChartTooltipContent />}
+                                />
 
-                            <Bar dataKey="volume" radius={[4, 4, 0, 0]}>
-                                {/* Colors the last bar yellow, keeps the rest gray to match your UI mockup */}
-                                {normalizedData.map((_, index) => (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={index === normalizedData.length - 1 ? "#eab308" : "#e2e8f0"}
-                                    />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ChartContainer>
+                                <Bar dataKey="volume" radius={[4, 4, 0, 0]}>
+                                    {/* Colors the last bar yellow, keeps the rest gray to match your UI mockup */}
+                                    {normalizedData.map((_, index) => (
+                                        <Cell
+                                            key={`cell-${index}`}
+                                            fill={index === normalizedData.length - 1 ? "#eab308" : "#e2e8f0"}
+                                        />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ChartContainer>
+                    </div>
                 )}
             </CardContent>
         </Card>

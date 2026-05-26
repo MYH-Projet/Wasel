@@ -32,9 +32,9 @@ export function DataTable<T>({ columns, data, isLoading, page, totalPages, onPag
                     </thead>
                     <tbody className="divide-y">
                         {isLoading ? (
-                            <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-muted-foreground">Chargement...</td></tr>
+                            <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-muted-foreground">Loading...</td></tr>
                         ) : data.length === 0 ? (
-                            <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-muted-foreground">Aucune donnée trouvée.</td></tr>
+                            <tr><td colSpan={columns.length} className="px-4 py-8 text-center text-muted-foreground">No data found.</td></tr>
                         ) : (
                             data.map((row, rowIndex) => (
                                 <tr key={rowIndex} className="hover:bg-muted">
