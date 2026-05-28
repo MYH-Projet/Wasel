@@ -55,3 +55,5 @@ dist/
 build/
 .dart_tool/
 .packages
+
+.env.staging

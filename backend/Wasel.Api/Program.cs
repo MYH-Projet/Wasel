@@ -49,8 +49,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuers = new[]
             {
                 keycloakOptions.Authority,
-                keycloakOptions.InternalAuthority
-            },
+                keycloakOptions.InternalAuthority,
+                keycloakOptions.NginxAuthority
+            }.Where(i => !string.IsNullOrEmpty(i)).ToArray(),
             ValidateAudience = false, // TODO: Audience validation can be reinforced later if needed
             ValidateLifetime = true
         };
@@ -152,3 +153,6 @@ app.MapGet("/api/health", () => Results.Ok(new
 .WithTags("Health");
 
 app.Run();
+
+// Required for WebApplicationFactory in integration tests
+public partial class Program { }

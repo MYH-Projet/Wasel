@@ -1,0 +1,24 @@
+---
+import "../styles/global.css";
+import Slidebar from "@/components/sections/admin/Sidebar";
+import { Toaster } from "@/components/ui/sonner";
+const admin = Astro.locals.user;
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" type="image/svg+xml" href="/wasel.svg" />
+        <link rel="icon" href="/wasel.svg" />
+        <meta name="generator" content={Astro.generator} />
+        <title>Admin Panel | Wasel</title>
+    </head>
+    <body>
+        <Toaster client:load position="bottom-right" />
+        <Slidebar admin={admin} client:load>
+            <slot />
+        </Slidebar>
+    </body>
+</html>

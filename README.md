@@ -1,184 +1,157 @@
-# 🚚 Wasel — Plateforme de livraison à la demande
+# 🚚 Wasel — Plateforme de Livraison à la Demande
 
-Wasel est une plateforme de livraison à la demande construite avec une architecture **monolithique modulaire**, prête à évoluer vers les microservices.
+> Backend .NET 10 · Keycloak · PostgreSQL · Redis · MinIO · Nginx
+
+[![Build Status](https://github.com/MYH-Projet/Wasel/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/MYH-Projet/Wasel/actions)
 
 ---
 
-## 📋 Stack technique
+## 📋 Vue d'ensemble
 
-| Composant | Technologie | Version |
-|-----------|-------------|---------|
-| Backend | ASP.NET Core | .NET 10 LTS |
-| ORM | Entity Framework Core | 10.x |
-| Database | PostgreSQL | 18.3 |
-| Cache | Redis | 8.6 |
-| Object Storage | MinIO | RELEASE.2025-02-28 |
-| IAM / Auth | Keycloak | latest |
-| API Docs | Scalar | 2.14 |
-| Mobile | Flutter | — |
-| Web | Astro | — |
+**Wasel** est une plateforme de livraison à la demande connectant :
+- 👤 **Clients** — passent des commandes de livraison
+- 🛵 **Livreurs (Drivers)** — acceptent et effectuent les livraisons
+- 🛡️ **Administrateurs** — valident les comptes et supervisent la plateforme
+
+---
+
+## 🏗️ Architecture
+
+```
+Flutter (Mobile) / Astro (Web Admin)
+              ↓
+      ┌───────────────┐
+      │  Nginx  :80   │  ← Point d'entrée unique
+      │  /api/*       │→ Backend .NET (wasel-api:8080)
+      │  /auth/*      │→ Keycloak     (wasel-keycloak:8080)
+      └───────────────┘
+              ↓
+      ┌───────────────────────────────────┐
+      │         Backend .NET 10           │
+      │  Monolithe Modulaire              │
+      │  Modules: Auth, Users, Drivers... │
+      └───────────────────────────────────┘
+         ↓           ↓           ↓
+    PostgreSQL     Redis       MinIO
+    (données)    (cache)    (fichiers)
+```
 
 ---
 
 ## 🚀 Démarrage rapide
 
 ### Prérequis
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [Git](https://git-scm.com/)
 
-- [Docker](https://www.docker.com/) (v20+)
-- [Docker Compose](https://docs.docker.com/compose/) (v2+)
-- [.NET 10 SDK](https://dotnet.microsoft.com/) (pour le développement local)
-
-### 1. Configurer l'environnement
+### Lancer le projet
 
 ```bash
-# Copier le fichier d'environnement
+# 1. Cloner le repository
+git clone https://github.com/MYH-Projet/Wasel.git
+cd Wasel
+
+# 2. Configurer l'environnement
 cp .env.example .env
-```
 
-### 2. Lancer l'infrastructure
-
-```bash
+# 3. Lancer tous les services
 docker compose up -d --build
+
+# 4. Vérifier que tout fonctionne
+curl http://localhost/api/health        # via Nginx
+curl http://localhost:5000/api/health   # accès direct
 ```
 
-### 3. Voir l'état et les logs
-```bash
-docker compose ps
-docker compose logs -f wasel-api
-```
+### URLs de développement
 
-### 4. Arrêter l'infrastructure
-
-```bash
-docker compose down
-```
-
-### 5. Arrêter et supprimer les données
-
-```bash
-docker compose down -v
-```
+| Service | Accès Direct | Via Nginx |
+|---|---|---|
+| 🔌 **API** | `http://localhost:5000/api` | `http://localhost/api` |
+| 📖 **Docs API (Scalar)** | `http://localhost:5000/scalar/v1` | `http://localhost/scalar/v1` |
+| 🔑 **Keycloak** | `http://localhost:8080/auth` | `http://localhost/auth` |
+| 💾 **Adminer (BDD)** | `http://localhost:8081` | — |
+| 🗂️ **MinIO Console** | `http://localhost:9001` | — |
 
 ---
 
-## 🌐 URLs utiles
+## 📡 Endpoints API
 
-| Service | URL |
-|---------|-----|
-| **API** | http://localhost:5000 |
-| **API Docs (Scalar)** | http://localhost:5000/scalar/v1 |
-| **OpenAPI JSON** | http://localhost:5000/openapi/v1.json |
-| **Health Check** | http://localhost:5000/api/health |
-| **Keycloak (Auth)** | http://localhost:8080 |
-| **Adminer** (DB UI) | http://localhost:8081 |
-| **MinIO Console** | http://localhost:9001 |
+### Public
+| `GET /api/health` | Santé de l'API |
+
+### 🔐 Authentification (token requis)
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/auth/me` | Profil connecté (auto-sync) |
+| `PATCH` | `/api/auth/me/profile` | Modifier le profil local |
+| `POST` | `/api/auth/sync` | Sync manuelle (optionnel) |
+
+### 👑 Administration (rôle ADMIN)
+| Méthode | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/admin/users` | Liste des utilisateurs |
+| `GET` | `/api/admin/users/{id}` | Détail utilisateur |
+| `PATCH` | `/api/admin/users/{id}/status` | Changer le statut |
 
 ---
 
-## 🔑 Identifiants de développement
+## 🧪 Tests et CI/CD
 
-### PostgreSQL
-| Champ | Valeur |
-|-------|--------|
-| Host | `localhost` |
-| Port | `5432` |
-| Database | `wasel_db` |
-| Username | `wasel_user` |
-| Password | `wasel_dev_password` |
+> 📖 Documentation complète : [docs/testing-and-ci.md](docs/testing-and-ci.md)
 
-### MinIO
-| Champ | Valeur |
-|-------|--------|
-| Endpoint | `localhost:9000` |
-| Console | `localhost:9001` |
-| Access Key | `minioadmin` |
-| Secret Key | `minioadmin123` |
-| Bucket | `wasel-documents` |
+```bash
+# Tests unitaires backend (rapides, sans Docker)
+dotnet test backend/Wasel.Api.Tests/Wasel.Api.Tests.csproj --verbosity normal
 
-### Keycloak
-| Champ | Valeur |
-|-------|--------|
-| Admin Console | `http://localhost:8080` |
-| Username | `admin` |
-| Password | `admin` |
+# Tests frontend web
+cd web && npm ci && npm test
 
+# Tests mobile Flutter
+cd mobile && flutter pub get && flutter test
 
+# Validation Docker Compose
+docker compose config --quiet
+
+# Tests d'intégration manuels (nécessite Docker + Keycloak)
+bash scripts/test-auth.sh
+```
+
+La CI GitHub Actions exécute automatiquement les tests backend, web, mobile et valide Docker Compose sur chaque pull request.
 
 ---
 
 ## 📁 Structure du projet
 
 ```
-wasel/
-├── backend/
-│   └── Wasel.Api/                  # API .NET 10 (monolithe modulaire)
-│       ├── Modules/                # Modules métier
-│       │   ├── Auth/               # Authentification
-│       │   ├── Users/              # Gestion des utilisateurs
-│       │   ├── Drivers/            # Gestion des chauffeurs
-│       │   ├── Deliveries/         # Gestion des livraisons
-│       │   ├── Payments/           # Paiements
-│       │   ├── Documents/          # Documents et fichiers
-│       │   ├── Tracking/           # Suivi en temps réel
-│       │   └── Reviews/            # Avis et évaluations
-│       ├── Shared/                 # Code partagé
-│       │   ├── Common/             # Classes de base
-│       │   ├── Database/           # DbContext EF Core
-│       │   ├── Exceptions/         # Exceptions custom
-│       │   ├── Responses/          # Format de réponse API
-│       │   └── Security/           # Sécurité
-│       └── Infrastructure/         # Intégrations externes
-│           ├── Keycloak/           # IAM / Auth
-│           ├── Redis/              # Cache
-│           ├── MinIO/              # Object Storage
-│           ├── Email/              # Emails
-│           └── Maps/               # Géolocalisation
-├── mobile/                         # Application Flutter
-├── web/                            # Application Astro
-├── infra/                          # Scripts d'infrastructure
-│   ├── minio/
-│   ├── keycloak/
-│   └── scripts/
-├── docker-compose.yml
-├── .env.example
-└── .gitignore
-```
-
-### Structure d'un module
-
-Chaque module métier suit cette organisation :
-
-```
-Modules/<NomModule>/
-├── Controllers/        # Endpoints API
-├── DTOs/              # Data Transfer Objects
-├── Entities/          # Entités EF Core
-├── Enums/             # Énumérations
-├── Services/          # Logique métier
-├── Repositories/      # Accès aux données
-└── Configurations/    # Configuration EF Core
+Wasel/
+├── backend/Wasel.Api/       ← API .NET 10
+│   ├── Modules/             ← Auth, Users, Drivers...
+│   ├── Shared/              ← Code commun
+│   └── Infrastructure/      ← Keycloak, MinIO, Redis
+├── infra/
+│   ├── nginx/nginx.conf     ← Reverse proxy
+│   └── keycloak/            ← realm-export.json
+├── scripts/
+│   └── test-auth.sh         ← Suite de tests
+├── docs/                    ← Documentation technique
+└── docker-compose.yml
 ```
 
 ---
 
-## 🛠️ Développement local (sans Docker)
+## 📚 Documentation
 
-```bash
-# Restaurer les packages
-cd backend/Wasel.Api
-dotnet restore
-
-# Lancer le backend
-dotnet run
-
-# Ou en mode watch
-dotnet watch run
-```
-
-> 💡 Assurez-vous que PostgreSQL, Redis et MinIO sont accessibles localement.
+| Document | Description |
+|---|---|
+| [backend-guide.md](docs/backend-guide.md) | Architecture, règles, endpoints backend |
+| [frontend-auth-guide.md](docs/frontend-auth-guide.md) | Intégration auth Flutter / Astro |
+| [testing-and-ci.md](docs/testing-and-ci.md) | Stratégie de tests et CI/CD |
 
 ---
 
-## 📝 Licence
+## 👥 Comptes de test (dev uniquement)
 
-Projet académique — Tous droits réservés.
+| Utilisateur | Mot de passe | Rôle |
+|---|---|---|
+| `admin@wasel.ma` | `admin123` | ADMIN |
+| `client@wasel.ma` | `client123` | CLIENT |

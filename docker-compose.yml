@@ -20,8 +20,9 @@ services:
       - MinIO__Endpoint=wasel-minio:9000
       - MinIO__AccessKey=${MINIO_ROOT_USER}
       - MinIO__SecretKey=${MINIO_ROOT_PASSWORD}
-      - Keycloak__Authority=http://localhost:8080/realms/${KEYCLOAK_REALM}
-      - Keycloak__InternalAuthority=http://wasel-keycloak:8080/realms/${KEYCLOAK_REALM}
+      - Keycloak__Authority=http://localhost:8080/auth/realms/${KEYCLOAK_REALM}
+      - Keycloak__InternalAuthority=http://wasel-keycloak:8080/auth/realms/${KEYCLOAK_REALM}
+      - Keycloak__NginxAuthority=http://localhost:8000/auth/realms/${KEYCLOAK_REALM}
       - Keycloak__Realm=${KEYCLOAK_REALM}
       - Keycloak__ClientId=${KEYCLOAK_CLIENT_ID}
       - Keycloak__RequireHttpsMetadata=false
@@ -51,9 +52,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - wasel-postgres-data:/var/lib/postgresql
+      - wasel-postgres-data:/var/lib/postgresql:z
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -70,7 +71,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -94,9 +95,9 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     command: server /data --console-address ":9001"
     volumes:
-      - wasel-minio-data:/data
+      - wasel-minio-data:/data:z
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -117,11 +118,14 @@ services:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: "true"
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_PROXY_HEADERS: xforwarded
     volumes:
-      - wasel-keycloak-data:/opt/keycloak/data
-      - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - wasel-keycloak-data:/opt/keycloak/data:z
+      - ./infra/keycloak/my-theme:/opt/keycloak/themes/my-theme:ro,z
+      - ./infra/keycloak/realm-import.json:/opt/keycloak/data/import/realm-import.json:ro,z
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080" ]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -143,6 +147,48 @@ services:
     networks:
       - wasel-network
     restart: unless-stopped
+  # ──────────────────────────────────────────────
+  # Astro Frontend (Web)
+  # ──────────────────────────────────────────────
+  wasel-frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      target: builder # 1. Stop at the 'builder' stage
+    container_name: wasel-frontend
+    command: npm run dev -- --host 0.0.0.0 # 2. Force the Dev Server to run
+    environment:
+      - HOST=0.0.0.0
+      - PORT=4321
+      - PUBLIC_KEYCLOAK_URL=http://localhost:8000/auth
+      - INTERNAL_API_URL=http://wasel-api:8080
+      - PUBLIC_KEYCLOAK_REALM=wasel
+      - PUBLIC_KEYCLOAK_CLIENT_ID=wasel-front
+      - PUBLIC_APP_URL=http://localhost:8000
+      - KEYCLOAK_INTERNAL_URL=http://wasel-keycloak:8080/auth
+    volumes:
+      - ./web:/app:z
+      - /app/node_modules
+    networks:
+      - wasel-network
+    restart: unless-stopped
+  # ──────────────────────────────────────────────
+  # Nginx (Reverse Proxy)
+  # ──────────────────────────────────────────────
+  wasel-nginx:
+    image: nginx:alpine
+    container_name: wasel-nginx
+    ports:
+      - "8000:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro,z
+    depends_on:
+      - wasel-api
+      - wasel-keycloak
+      - wasel-frontend
+    networks:
+      - wasel-network
+    restart: unless-stopped
 
 # ──────────────────────────────────────────────
 # Volumes
@@ -152,9 +198,9 @@ volumes:
   wasel-minio-data:
   wasel-keycloak-data:
 
-# ──────────────────────────────────────────────
-# Network
-# ──────────────────────────────────────────────
+    # ──────────────────────────────────────────────
+    # Network
+    # ──────────────────────────────────────────────
 networks:
   wasel-network:
     driver: bridge

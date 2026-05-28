@@ -1,0 +1,199 @@
+---
+export const prerender = true;
+import Layout from "../layouts/Layout.astro";
+import { Mail, Phone, MapPin, Send } from "lucide-react";
+---
+
+<Layout>
+  <div
+    class="min-h-screen bg-background pt-32 pb-24 px-6 lg:px-8 relative overflow-hidden"
+  >
+    <!-- Background Decoration -->
+    <div
+      class="absolute top-0 right-0 w-[40rem] h-[40rem] bg-primary/5 rounded-full blur-[100px] z-0 -translate-y-1/2 translate-x-1/4"
+    >
+    </div>
+    <div
+      class="absolute bottom-0 left-0 w-[40rem] h-[40rem] bg-secondary/5 rounded-full blur-[100px] z-0 translate-y-1/4 -translate-x-1/4"
+    >
+    </div>
+
+    <div class="max-w-7xl mx-auto relative z-10">
+      <!-- Header -->
+      <div class="text-center max-w-2xl mx-auto mb-16 space-y-4">
+        <h1
+          class="text-4xl md:text-6xl font-extrabold text-foreground tracking-tight"
+        >
+          Get in <span class="text-primary">Touch</span>
+        </h1>
+        <p class="text-lg text-muted-foreground font-light">
+          Have questions about our logistics solutions? Our team in Casablanca
+          is ready to help you optimize your delivery workflow.
+        </p>
+      </div>
+
+      <!-- Main Layout -->
+      <div class="grid lg:grid-cols-5 gap-12 lg:gap-8 items-start">
+        <!-- Left: Contact Information -->
+        <div class="lg:col-span-2 space-y-8">
+          <div
+            class="bg-card border border-border p-8 rounded-[2rem] shadow-sm hover:shadow-md transition-shadow"
+          >
+            <h3 class="text-2xl font-bold mb-8 text-foreground">
+              Contact Information
+            </h3>
+
+            <div class="space-y-6">
+              <!-- Email -->
+              <div class="flex items-start gap-4">
+                <div
+                  class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0"
+                >
+                  <Mail className="text-primary" size={24} />
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-foreground">Email Us</p>
+                  <p class="text-muted-foreground text-sm mt-1">
+                    support@wasel.ma
+                  </p>
+                  <p class="text-muted-foreground text-sm">
+                    partnerships@wasel.ma
+                  </p>
+                </div>
+              </div>
+
+              <!-- Phone -->
+              <div class="flex items-start gap-4">
+                <div
+                  class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0"
+                >
+                  <Phone className="text-primary" size={24} />
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-foreground">Call Us</p>
+                  <p class="text-muted-foreground text-sm mt-1">
+                    +212 522 12 34 56
+                  </p>
+                  <p class="text-muted-foreground text-sm">
+                    Mon-Fri from 9am to 6pm
+                  </p>
+                </div>
+              </div>
+
+              <!-- Office -->
+              <div class="flex items-start gap-4">
+                <div
+                  class="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0"
+                >
+                  <MapPin className="text-primary" size={24} />
+                </div>
+                <div>
+                  <p class="text-sm font-semibold text-foreground">
+                    Headquarters
+                  </p>
+                  <p class="text-muted-foreground text-sm mt-1">
+                    Twin Center, Maarif
+                  </p>
+                  <p class="text-muted-foreground text-sm">
+                    Casablanca, Morocco
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Contact Form -->
+        <div class="lg:col-span-3">
+          <form
+            class="bg-card/80 backdrop-blur-md border border-border p-8 md:p-12 rounded-[2.5rem] shadow-lg space-y-6"
+          >
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- First Name -->
+              <div class="space-y-2">
+                <label
+                  for="firstName"
+                  class="text-sm font-semibold text-foreground"
+                  >First Name</label
+                >
+                <input
+                  type="text"
+                  id="firstName"
+                  class="w-full bg-background border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors text-foreground"
+                  placeholder="John"
+                />
+              </div>
+
+              <!-- Last Name -->
+              <div class="space-y-2">
+                <label
+                  for="lastName"
+                  class="text-sm font-semibold text-foreground">Last Name</label
+                >
+                <input
+                  type="text"
+                  id="lastName"
+                  class="w-full bg-background border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors text-foreground"
+                  placeholder="Doe"
+                />
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="space-y-2">
+              <label for="email" class="text-sm font-semibold text-foreground"
+                >Email Address</label
+              >
+              <input
+                type="email"
+                id="email"
+                class="w-full bg-background border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors text-foreground"
+                placeholder="john@example.com"
+              />
+            </div>
+
+            <!-- Subject -->
+            <div class="space-y-2">
+              <label for="subject" class="text-sm font-semibold text-foreground"
+                >Subject</label
+              >
+              <select
+                id="subject"
+                class="w-full bg-background border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors text-foreground appearance-none"
+              >
+                <option value="general">General Inquiry</option>
+                <option value="driver">Driver Support</option>
+                <option value="partnership">Business Partnership</option>
+                <option value="billing">Billing & Payments</option>
+              </select>
+            </div>
+
+            <!-- Message -->
+            <div class="space-y-2">
+              <label for="message" class="text-sm font-semibold text-foreground"
+                >Message</label
+              >
+              <textarea
+                id="message"
+                rows="4"
+                class="w-full bg-background border border-border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors text-foreground resize-none"
+                placeholder="How can we help you today?"></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <button
+              type="button"
+              class="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-8 py-4 rounded-xl transition-all shadow-md hover:shadow-lg transform hover:-translate-y-1 duration-200 flex items-center justify-center gap-2 group"
+            >
+              Send Message
+              <Send
+                size={20}
+                className="group-hover:translate-x-1 transition-transform"
+              />
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

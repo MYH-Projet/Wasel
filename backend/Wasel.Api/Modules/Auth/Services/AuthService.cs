@@ -17,33 +17,49 @@ public class AuthService : IAuthService
         _userService = userService;
     }
 
-    public async Task<CurrentUserResponseDto> GetCurrentUserAsync()
+    /// <summary>
+    /// Ensures that a local user profile exists in PostgreSQL for the current JWT identity.
+    /// If the user does not exist locally, it is created via FindOrCreateFromKeycloakAsync.
+    /// This is the central auto-sync method — all endpoints needing the current user should call this.
+    /// </summary>
+    public async Task<CurrentUserResponseDto> EnsureCurrentUserExistsAsync()
     {
         var keycloakId = _currentUserService.KeycloakId;
-        if (string.IsNullOrEmpty(keycloakId))
+        var email = _currentUserService.Email;
+        var firstName = _currentUserService.FirstName;
+        var lastName = _currentUserService.LastName;
+
+        if (string.IsNullOrEmpty(keycloakId) || string.IsNullOrEmpty(email))
         {
-            throw ApiException.Unauthorized("Invalid token or missing subject claim");
+            throw ApiException.Unauthorized("Invalid token: missing subject or email claim");
         }
 
-        var dto = new CurrentUserResponseDto
+        // FindOrCreateFromKeycloakAsync handles: lookup by KeycloakId → fallback by Email → create
+        // DB exceptions (DbException, DbUpdateException, timeout) propagate naturally — no catch here.
+        var localUser = await _userService.FindOrCreateFromKeycloakAsync(
+            keycloakId,
+            email,
+            firstName ?? string.Empty,
+            lastName ?? string.Empty);
+
+        return new CurrentUserResponseDto
         {
             KeycloakId = keycloakId,
-            Email = _currentUserService.Email ?? string.Empty,
-            FirstName = _currentUserService.FirstName ?? string.Empty,
-            LastName = _currentUserService.LastName ?? string.Empty,
-            Roles = _currentUserService.Roles.ToList()
+            Email = email,
+            FirstName = firstName ?? string.Empty,
+            LastName = lastName ?? string.Empty,
+            Roles = _currentUserService.Roles.ToList(),
+            LocalUserId = localUser.Id,
+            Phone = localUser.Phone,
+            Cin = localUser.Cin,
+            Status = localUser.Status.ToString()
         };
+    }
 
-        var localUser = await _userService.GetByKeycloakIdAsync(keycloakId);
-        if (localUser != null)
-        {
-            dto.LocalUserId = localUser.Id;
-            dto.Phone = localUser.Phone;
-            dto.Cin = localUser.Cin;
-            dto.Status = localUser.Status.ToString();
-        }
-
-        return dto;
+    public async Task<CurrentUserResponseDto> GetCurrentUserAsync()
+    {
+        // Auto-sync: the local user is created if it doesn't exist yet
+        return await EnsureCurrentUserExistsAsync();
     }
 
     public async Task<UserResponseDto> SyncCurrentUserAsync()
@@ -65,30 +81,23 @@ public class AuthService : IAuthService
             lastName ?? string.Empty);
     }
 
-    public async Task<CurrentUserResponseDto?> UpdateProfileAsync(UpdateCurrentUserProfileRequestDto request)
+    public async Task<CurrentUserResponseDto> UpdateProfileAsync(UpdateCurrentUserProfileRequestDto request)
     {
-        var keycloakId = _currentUserService.KeycloakId;
-        if (string.IsNullOrEmpty(keycloakId))
-        {
-            throw ApiException.Unauthorized("Invalid token or missing subject claim");
-        }
+        // Auto-sync: guarantee the local user exists before attempting profile update
+        var currentUser = await EnsureCurrentUserExistsAsync();
 
         var user = await _userService.UpdateUserProfileAsync(
-            keycloakId,
+            currentUser.KeycloakId,
             request.Cin,
             request.Phone,
             request.FirstName,
             request.LastName,
             request.ProfileObjectKey);
 
-        if (user is null)
-        {
-            return null; // Local user not found
-        }
-
+        // user is guaranteed non-null because EnsureCurrentUserExistsAsync already created it
         return new CurrentUserResponseDto
         {
-            KeycloakId = user.KeycloakId,
+            KeycloakId = user!.KeycloakId,
             Email = user.Email,
             FirstName = user.FirstName,
             LastName = user.LastName,

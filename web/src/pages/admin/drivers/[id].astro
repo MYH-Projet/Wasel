@@ -1,0 +1,77 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import DriverHeader from "@/components/sections/admin/drivers/DriverHeader.astro";
+import PersonalInfoCard from "@/components/sections/admin/drivers/PersonalInfoCard.astro";
+import VehicleInfoCard from "@/components/sections/admin/drivers/VehicleInfoCard.astro";
+import PerformanceCard from "@/components/sections/admin/drivers/PerformanceCard.astro";
+import ComplianceDocuments from "@/components/sections/admin/drivers/ComplianceDocuments.astro";
+import ActivityFeed from "@/components/sections/admin/drivers/ActivityFeed.astro";
+
+const { id } = Astro.params;
+---
+
+<AdminLayout title="Détails du Livreur">
+    <div class="px-6 py-4 text-sm text-slate-500 font-medium">
+        <a href="/admin/users" class="hover:text-white">Users</a> &gt;
+        <a href="/admin/drivers" class="hover:text-white">Driver Details</a> &gt;
+        <span class="text-slate-300">Julian Rossi</span>
+    </div>
+
+    <div class="p-6 max-w-7xl mx-auto space-y-6">
+        <DriverHeader server:defer driverId={id}>
+            <div
+                slot="fallback"
+                class="h-32 bg-slate-800 animate-pulse rounded-xl"
+            >
+            </div>
+        </DriverHeader>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <PersonalInfoCard server:defer driverId={id}>
+                <div
+                    slot="fallback"
+                    class="h-64 bg-slate-800 animate-pulse rounded-xl"
+                >
+                </div>
+            </PersonalInfoCard>
+
+            <VehicleInfoCard server:defer driverId={id}>
+                <div
+                    slot="fallback"
+                    class="h-64 bg-slate-800 animate-pulse rounded-xl"
+                >
+                </div>
+            </VehicleInfoCard>
+
+            <PerformanceCard server:defer driverId={id}>
+                <div
+                    slot="fallback"
+                    class="h-64 bg-slate-800 animate-pulse rounded-xl"
+                >
+                </div>
+            </PerformanceCard>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="md:col-span-2">
+                <ComplianceDocuments server:defer driverId={id}>
+                    <div
+                        slot="fallback"
+                        class="h-80 bg-slate-800 animate-pulse rounded-xl"
+                    >
+                    </div>
+                </ComplianceDocuments>
+            </div>
+
+            <div class="md:col-span-1">
+                <ActivityFeed server:defer driverId={id}>
+                    <div
+                        slot="fallback"
+                        class="h-80 bg-slate-800 animate-pulse rounded-xl"
+                    >
+                    </div>
+                </ActivityFeed>
+            </div>
+        </div>
+    </div>
+</AdminLayout>
