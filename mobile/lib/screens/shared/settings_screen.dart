@@ -3,6 +3,8 @@ import 'package:wasel/main.dart';
 import 'package:wasel/screens/welcome_screen.dart';
 import 'package:wasel/themes/colors.dart';
 import 'package:wasel/themes/text_styles.dart';
+import 'package:wasel/screens/driver/profile_screen.dart';
+import 'package:wasel/screens/driver/wallet_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   final bool isDriver;
@@ -29,6 +31,25 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 32),
               Text('Settings', style: headingText),
               const SizedBox(height: 32),
+              ListTile(
+                leading: const Icon(Icons.person_rounded, color: secondaryColor),
+                title: Text('My Profile', style: labelText),
+                trailing: const Icon(Icons.chevron_right_rounded, color: secondaryColor),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DriverProfileScreen()),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.account_balance_wallet_rounded, color: secondaryColor),
+                title: Text('My Wallet', style: labelText),
+                trailing: const Icon(Icons.chevron_right_rounded, color: secondaryColor),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DriverWalletScreen()),
+                ),
+              ),
+              const Spacer(),
               OutlinedButton.icon(
                 onPressed: onModeSwitch,
                 icon: Icon(
@@ -47,7 +68,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 16),
               OutlinedButton.icon(
                 onPressed: () async {
                   await authService.clearTokens();

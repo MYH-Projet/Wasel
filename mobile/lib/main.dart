@@ -13,7 +13,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return InheritedAuth(
       authService: AuthService(),
-      child: const MaterialApp(home: SplashScreen()),
+      child: const MaterialApp(debugShowCheckedModeBanner: false, home: SplashScreen()),
     );
   }
 }
