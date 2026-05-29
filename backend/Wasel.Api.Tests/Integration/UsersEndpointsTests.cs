@@ -36,13 +36,17 @@ public class UsersEndpointsTests : IClassFixture<IntegrationTestWebAppFactory>
     public async Task GetAllUsers_AdminRole_ReturnsUsers()
     {
         // Arrange
-        await SeedUserAsync(new User 
-        { 
-            KeycloakId = "kc-user-1", 
-            Email = "user1@wasel.ma",
-            FirstName = "Test",
-            LastName = "User1"
-        });
+        await SeedUserAsync(new User
+{
+    KeycloakId = "kc-user-1",
+    Email = "user1@wasel.ma",
+    FirstName = "Test",
+    LastName = "User1",
+    Preference = new UserPreference
+    {
+        ActiveAppMode = ActiveAppMode.CLIENT
+    }
+});
 
         // Act: Envoi de la requête en simulant un administrateur
         var request = new HttpRequestMessage(HttpMethod.Get, "/api/admin/users");
@@ -59,10 +63,11 @@ public class UsersEndpointsTests : IClassFixture<IntegrationTestWebAppFactory>
 
         options.Converters.Add(new JsonStringEnumConverter());
 
-        var users = await response.Content.ReadFromJsonAsync<List<UserResponseDto>>(options);
+        var result = await response.Content.ReadFromJsonAsync<PaginatedResponseDto<UserResponseDto>>(options);
 
-        users.Should().NotBeNull();
-        users!.Should().Contain(u => u.Email == "user1@wasel.ma");
+result.Should().NotBeNull();
+result!.Items.Should().Contain(u => u.Email == "user1@wasel.ma");
+result.TotalCount.Should().BeGreaterThan(0);
     }
 
     [Fact]
