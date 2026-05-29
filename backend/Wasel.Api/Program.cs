@@ -14,7 +14,9 @@ using Wasel.Api.Modules.Drivers.Services;
 using Wasel.Api.Modules.Documents.Repositories;
 using Wasel.Api.Modules.Documents.Services;
 using Wasel.Api.Modules.Auth.Services;
-
+using Wasel.Api.Modules.Deliveries.Repositories;
+using Wasel.Api.Modules.Deliveries.Services;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,8 +86,18 @@ builder.Services.AddScoped<IDriverDossierService, DriverDossierService>();
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 
+//module deliveries
+builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
+builder.Services.AddScoped<IDeliveryService, DeliveryService>();
+builder.Services.AddScoped<IAddressRepository, AddressRepository>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+
 // Controllers
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 // CORS — permissive for development
 builder.Services.AddCors(options =>

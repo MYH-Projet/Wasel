@@ -30,6 +30,12 @@ public class DriverRepository : IDriverRepository
                 .ThenInclude(dossier => dossier!.Documents)
             .FirstOrDefaultAsync(d => d.Id == driverId);
     }
+
+    public async Task<Driver?> GetByUserIdAsync(Guid userId)
+    {
+        return await _context.Drivers
+            .FirstOrDefaultAsync(d => d.UserId == userId);
+    }
 }
 
 

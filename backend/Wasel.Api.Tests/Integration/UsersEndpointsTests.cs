@@ -7,6 +7,8 @@ using Wasel.Api.Modules.Users.Entities;
 using Wasel.Api.Modules.Users.Enums;
 using Wasel.Api.Shared.Database;
 using Wasel.Api.Tests.Fixtures;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Wasel.Api.Tests;
 
@@ -50,7 +52,15 @@ public class UsersEndpointsTests : IClassFixture<IntegrationTestWebAppFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         
-        var users = await response.Content.ReadFromJsonAsync<List<User>>();
+        var options = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
+        options.Converters.Add(new JsonStringEnumConverter());
+
+        var users = await response.Content.ReadFromJsonAsync<List<UserResponseDto>>(options);
+
         users.Should().NotBeNull();
         users!.Should().Contain(u => u.Email == "user1@wasel.ma");
     }

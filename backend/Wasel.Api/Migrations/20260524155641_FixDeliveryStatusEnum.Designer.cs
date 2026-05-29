@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Wasel.Api.Shared.Database;
@@ -11,9 +12,11 @@ using Wasel.Api.Shared.Database;
 namespace Wasel.Api.Migrations
 {
     [DbContext(typeof(WaselDbContext))]
-    partial class WaselDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260524155641_FixDeliveryStatusEnum")]
+    partial class FixDeliveryStatusEnum
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -47,9 +50,6 @@ namespace Wasel.Api.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Instructions")
-                        .HasColumnType("text");
 
                     b.Property<string>("Label")
                         .IsRequired()
@@ -319,45 +319,6 @@ namespace Wasel.Api.Migrations
                     b.ToTable("driver_dossiers", (string)null);
                 });
 
-            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.Vehicle", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DriverId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Marque")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Matricule")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Model")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DriverId")
-                        .IsUnique();
-
-                    b.ToTable("Vehicles");
-                });
-
             modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -527,17 +488,6 @@ namespace Wasel.Api.Migrations
                     b.Navigation("Driver");
                 });
 
-            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.Vehicle", b =>
-                {
-                    b.HasOne("Wasel.Api.Modules.Drivers.Entities.Driver", "Driver")
-                        .WithOne("Vehicle")
-                        .HasForeignKey("Wasel.Api.Modules.Drivers.Entities.Vehicle", "DriverId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Driver");
-                });
-
             modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.UserPreference", b =>
                 {
                     b.HasOne("Wasel.Api.Modules.Users.Entities.User", "User")
@@ -557,8 +507,6 @@ namespace Wasel.Api.Migrations
             modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.Driver", b =>
                 {
                     b.Navigation("Dossier");
-
-                    b.Navigation("Vehicle");
                 });
 
             modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.DriverDossier", b =>

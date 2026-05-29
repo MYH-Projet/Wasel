@@ -21,9 +21,7 @@ public class UsersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAllUsers()
     {
-        /*IActionResult est le type de retour d’une méthode dans un Controller ASP.NET Core.
-        Cette méthode va retourner une réponse HTTP.
-        */
+       
         var users = await _userService.GetAllUsersAsync();
         return Ok(users);
     }
