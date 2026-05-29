@@ -123,6 +123,32 @@ class DeliveryService {
     }
   }
 
+  static Future<DeliveryResult> getActiveDeliveries({
+    required AuthService authService,
+  }) async {
+    final token = await authService.getAccessToken();
+    if (token == null)
+      return DeliveryResult.failure(DeliveryServiceError.unauthorized);
+
+    try {
+      final response = await http.get(
+        Uri.parse('$API/api/deliveries/my/active'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      switch (response.statusCode) {
+        case 200:
+          return DeliveryResult.success(jsonDecode(response.body));
+        case 401:
+        case 403:
+          return DeliveryResult.failure(DeliveryServiceError.unauthorized);
+        default:
+          return DeliveryResult.failure(DeliveryServiceError.server);
+      }
+    } catch (_) {
+      return DeliveryResult.failure(DeliveryServiceError.network);
+    }
+  }
   // ── cancel delivery ────────────────────────────────────────────
 
   static Future<DeliveryResult> cancelDelivery({
