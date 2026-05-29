@@ -186,4 +186,57 @@ public class DeliveryRepository : IDeliveryRepository
             .Where(d => d.ClientId == clientId)
             .CountAsync();
     }
+
+    public async Task<(List<Delivery> Items, int TotalCount)> GetAdminDeliveriesAsync(
+    int page,
+    int pageSize,
+    string? search,
+    List<DeliveryStatus>? statuses,
+    DateTime? startDate,
+    DateTime? endDate)
+    {
+        var query = _context.Deliveries
+            .Include(d => d.Client)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var pattern = $"%{search}%";
+
+            query = query.Where(d =>
+                EF.Functions.ILike(d.Id.ToString(), pattern) ||
+                EF.Functions.ILike(d.Client.FirstName, pattern) ||
+                EF.Functions.ILike(d.Client.LastName, pattern) ||
+                EF.Functions.ILike(d.Client.Email, pattern));
+        }
+
+        if (statuses is not null && statuses.Any())
+        {
+            query = query.Where(d => statuses.Contains(d.Status));
+        }
+
+        if (startDate.HasValue)
+        {
+            var utcStartDate = DateTime.SpecifyKind(startDate.Value, DateTimeKind.Utc);
+            query = query.Where(d => d.CreatedAt >= utcStartDate);
+        }
+
+        if (endDate.HasValue)
+        {
+            var utcEndDate = DateTime.SpecifyKind(endDate.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
+            query = query.Where(d => d.CreatedAt <= utcEndDate);
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
+            .OrderByDescending(d => d.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalCount);
+    }
+
+    
 }

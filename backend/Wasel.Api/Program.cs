@@ -17,6 +17,11 @@ using Wasel.Api.Modules.Auth.Services;
 using Wasel.Api.Modules.Deliveries.Repositories;
 using Wasel.Api.Modules.Deliveries.Services;
 using System.Text.Json.Serialization;
+using Wasel.Api.Modules.Complaints.Repositories;
+using Wasel.Api.Modules.Complaints.Services;
+using Wasel.Api.Modules.Messaging.Hubs;
+using Wasel.Api.Modules.Messaging.Repositories;
+using Wasel.Api.Modules.Messaging.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,6 +97,16 @@ builder.Services.AddScoped<IDeliveryService, DeliveryService>();
 builder.Services.AddScoped<IAddressRepository, AddressRepository>();
 builder.Services.AddScoped<IAddressService, AddressService>();
 
+//module reclamations
+builder.Services.AddScoped<IComplaintRepository, ComplaintRepository>();
+builder.Services.AddScoped<IComplaintService, ComplaintService>();
+
+//module message
+builder.Services.AddSignalR();
+
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessagingService, MessagingService>();
+
 // Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -139,7 +154,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.MapHub<MessagingHub>("/hubs/messaging");
 // ──────────────────────────────────────────────
 // Health Check Endpoint
 // ──────────────────────────────────────────────

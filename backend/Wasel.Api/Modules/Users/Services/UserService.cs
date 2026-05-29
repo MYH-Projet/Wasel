@@ -193,4 +193,58 @@ public class UserService : IUserService
             UpdatedAt = user.UpdatedAt
         };
     }
+
+    public async Task<PaginatedResponseDto<UserResponseDto>> GetAdminUsersAsync(
+    int page,
+    int pageSize,
+    string? search,
+    string? role,
+    string? status,
+    DateTime? startDate,
+    DateTime? endDate)
+    {
+        if (page <= 0)
+            page = 1;
+
+        if (pageSize <= 0)
+            pageSize = 10;
+
+        ActiveAppMode? parsedRole = null;
+
+        if (!string.IsNullOrWhiteSpace(role))
+        {
+            if (!Enum.TryParse<ActiveAppMode>(role, true, out var roleValue))
+                throw new InvalidOperationException("Invalid role filter.");
+
+            parsedRole = roleValue;
+        }
+
+        UserStatus? parsedStatus = null;
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            if (!Enum.TryParse<UserStatus>(status, true, out var statusValue))
+                throw new InvalidOperationException("Invalid status filter.");
+
+            parsedStatus = statusValue;
+        }
+
+        var result = await _userRepository.GetAdminUsersAsync(
+            page,
+            pageSize,
+            search,
+            parsedRole,
+            parsedStatus,
+            startDate,
+            endDate);
+
+        return new PaginatedResponseDto<UserResponseDto>
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = result.TotalCount,
+            TotalPages = (int)Math.Ceiling(result.TotalCount / (double)pageSize),
+            Items = result.Items.Select(MapToResponseDto).ToList()
+        };
+    }
 }

@@ -37,4 +37,12 @@ public interface IDeliveryService
 
     Task<object> GetMyDeliveriesAsync(string keycloakId, int page, int pageSize);
 
+    Task<PagedResultDto<AdminDeliveryListItemDto>> GetAdminDeliveriesAsync(
+    int page,
+    int pageSize,
+    string? search,
+    string? status,
+    DateTime? startDate,
+    DateTime? endDate);
+
 }

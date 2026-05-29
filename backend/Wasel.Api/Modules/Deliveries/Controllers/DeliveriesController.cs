@@ -286,4 +286,32 @@ public class DeliveriesController : ControllerBase
 
         return Ok(result);
     }
+
+    [HttpGet("/api/admin/deliveries")]
+    [Authorize(Policy = "AdminOnly")]
+    public async Task<IActionResult> GetAdminDeliveries(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null,
+        [FromQuery] string? status = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
+    {
+        try
+        {
+            var result = await _deliveryService.GetAdminDeliveriesAsync(
+                page,
+                pageSize,
+                search,
+                status,
+                startDate,
+                endDate);
+
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

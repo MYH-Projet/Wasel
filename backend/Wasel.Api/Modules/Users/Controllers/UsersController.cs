@@ -19,11 +19,32 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllUsers()
+    public async Task<IActionResult> GetAllUsers(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null,
+        [FromQuery] string? role = null,
+        [FromQuery] string? status = null,
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null)
     {
-       
-        var users = await _userService.GetAllUsersAsync();
-        return Ok(users);
+        try
+        {
+            var users = await _userService.GetAdminUsersAsync(
+                page,
+                pageSize,
+                search,
+                role,
+                status,
+                startDate,
+                endDate);
+
+            return Ok(users);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpGet("{id:guid}")]
