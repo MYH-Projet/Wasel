@@ -603,4 +603,63 @@ public class DeliveryService : IDeliveryService
             items
         };
     }
+
+    public async Task<PagedResultDto<AdminDeliveryListItemDto>> GetAdminDeliveriesAsync(
+    int page,
+    int pageSize,
+    string? search,
+    string? status,
+    DateTime? startDate,
+    DateTime? endDate)
+    {
+        if (page <= 0)
+            page = 1;
+
+        if (pageSize <= 0)
+            pageSize = 10;
+
+        List<DeliveryStatus>? parsedStatuses = null;
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            parsedStatuses = new List<DeliveryStatus>();
+
+            var statusValues = status.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var value in statusValues)
+            {
+                if (!Enum.TryParse<DeliveryStatus>(value.Trim(), true, out var parsedStatus))
+                    throw new InvalidOperationException($"Invalid delivery status: {value}");
+
+                parsedStatuses.Add(parsedStatus);
+            }
+        }
+
+        var result = await _deliveryRepository.GetAdminDeliveriesAsync(
+            page,
+            pageSize,
+            search,
+            parsedStatuses,
+            startDate,
+            endDate);
+
+        return new PagedResultDto<AdminDeliveryListItemDto>
+{
+    Page = page,
+    PageSize = pageSize,
+    TotalItems = result.TotalCount,
+    Items = result.Items.Select(d => new AdminDeliveryListItemDto
+    {
+        Id = d.Id,
+        ClientId = d.ClientId,
+        ClientName = $"{d.Client.FirstName} {d.Client.LastName}",
+        DriverId = d.DriverId,
+        Status = d.Status.ToString(),
+        PaymentMethod = d.PaymentMethod.ToString(),
+        DistanceKm = d.DistanceKm,
+        Price = d.Price,
+        CreatedAt = d.CreatedAt
+    }).ToList()
+};
+    }
 }

@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Test Messaging SignalR</title>
+</head>
+<body>
+  <h2>Test Messaging Hub</h2>
+
+  <input id="token" placeholder="Bearer token sans le mot Bearer" style="width:600px" />
+  <br><br>
+
+  <input id="deliveryId" placeholder="deliveryId" style="width:400px" />
+  <button onclick="connect()">Connecter</button>
+  <button onclick="joinGroup()">Join delivery group</button>
+
+  <br><br>
+
+  <input id="message" placeholder="Message" style="width:400px" />
+  <button onclick="sendMessage()">Envoyer</button>
+
+  <pre id="log"></pre>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+
+  <script>
+    let connection;
+
+    function log(message) {
+      document.getElementById("log").textContent += message + "\n";
+    }
+
+    async function connect() {
+      const token = document.getElementById("token").value;
+
+      connection = new signalR.HubConnectionBuilder()
+        .withUrl("http://localhost:5000/hubs/messaging", {
+          accessTokenFactory: () => token
+        })
+        .withAutomaticReconnect()
+        .build();
+
+      connection.on("ReceiveMessage", function (message) {
+        log("Message reçu : " + JSON.stringify(message, null, 2));
+      });
+
+      await connection.start();
+      log("Connecté au hub.");
+    }
+
+    async function joinGroup() {
+      const deliveryId = document.getElementById("deliveryId").value;
+      await connection.invoke("JoinDeliveryGroup", deliveryId);
+      log("Rejoint le groupe delivery-" + deliveryId);
+    }
+
+    async function sendMessage() {
+      const deliveryId = document.getElementById("deliveryId").value;
+      const content = document.getElementById("message").value;
+
+      await connection.invoke("SendMessage", {
+        deliveryId: deliveryId,
+        content: content
+      });
+
+      log("Message envoyé.");
+    }
+  </script>
+</body>
+</html>

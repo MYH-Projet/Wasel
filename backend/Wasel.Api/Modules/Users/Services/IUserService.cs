@@ -10,4 +10,12 @@ public interface IUserService
     Task<UserResponseDto> FindOrCreateFromKeycloakAsync(string keycloakId, string email, string firstName, string lastName);
     Task<UserResponseDto?> ChangeUserStatusAsync(Guid id, ChangeUserStatusRequestDto request);
     Task<UserResponseDto?> UpdateUserProfileAsync(string keycloakId, string? cin, string? phone, string? firstName, string? lastName, string? profileObjectKey);
+    Task<PaginatedResponseDto<UserResponseDto>> GetAdminUsersAsync(
+    int page,
+    int pageSize,
+    string? search,
+    string? role,
+    string? status,
+    DateTime? startDate,
+    DateTime? endDate);
 }

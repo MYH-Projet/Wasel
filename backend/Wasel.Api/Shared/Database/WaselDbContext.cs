@@ -4,6 +4,9 @@ using Wasel.Api.Modules.Drivers.Entities;
 using Wasel.Api.Modules.Users.Entities;
 using Wasel.Api.Modules.Documents.Entities;
 using Wasel.Api.Shared.Common;
+using Wasel.Api.Modules.Complaints.Entities;
+using Wasel.Api.Modules.Complaints.Entities;
+using Wasel.Api.Modules.Messaging.Entities;
 
 namespace Wasel.Api.Shared.Database;
 
@@ -30,7 +33,12 @@ public class WaselDbContext : DbContext
     public DbSet<DeliveryStatusHistory> DeliveryStatusHistories => Set<DeliveryStatusHistory>();
     // Module: Documents
     public DbSet<Document> Documents => Set<Document>();
-
+    //Module complaints
+    public DbSet<Complaint> Complaints => Set<Complaint>();
+    public DbSet<ComplaintEvidence> ComplaintEvidences => Set<ComplaintEvidence>();
+    //message
+    public DbSet<Message> Messages => Set<Message>();
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

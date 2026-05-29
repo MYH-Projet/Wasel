@@ -39,4 +39,12 @@ public interface IDeliveryRepository
     Task<List<Delivery>> GetClientDeliveriesAsync(Guid clientId, int page, int pageSize);
     
     Task<int> CountClientDeliveriesAsync(Guid clientId);
+
+    Task<(List<Delivery> Items, int TotalCount)> GetAdminDeliveriesAsync(
+    int page,
+    int pageSize,
+    string? search,
+    List<DeliveryStatus>? statuses,
+    DateTime? startDate,
+    DateTime? endDate);
 }
