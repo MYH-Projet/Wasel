@@ -25,62 +25,45 @@ interface DriverData {
     documents: Documant[];
 }
 
-// const INTERNAL_API_URL = import.meta.env.INTERNAL_API_URL;
+const INTERNAL_API_URL = import.meta.env.INTERNAL_API_URL;
 const { id } = Astro.params;
-// const user = Astro.locals.user;
+const user = Astro.locals.user;
 
-// const response = await fetch(`${INTERNAL_API_URL}/api/admin/drivers/${id}`, {
-//     headers: { Authorization: `Bearer ${user.token}` },
-// });
+const response = await fetch(
+    `${INTERNAL_API_URL}/api/admin/drivers/${id}/dossier`,
+    {
+        headers: { Authorization: `Bearer ${user.token}` },
+    },
+);
 
-// if (!response.ok) return Astro.redirect("/admin/requests?error=not_found");
-// const driverData = await response.json();
+if (!response.ok) return Astro.redirect("/admin/requests?error=not_found");
+const driverData = await response.json();
 
-const driverData = {
-    id: id || "REQ-8942A",
-    status: "SUBMITTED",
+const mapedDriverData: DriverData = {
+    id: driverData.id,
     personalInfo: {
-        fullName: "Youssef Alaoui",
-        cin: "KB123456",
-        phone: "+212 6 11 22 33 44",
-        email: "youssef.alaoui@gmail.com",
+        fullName: `${driverData.firstName} ${driverData.lastName}`,
+        cin: driverData.permitNumber,
+        phone: driverData.phone,
+        email: driverData.email,
     },
     vehicle: {
-        type: "Moto",
-        licensePlate: "12345 | A | 1",
-        brand: "Honda",
-        model: "SH125i",
+        type: driverData.vehicle.type || "NA",
+        licensePlate: driverData.vehicle.licensePlate || "NA",
+        brand: driverData.vehicle.brand || "NA",
+        model: driverData.vehicle.model || "NA",
     },
-    documents: [
-        {
-            docId: "doc-1",
-            documentType: "CIN (Recto)",
-            // Using placeholder.co to generate real images for your UI
-            minioUrl:
-                "https://placehold.co/600x400/e2e8f0/475569?text=Carte+Nationale+(Recto)",
-        },
-        {
-            docId: "doc-2",
-            documentType: "Permis de Conduire",
-            minioUrl:
-                "https://placehold.co/600x400/e2e8f0/475569?text=Permis+de+Conduire",
-        },
-        {
-            docId: "doc-3",
-            documentType: "Assurance Véhicule",
-            minioUrl:
-                "https://placehold.co/600x400/e2e8f0/475569?text=Attestation+Assurance",
-        },
-    ],
+    documents: driverData.documents.map((doc: any) => {
+        return {
+            docId: doc.id,
+            documentType: doc.documentType,
+            minioUrl: import.meta.env.INTERNAL_API_URL + doc.docUrl,
+        };
+    }),
 };
-
-const doc = driverData.documents.map((doc: Documant) => ({
-    id: doc.docId,
-    type: doc.documentType,
-}));
 ---
 
-<Layout title={`Révision - ${driverData.personalInfo.fullName}`}>
+<Layout title={`Révision - ${mapedDriverData.personalInfo.fullName}`}>
     <div class="px-6 py-4 border-b bg-card flex justify-between items-center">
         <div class="flex items-center text-sm">
             <a
@@ -199,7 +182,6 @@ const doc = driverData.documents.map((doc: Documant) => ({
                     client:load
                     driverId={id!}
                     currentStatus={driverData.status}
-                    docs={doc}
                 />
             </div>
         </div>

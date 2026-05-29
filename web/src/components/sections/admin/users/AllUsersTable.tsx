@@ -26,11 +26,10 @@ export function AllUsersTable() {
         userId: string | null;
         currentStatus: string
     }>({ isOpen: false, userId: null, currentStatus: "" });
-    const [actionReason, setActionReason] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
 
     // Fetch Hook
-    const { data, isLoading, page, totalPages, setPage } = useTableFetch<UserData>({
+    const { data, isLoading, page, totalPages, setPage, setData } = useTableFetch<UserData>({
         endpoint: "/endpoint/users",
         filters: { search, status: statusFilter, role: roleFilter }
     });
@@ -41,16 +40,35 @@ export function AllUsersTable() {
         const newStatus = isBlocking ? "BLOCKED" : "ACTIVE";
 
         try {
-            // NOTE: Replace with your real .NET BFF endpoint when ready
-            await new Promise(r => setTimeout(r, 800));
+            // Optimistically update the table data without full reload
+            const res = await fetch("/endpoint/users", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: actionModalData.userId,
+                    status: newStatus
+                })
+            });
+            if (!res.ok) {
+                toast.error(`Failed to ${isBlocking ? 'block' : 'unblock'} user.`);
+                return;
+            }
 
+
+            setData(data.map((user) => {
+                if (user.id === actionModalData.userId) {
+                    return {
+                        ...user,
+                        status: newStatus
+                    };
+                }
+                return user;
+            }))
             toast.success(`User successfully ${isBlocking ? 'blocked' : 'unblocked'}.`);
 
-            // Optimistically update the table data without full reload
 
 
             setActionModalData({ isOpen: false, userId: null, currentStatus: "" });
-            setActionReason("");
         } catch (error) {
             toast.error(`Failed to ${isBlocking ? 'block' : 'unblock'} user.`);
         } finally {
@@ -178,19 +196,6 @@ export function AllUsersTable() {
                             Are you sure you want to {isBlockingModal ? 'block' : 'unblock'} user <span className="font-bold text-slate-900">{actionModalData.userId}</span>?
                             {isBlockingModal ? " They will immediately lose access to the platform." : " They will regain full access to the platform."}
                         </p>
-
-                        <div className="mt-4">
-                            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 block">
-                                Reason for action (Optional)
-                            </label>
-                            <textarea
-                                className={`w-full border rounded-md p-3 text-sm focus:ring-2 outline-none ${isBlockingModal ? 'focus:ring-red-500' : 'focus:ring-green-500'}`}
-                                rows={3}
-                                placeholder="E.g., Violation of terms, resolved dispute..."
-                                value={actionReason}
-                                onChange={(e) => setActionReason(e.target.value)}
-                            />
-                        </div>
 
                         <div className="mt-6 flex justify-end gap-3">
                             <button

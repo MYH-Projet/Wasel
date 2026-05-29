@@ -7,7 +7,8 @@ import { DataTable } from "@/components/ui/DataTable";
 interface Driver {
     id: string;
     fullName: string;
-    cin: string;
+    gmail: string;
+    phone: string;
     licenseNumber: string;
     submissionDate: string;
     dossierStatus: "SUBMITTED" | "UNDER_REVIEW";
@@ -25,7 +26,12 @@ export function PendingDriversTable() {
 
     const columns = [
         { header: "Full Name", render: (row: Driver) => <span className="font-medium text-foreground">{row.fullName}</span> },
-        { header: "CIN", render: (row: Driver) => <span className="text-muted-foreground">{row.cin}</span> },
+        {
+            header: "Gmail and Phone", render: (row: Driver) => <div className="flex flex-col items-center gap-2">
+                <span className="text-muted-foreground">{row.gmail}</span>
+                <span className="text-muted-foreground">{row.phone}</span>
+            </div>
+        },
         { header: "Driver's License Number", render: (row: Driver) => <span className="text-muted-foreground">{row.licenseNumber}</span> },
         {
             header: "Submission Date", render: (row: Driver) => (

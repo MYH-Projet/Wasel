@@ -5,21 +5,19 @@ import { toast } from "sonner";
 interface Props {
     driverId: string
     currentStatus: string;
-    docs: { id: string, type: string }[]
 }
 
-export function DriverReviewActions({ driverId, currentStatus, docs }: Props) {
+export function DriverReviewActions({ driverId, currentStatus }: Props) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showApproveModal, setShowApproveModal] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
-    const [rejectedDoc, setRejecedDoc] = useState<string[]>([])
     const [rejectionReason, setRejectionReason] = useState("");
 
     const handleAction = async (endpoint: string, payload?: any) => {
         setIsSubmitting(true);
         try {
             const response = await fetch(`/endpoint/requests/DriversRequest`, {
-                method: "POST",
+                method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     id: driverId,
@@ -101,22 +99,6 @@ export function DriverReviewActions({ driverId, currentStatus, docs }: Props) {
                         <h4 className="text-lg font-bold flex items-center gap-2"><AlertTriangle className="text-red-600" /> Confirm the reject</h4>
 
                         <p className="text-muted-foreground mt-2 mb-4">Please enter the reason for rejection. This message will be sent to the driver.</p>
-                        {docs.map((doc) => (
-                            <div key={doc.id} className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={rejectedDoc.includes(doc.id)}
-                                    onChange={() => {
-                                        if (rejectedDoc.includes(doc.id)) {
-                                            setRejecedDoc(rejectedDoc.filter((id) => id !== doc.id))
-                                        } else {
-                                            setRejecedDoc([...rejectedDoc, doc.id])
-                                        }
-                                    }}
-                                />
-                                <p>{doc.type}</p>
-                            </div>
-                        ))}
                         <textarea
                             className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-red-500 outline-none"
                             rows={4}
@@ -128,7 +110,7 @@ export function DriverReviewActions({ driverId, currentStatus, docs }: Props) {
                         <div className="mt-6 flex justify-end gap-3">
                             <button onClick={() => setShowRejectModal(false)} className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-md">Annuler</button>
                             <button
-                                onClick={() => handleAction("reject", { reason: rejectionReason, docs: rejectedDoc })}
+                                onClick={() => handleAction("reject", { reason: rejectionReason })}
                                 disabled={rejectionReason.trim().length < 10}
                                 className="px-4 py-2 bg-red-600 text-secondary-foreground rounded-md hover:bg-red-700 disabled:opacity-50"
                             >
