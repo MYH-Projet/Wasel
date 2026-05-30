@@ -426,7 +426,7 @@ Voici l'ordre logique conseillé pour la suite du projet :
 4. **Module Documents / MinIO** : Permettre l'upload de fichiers.
 5. **Module Deliveries** : Le cœur de l'application (Création de commande, affectation, statuts).
 6. **Module Payments** : Systèmes de transactions.
-7. **Module Tracking (Redis)** : Localisation en temps réel.
+7. **Module Tracking (SignalR)** 🚧 En cours d'intégration — Localisation en temps réel via WebSockets. (Voir [realtime-gps-guide.md](./realtime-gps-guide.md)).
 8. ~~**Mise en place CI/CD**~~ ✅ Fait — voir section 20.
 
 ---

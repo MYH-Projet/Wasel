@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Wasel.Api.Modules.Deliveries.Entities;
 using Wasel.Api.Modules.Drivers.Entities;
 using Wasel.Api.Modules.Users.Entities;
+using Wasel.Api.Modules.Tracking.Entities;
 using Wasel.Api.Modules.Documents.Entities;
 using Wasel.Api.Shared.Common;
 using Wasel.Api.Modules.Complaints.Entities;
@@ -30,6 +31,10 @@ public class WaselDbContext : DbContext
     public DbSet<Address> Addresses => Set<Address>();
     public DbSet<Parcel> Parcels => Set<Parcel>();
     public DbSet<Delivery> Deliveries => Set<Delivery>();
+
+    // Module: Tracking
+    public DbSet<TrackingPoint> TrackingPoints => Set<TrackingPoint>();
+
     public DbSet<DeliveryStatusHistory> DeliveryStatusHistories => Set<DeliveryStatusHistory>();
     // Module: Documents
     public DbSet<Document> Documents => Set<Document>();
@@ -223,6 +228,14 @@ public class WaselDbContext : DbContext
                 .WithMany(d => d.StatusHistories)
                 .HasForeignKey(h => h.DeliveryId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Tracking
+        modelBuilder.Entity<TrackingPoint>(entity =>
+        {
+            entity.ToTable("tracking_points");
+            entity.HasIndex(e => new { e.DriverId, e.RecordedAt });
+            entity.HasIndex(e => new { e.DeliveryId, e.RecordedAt });
         });
     }
 

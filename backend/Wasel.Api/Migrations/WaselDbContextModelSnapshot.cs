@@ -362,6 +362,51 @@ namespace Wasel.Api.Migrations
                     b.ToTable("drivers", (string)null);
                 });
 
+            modelBuilder.Entity("Wasel.Api.Modules.Tracking.Entities.TrackingPoint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<double?>("AccuracyMeters")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<double?>("Heading")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double?>("SpeedKmh")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId", "RecordedAt");
+
+                    b.HasIndex("DriverId", "RecordedAt");
+
+                    b.ToTable("tracking_points", (string)null);
+                });
+
             modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.DriverDossier", b =>
                 {
                     b.Property<Guid>("Id")

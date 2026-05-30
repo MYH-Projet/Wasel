@@ -14,6 +14,9 @@ using Wasel.Api.Modules.Drivers.Services;
 using Wasel.Api.Modules.Documents.Repositories;
 using Wasel.Api.Modules.Documents.Services;
 using Wasel.Api.Modules.Auth.Services;
+using Wasel.Api.Modules.Tracking.Hubs;
+using Wasel.Api.Modules.Tracking.Repositories;
+using Wasel.Api.Modules.Tracking.Services;
 using Wasel.Api.Modules.Deliveries.Repositories;
 using Wasel.Api.Modules.Deliveries.Services;
 using System.Text.Json.Serialization;
@@ -22,7 +25,6 @@ using Wasel.Api.Modules.Complaints.Services;
 using Wasel.Api.Modules.Messaging.Hubs;
 using Wasel.Api.Modules.Messaging.Repositories;
 using Wasel.Api.Modules.Messaging.Services;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -60,6 +62,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false, // TODO: Audience validation can be reinforced later if needed
             ValidateLifetime = true
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/api/hubs/gps"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization(options =>
@@ -80,6 +99,14 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // Module Users
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+// Module Tracking
+builder.Services.AddScoped<ITrackingRepository, TrackingRepository>();
+builder.Services.AddScoped<ITrackingService, TrackingService>();
+
+// Memory Cache & SignalR
+builder.Services.AddMemoryCache();
+builder.Services.AddSignalR();
 
 // Module Drivers
 builder.Services.AddScoped<IDriverRepository, DriverRepository>();
@@ -102,11 +129,8 @@ builder.Services.AddScoped<IComplaintRepository, ComplaintRepository>();
 builder.Services.AddScoped<IComplaintService, ComplaintService>();
 
 //module message
-builder.Services.AddSignalR();
-
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IMessagingService, MessagingService>();
-
 // Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -154,6 +178,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<GpsHub>("/api/hubs/gps");
 app.MapHub<MessagingHub>("/hubs/messaging");
 // ──────────────────────────────────────────────
 // Health Check Endpoint

@@ -68,6 +68,7 @@ public class UserService : IUserService
                 {
                     user.Preference = new UserPreference
                     {
+                        Id = Guid.Empty,
                         ActiveAppMode = ActiveAppMode.CLIENT
                     };
                 }
@@ -118,6 +119,7 @@ public class UserService : IUserService
             {
                 user.Preference = new UserPreference
                 {
+                    Id = Guid.Empty,
                     ActiveAppMode = ActiveAppMode.CLIENT
                 };
 
