@@ -34,6 +34,9 @@ using Wasel.Api.Modules.Wallets.Repositories;
 using Wasel.Api.Modules.Wallets.Services;
 using Wasel.Api.Modules.Reviews.Repositories;
 using Wasel.Api.Modules.Reviews.Services;
+using Wasel.Api.Modules.Notifications.Repositories;
+using Wasel.Api.Modules.Notifications.Services;
+using Wasel.Api.Infrastructure.Firebase;
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -160,6 +163,12 @@ builder.Services.AddScoped<IWalletService, WalletService>();
 // Module Reviews
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
+
+// Module Notifications
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddSingleton<IPushNotificationSender, NoopPushNotificationSender>();
+
 // Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

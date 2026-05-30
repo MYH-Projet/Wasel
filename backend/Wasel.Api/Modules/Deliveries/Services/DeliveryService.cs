@@ -8,6 +8,8 @@ using Wasel.Api.Modules.Users.Entities;
 using Wasel.Api.Modules.Users.Enums;
 using Wasel.Api.Modules.Drivers.Entities;
 using Wasel.Api.Modules.Drivers.Repositories;
+using Wasel.Api.Modules.Notifications.Enums;
+using Wasel.Api.Modules.Notifications.Services;
 
 namespace Wasel.Api.Modules.Deliveries.Services;
 
@@ -16,15 +18,18 @@ public class DeliveryService : IDeliveryService
     private readonly IDeliveryRepository _deliveryRepository;
     private readonly WaselDbContext _context;
     private readonly IDriverRepository _driverRepository;
+    private readonly INotificationService _notificationService;
 
     public DeliveryService(
     IDeliveryRepository deliveryRepository,
     IDriverRepository driverRepository,
-    WaselDbContext context)
+    WaselDbContext context,
+    INotificationService notificationService)
     {
         _deliveryRepository = deliveryRepository;
         _driverRepository = driverRepository;
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<CreateDeliveryResponseDto> CreateDeliveryAsync(
@@ -359,6 +364,18 @@ public class DeliveryService : IDeliveryService
             });
 
             await transaction.CommitAsync();
+
+            // Notify client — after commit, non-blocking
+            try
+            {
+                await _notificationService.CreateAsync(
+                    delivery.ClientId,
+                    NotificationType.DELIVERY_ASSIGNED,
+                    "Livreur assigné",
+                    "Un livreur a accepté votre livraison.");
+            }
+            catch { /* notification failure must not affect delivery */ }
+
             return (true, "Delivery accepted", delivery.Status);
         }
         else
@@ -401,6 +418,20 @@ public class DeliveryService : IDeliveryService
 
         delivery.Status = newStatus;
         await _deliveryRepository.UpdateAsync(delivery);
+
+        // Notify client on ARRIVED_AT_PICKUP — non-blocking
+        if (newStatus == DeliveryStatus.ARRIVED_AT_PICKUP)
+        {
+            try
+            {
+                await _notificationService.CreateAsync(
+                    delivery.ClientId,
+                    NotificationType.DRIVER_ARRIVING,
+                    "Livreur en approche",
+                    "Votre livreur est arrivé au point de retrait.");
+            }
+            catch { /* notification failure must not affect delivery */ }
+        }
 
         return (true, "Status updated successfully", newStatus);
     }

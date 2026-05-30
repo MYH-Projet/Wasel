@@ -4,6 +4,9 @@ using Wasel.Api.Modules.Messaging.DTOs;
 using Wasel.Api.Modules.Messaging.Entities;
 using Wasel.Api.Modules.Messaging.Repositories;
 using Wasel.Api.Modules.Users.Repositories;
+using Wasel.Api.Modules.Drivers.Repositories;
+using Wasel.Api.Modules.Notifications.Enums;
+using Wasel.Api.Modules.Notifications.Services;
 
 namespace Wasel.Api.Modules.Messaging.Services;
 
@@ -12,15 +15,21 @@ public class MessagingService : IMessagingService
     private readonly IMessageRepository _messageRepository;
     private readonly IDeliveryRepository _deliveryRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IDriverRepository _driverRepository;
+    private readonly INotificationService _notificationService;
 
     public MessagingService(
         IMessageRepository messageRepository,
         IDeliveryRepository deliveryRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IDriverRepository driverRepository,
+        INotificationService notificationService)
     {
         _messageRepository = messageRepository;
         _deliveryRepository = deliveryRepository;
         _userRepository = userRepository;
+        _driverRepository = driverRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<object> SendMessageAsync(SendMessageRequestDto request, string keycloakId)
@@ -61,6 +70,40 @@ public class MessagingService : IMessagingService
         };
 
         await _messageRepository.AddAsync(message);
+
+        // Notify recipient non-blocking
+        try
+        {
+            Guid? recipientUserId = null;
+
+            if (user.Id == delivery.ClientId)
+            {
+                // Sender is Client, notify Driver
+                if (delivery.DriverId.HasValue)
+                {
+                    var driver = await _driverRepository.GetByIdAsync(delivery.DriverId.Value);
+                    if (driver != null)
+                    {
+                        recipientUserId = driver.UserId;
+                    }
+                }
+            }
+            else
+            {
+                // Sender is Driver, notify Client
+                recipientUserId = delivery.ClientId;
+            }
+
+            if (recipientUserId.HasValue)
+            {
+                await _notificationService.CreateAsync(
+                    recipientUserId.Value,
+                    NotificationType.NEW_MESSAGE,
+                    "Nouveau message",
+                    "Vous avez reçu un nouveau message.");
+            }
+        }
+        catch { /* notification failure must not affect message creation */ }
 
         return new
         {

@@ -5,6 +5,8 @@ using Wasel.Api.Modules.Complaints.Repositories;
 using Wasel.Api.Modules.Deliveries.Enums;
 using Wasel.Api.Modules.Deliveries.Repositories;
 using Wasel.Api.Modules.Users.Repositories;
+using Wasel.Api.Modules.Notifications.Enums;
+using Wasel.Api.Modules.Notifications.Services;
 
 namespace Wasel.Api.Modules.Complaints.Services;
 
@@ -13,15 +15,18 @@ public class ComplaintService : IComplaintService
     private readonly IComplaintRepository _complaintRepository;
     private readonly IDeliveryRepository _deliveryRepository;
     private readonly IUserRepository _userRepository;
+    private readonly INotificationService _notificationService;
 
     public ComplaintService(
         IComplaintRepository complaintRepository,
         IDeliveryRepository deliveryRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        INotificationService notificationService)
     {
         _complaintRepository = complaintRepository;
         _deliveryRepository = deliveryRepository;
         _userRepository = userRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<object> CreateComplaintAsync(CreateComplaintRequestDto request, string keycloakId)
@@ -64,6 +69,9 @@ public class ComplaintService : IComplaintService
         };
 
         await _complaintRepository.AddAsync(complaint);
+
+        // TODO: Notify admin — requires a method to find admin users by role.
+        // Once available: await _notificationService.CreateAsync(adminUserId, NotificationType.COMPLAINT_CREATED, "Nouvelle réclamation", ...);
 
         return new
         {
@@ -368,6 +376,21 @@ public class ComplaintService : IComplaintService
         // - ManualAdjustment : ajustement libre selon votre modèle Wallet
 
         await _complaintRepository.SaveChangesAsync();
+
+        // Notify the client who owns the delivery that complaint is resolved
+        try
+        {
+            var delivery = await _deliveryRepository.GetByIdAsync(complaint.DeliveryId);
+            if (delivery != null)
+            {
+                await _notificationService.CreateAsync(
+                    delivery.ClientId,
+                    NotificationType.COMPLAINT_RESOLVED,
+                    "Réclamation résolue",
+                    $"Votre réclamation \"{complaint.Title}\" a été résolue.");
+            }
+        }
+        catch { /* notification failure must not affect complaint resolution */ }
 
         return new
         {

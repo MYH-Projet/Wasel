@@ -11,6 +11,8 @@ using Wasel.Api.Modules.Messaging.Entities;
 using Wasel.Api.Modules.Payments.Entities;
 using Wasel.Api.Modules.Wallets.Entities;
 using Wasel.Api.Modules.Reviews.Entities;
+using Wasel.Api.Modules.Notifications.Entities;
+using Wasel.Api.Modules.Notifications.Enums;
 
 namespace Wasel.Api.Shared.Database;
 
@@ -61,6 +63,9 @@ public class WaselDbContext : DbContext
     
     // Module: Reviews
     public DbSet<Review> Reviews => Set<Review>();
+
+    // Module: Notifications
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -361,6 +366,39 @@ public class WaselDbContext : DbContext
             entity.HasOne(r => r.Delivery)
                 .WithMany()
                 .HasForeignKey(r => r.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Notifications
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.ToTable("notifications");
+            entity.HasKey(n => n.Id);
+
+            entity.Property(n => n.Type)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(n => n.Status)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(n => n.Title)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(n => n.Body)
+                .HasMaxLength(1000)
+                .IsRequired();
+
+            entity.HasIndex(n => new { n.UserId, n.CreatedAt });
+            entity.HasIndex(n => new { n.UserId, n.Status });
+
+            entity.HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }
