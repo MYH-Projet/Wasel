@@ -18,4 +18,8 @@ public interface IDriverService
     string? dossierStatus,
     DateTime? startDate,
     DateTime? endDate);
+
+    Task<DriverMeResponseDto> RegisterCurrentUserAsDriverAsync(string keycloakId, RegisterDriverRequestDto request);
+    Task<DriverMeResponseDto> GetCurrentDriverProfileAsync(string keycloakId);
+    Task<DriverMeResponseDto> SubmitCurrentDriverDossierAsync(string keycloakId);
 }

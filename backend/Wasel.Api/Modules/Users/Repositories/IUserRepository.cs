@@ -11,6 +11,8 @@ public interface IUserRepository
 
     Task<User?> GetByKeycloakIdAsync(string keycloakId);
 
+    Task<User?> GetUserWithPreferenceAndDriverAsync(string keycloakId);
+
     Task<User?> GetByEmailAsync(string email);
 
     Task<User> AddAsync(User user);

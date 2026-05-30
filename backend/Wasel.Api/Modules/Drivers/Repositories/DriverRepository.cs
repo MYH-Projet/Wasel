@@ -128,6 +128,34 @@ public class DriverRepository : IDriverRepository
 
         return (items, totalCount);
     }
+
+    public async Task<Driver?> GetByUserIdWithDossierAndVehicleAsync(Guid userId)
+    {
+        return await _context.Drivers
+            .Include(d => d.Dossier)
+            .Include(d => d.Vehicle)
+            .FirstOrDefaultAsync(d => d.UserId == userId);
+    }
+
+    public async Task<bool> ExistsByUserIdAsync(Guid userId)
+    {
+        return await _context.Drivers.AnyAsync(d => d.UserId == userId);
+    }
+
+    public async Task<bool> ExistsByPermitNumberAsync(string permitNumber)
+    {
+        return await _context.Drivers.AnyAsync(d => d.PermitNumber == permitNumber);
+    }
+
+    public async Task AddAsync(Driver driver)
+    {
+        await _context.Drivers.AddAsync(driver);
+    }
+
+    public async Task SaveChangesAsync()
+    {
+        await _context.SaveChangesAsync();
+    }
 }
 
 
