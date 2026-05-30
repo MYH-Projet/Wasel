@@ -338,7 +338,7 @@ public class DeliveryService : IDeliveryService
     }
 
     public async Task<(bool Success, string Message, DeliveryStatus Status)> RespondToDeliveryAsync(
-    Guid deliveryId, Guid driverId, bool accept)
+    Guid deliveryId, string keycloakId, bool accept)
     {
                 using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -346,12 +346,20 @@ public class DeliveryService : IDeliveryService
         if (delivery == null)
             return (false, "Delivery not found", DeliveryStatus.WAITING_DRIVER);
 
+        var user = await _deliveryRepository.GetUserByKeycloakIdAsync(keycloakId);
+        if (user == null)
+            return (false, "User not found", delivery.Status);
+
+        var driver = await _driverRepository.GetByUserIdAsync(user.Id);
+        if (driver == null)
+            return (false, "Driver profile not found", delivery.Status);
+
         if (accept)
         {
             if (delivery.Status == DeliveryStatus.ASSIGNED)
                 return (false, "Delivery already assigned", delivery.Status);
 
-            delivery.DriverId = driverId;
+            delivery.DriverId = driver.Id;
             delivery.Status = DeliveryStatus.ASSIGNED;
 
             await _deliveryRepository.UpdateAsync(delivery);
@@ -360,7 +368,7 @@ public class DeliveryService : IDeliveryService
                 DeliveryId = delivery.Id,
                 Status = DeliveryStatus.ASSIGNED,
                 ChangedAt = DateTime.UtcNow,
-                ChangedByDriverId = driverId
+                ChangedByDriverId = driver.Id
             });
 
             await transaction.CommitAsync();
@@ -387,13 +395,21 @@ public class DeliveryService : IDeliveryService
 
 
     public async Task<(bool Success, string Message, DeliveryStatus Status)> UpdateDeliveryStatusAsync(
-    Guid deliveryId, Guid driverId, DeliveryStatus newStatus, string? note)
+    Guid deliveryId, string keycloakId, DeliveryStatus newStatus, string? note)
     {
         var delivery = await _deliveryRepository.GetByIdAsync(deliveryId);
         if (delivery == null)
             return (false, "Delivery not found", delivery?.Status ?? DeliveryStatus.CREATED);
 
-        if (delivery.DriverId != driverId)
+        var user = await _deliveryRepository.GetUserByKeycloakIdAsync(keycloakId);
+        if (user == null)
+            return (false, "User not found", delivery.Status);
+
+        var driver = await _driverRepository.GetByUserIdAsync(user.Id);
+        if (driver == null)
+            return (false, "Driver profile not found", delivery.Status);
+
+        if (delivery.DriverId != driver.Id)
             return (false, "Driver not assigned to this delivery", delivery.Status);
 
         
@@ -411,7 +427,7 @@ public class DeliveryService : IDeliveryService
             Status = newStatus,
             ChangedAt = DateTime.UtcNow,
             Note = note,
-            ChangedByDriverId = driverId
+            ChangedByDriverId = driver.Id
         };
 
         await _deliveryRepository.AddStatusHistoryAsync(history);

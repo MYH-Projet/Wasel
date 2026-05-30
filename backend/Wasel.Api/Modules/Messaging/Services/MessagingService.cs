@@ -44,7 +44,10 @@ public class MessagingService : IMessagingService
         if (delivery is null)
             throw new InvalidOperationException("Livraison introuvable.");
 
-        if (delivery.ClientId != user.Id && delivery.DriverId != user.Id)
+        var driver = await _driverRepository.GetByUserIdAsync(user.Id);
+        bool isDriver = driver != null && delivery.DriverId == driver.Id;
+
+        if (delivery.ClientId != user.Id && !isDriver)
             throw new UnauthorizedAccessException("Vous n'êtes pas concerné par cette livraison.");
 
         var activeStatuses = new[]
@@ -81,10 +84,10 @@ public class MessagingService : IMessagingService
                 // Sender is Client, notify Driver
                 if (delivery.DriverId.HasValue)
                 {
-                    var driver = await _driverRepository.GetByIdAsync(delivery.DriverId.Value);
-                    if (driver != null)
+                    var recipientDriver = await _driverRepository.GetByIdAsync(delivery.DriverId.Value);
+                    if (recipientDriver != null)
                     {
-                        recipientUserId = driver.UserId;
+                        recipientUserId = recipientDriver.UserId;
                     }
                 }
             }
@@ -127,7 +130,10 @@ public class MessagingService : IMessagingService
         if (delivery is null)
             throw new InvalidOperationException("Livraison introuvable.");
 
-        if (delivery.ClientId != user.Id && delivery.DriverId != user.Id)
+        var driver = await _driverRepository.GetByUserIdAsync(user.Id);
+        bool isDriver = driver != null && delivery.DriverId == driver.Id;
+
+        if (delivery.ClientId != user.Id && !isDriver)
             throw new UnauthorizedAccessException("Vous n'êtes pas concerné par cette livraison.");
 
         var messages = await _messageRepository.GetByDeliveryIdAsync(deliveryId);
