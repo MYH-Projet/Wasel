@@ -24,6 +24,8 @@ public class Delivery : BaseEntity
 
     public decimal Price { get; set; }
 
+    public string Currency { get; set; } = "MAD";
+
     public User Client { get; set; } = default!;
 
     public Address PickupAddress { get; set; } = default!;

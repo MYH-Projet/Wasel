@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 
 using Wasel.Api.Shared.Database;
 using Wasel.Api.Shared.Security;
+using Wasel.Api.Shared.Middleware;
 using Wasel.Api.Infrastructure.Keycloak;
 using Wasel.Api.Modules.Users.Repositories;
 using Wasel.Api.Modules.Users.Services;
@@ -25,6 +26,10 @@ using Wasel.Api.Modules.Complaints.Services;
 using Wasel.Api.Modules.Messaging.Hubs;
 using Wasel.Api.Modules.Messaging.Repositories;
 using Wasel.Api.Modules.Messaging.Services;
+using Wasel.Api.Modules.Payments.Repositories;
+using Wasel.Api.Modules.Payments.Services;
+using Wasel.Api.Modules.Wallets.Repositories;
+using Wasel.Api.Modules.Wallets.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -131,6 +136,17 @@ builder.Services.AddScoped<IComplaintService, ComplaintService>();
 //module message
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IMessagingService, MessagingService>();
+
+//module payments
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<ISavedPaymentMethodRepository, SavedPaymentMethodRepository>();
+builder.Services.AddScoped<IPaymentGateway, FakePaymentGateway>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IPaymentMethodService, PaymentMethodService>();
+
+//module wallets
+builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+builder.Services.AddScoped<IWalletService, WalletService>();
 // Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -164,6 +180,8 @@ if (app.Environment.IsDevelopment())
 // ──────────────────────────────────────────────
 // Middleware Pipeline
 // ──────────────────────────────────────────────
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

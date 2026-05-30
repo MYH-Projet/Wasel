@@ -8,6 +8,8 @@ using Wasel.Api.Shared.Common;
 using Wasel.Api.Modules.Complaints.Entities;
 using Wasel.Api.Modules.Complaints.Entities;
 using Wasel.Api.Modules.Messaging.Entities;
+using Wasel.Api.Modules.Payments.Entities;
+using Wasel.Api.Modules.Wallets.Entities;
 
 namespace Wasel.Api.Shared.Database;
 
@@ -43,6 +45,18 @@ public class WaselDbContext : DbContext
     public DbSet<ComplaintEvidence> ComplaintEvidences => Set<ComplaintEvidence>();
     //message
     public DbSet<Message> Messages => Set<Message>();
+    
+    // Module: Payments
+    public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<SavedPaymentMethod> SavedPaymentMethods => Set<SavedPaymentMethod>();
+
+    // Module: Wallets
+    public DbSet<Wallet> Wallets => Set<Wallet>();
+    public DbSet<ClientWallet> ClientWallets => Set<ClientWallet>();
+    public DbSet<DriverWallet> DriverWallets => Set<DriverWallet>();
+    public DbSet<PlatformWallet> PlatformWallets => Set<PlatformWallet>();
+    public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
+    public DbSet<WalletTransfer> WalletTransfers => Set<WalletTransfer>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -188,6 +202,9 @@ public class WaselDbContext : DbContext
                 .HasMaxLength(50)
                 .IsRequired();
 
+            entity.Property(d => d.Price)
+                .HasColumnType("decimal(18,2)");
+
             entity.HasOne(d => d.Client)
                 .WithMany()
                 .HasForeignKey(d => d.ClientId)
@@ -236,6 +253,86 @@ public class WaselDbContext : DbContext
             entity.ToTable("tracking_points");
             entity.HasIndex(e => new { e.DriverId, e.RecordedAt });
             entity.HasIndex(e => new { e.DeliveryId, e.RecordedAt });
+        });
+
+        // Payments
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.ToTable("payments");
+            entity.HasKey(p => p.Id);
+            entity.Property(p => p.Amount).HasColumnType("decimal(18,2)").IsRequired();
+            entity.Property(p => p.Currency).HasMaxLength(10).IsRequired();
+            entity.Property(p => p.Method).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(p => p.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+            
+            entity.HasIndex(p => p.DeliveryId).IsUnique();
+
+            entity.HasOne(p => p.Delivery)
+                .WithOne()
+                .HasForeignKey<Payment>(p => p.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SavedPaymentMethod>(entity =>
+        {
+            entity.ToTable("saved_payment_methods");
+            entity.HasKey(s => s.Id);
+            entity.HasIndex(s => s.UserId);
+        });
+
+        // Wallets
+        modelBuilder.Entity<Wallet>(entity =>
+        {
+            entity.ToTable("wallets");
+            entity.HasKey(w => w.Id);
+            
+            entity.HasDiscriminator<string>("WalletType")
+                .HasValue<ClientWallet>("CLIENT")
+                .HasValue<DriverWallet>("DRIVER")
+                .HasValue<PlatformWallet>("PLATFORM");
+
+            entity.Property(w => w.Balance).HasColumnType("decimal(18,2)").IsRequired();
+            entity.Property(w => w.Currency).HasMaxLength(10).IsRequired();
+            entity.Property(w => w.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+        });
+
+        modelBuilder.Entity<ClientWallet>()
+            .HasIndex(w => w.UserId).IsUnique();
+
+        modelBuilder.Entity<DriverWallet>()
+            .HasIndex(w => w.DriverId).IsUnique();
+
+        modelBuilder.Entity<WalletTransaction>(entity =>
+        {
+            entity.ToTable("wallet_transactions");
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.Amount).HasColumnType("decimal(18,2)").IsRequired();
+            entity.Property(t => t.Direction).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(t => t.Reason).HasConversion<string>().HasMaxLength(50).IsRequired();
+
+            entity.HasOne(t => t.Wallet)
+                .WithMany(w => w.Transactions)
+                .HasForeignKey(t => t.WalletId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(t => t.CreatedAt);
+            entity.HasIndex(t => t.DeliveryId);
+        });
+
+        modelBuilder.Entity<WalletTransfer>(entity =>
+        {
+            entity.ToTable("wallet_transfers");
+            entity.HasKey(t => t.Id);
+            entity.Property(t => t.Amount).HasColumnType("decimal(18,2)").IsRequired();
+            entity.Property(t => t.Type).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(t => t.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+
+            entity.HasMany(t => t.Transactions)
+                .WithOne(tr => tr.WalletTransfer)
+                .HasForeignKey(tr => tr.WalletTransferId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(t => t.Status);
         });
     }
 

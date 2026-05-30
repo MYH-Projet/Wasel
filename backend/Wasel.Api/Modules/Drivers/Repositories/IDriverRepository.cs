@@ -10,6 +10,7 @@ public interface IDriverRepository
     string? search);
     Task<Driver?> GetDriverDossierAsync(Guid driverId);
     Task<Driver?> GetByUserIdAsync(Guid userId);
+    Task<Driver?> GetByIdAsync(Guid id);
     Task<(List<Driver> Items, int TotalCount)> GetAdminDriversAsync(
     int page,
     int pageSize,

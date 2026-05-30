@@ -62,6 +62,12 @@ public class DriverRepository : IDriverRepository
             .FirstOrDefaultAsync(d => d.UserId == userId);
     }
 
+    public async Task<Driver?> GetByIdAsync(Guid id)
+    {
+        return await _context.Drivers
+            .FirstOrDefaultAsync(d => d.Id == id);
+    }
+
     public async Task<(List<Driver> Items, int TotalCount)> GetAdminDriversAsync(
     int page,
     int pageSize,
