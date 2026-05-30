@@ -10,6 +10,9 @@ using Wasel.Api.Infrastructure.Keycloak;
 using Wasel.Api.Modules.Users.Repositories;
 using Wasel.Api.Modules.Users.Services;
 using Wasel.Api.Modules.Auth.Services;
+using Wasel.Api.Modules.Tracking.Hubs;
+using Wasel.Api.Modules.Tracking.Repositories;
+using Wasel.Api.Modules.Tracking.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -48,6 +51,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false, // TODO: Audience validation can be reinforced later if needed
             ValidateLifetime = true
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/api/hubs/gps"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization(options =>
@@ -68,6 +88,14 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // Module Users
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+// Module Tracking
+builder.Services.AddScoped<ITrackingRepository, TrackingRepository>();
+builder.Services.AddScoped<ITrackingService, TrackingService>();
+
+// Memory Cache & SignalR
+builder.Services.AddMemoryCache();
+builder.Services.AddSignalR();
 
 // Controllers
 builder.Services.AddControllers();
@@ -112,6 +140,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<GpsHub>("/api/hubs/gps");
 
 // ──────────────────────────────────────────────
 // Health Check Endpoint

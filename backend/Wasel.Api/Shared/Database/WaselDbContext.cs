@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Wasel.Api.Modules.Deliveries.Entities;
 using Wasel.Api.Modules.Drivers.Entities;
 using Wasel.Api.Modules.Users.Entities;
+using Wasel.Api.Modules.Tracking.Entities;
 using Wasel.Api.Shared.Common;
 
 namespace Wasel.Api.Shared.Database;
@@ -22,6 +23,9 @@ public class WaselDbContext : DbContext
 
     // Module: Deliveries
     public DbSet<Delivery> Deliveries => Set<Delivery>();
+
+    // Module: Tracking
+    public DbSet<TrackingPoint> TrackingPoints => Set<TrackingPoint>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,6 +50,14 @@ public class WaselDbContext : DbContext
         modelBuilder.Entity<Delivery>(entity =>
         {
             entity.ToTable("deliveries");
+        });
+
+        // Tracking
+        modelBuilder.Entity<TrackingPoint>(entity =>
+        {
+            entity.ToTable("tracking_points");
+            entity.HasIndex(e => new { e.DriverId, e.RecordedAt });
+            entity.HasIndex(e => new { e.DeliveryId, e.RecordedAt });
         });
     }
 
