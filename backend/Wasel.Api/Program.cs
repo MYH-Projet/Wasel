@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication;
+using Minio;
 
 using Wasel.Api.Shared.Database;
 using Wasel.Api.Shared.Security;
 using Wasel.Api.Infrastructure.Keycloak;
+using Wasel.Api.Infrastructure.MinIO;
 using Wasel.Api.Modules.Users.Repositories;
 using Wasel.Api.Modules.Users.Services;
 using Wasel.Api.Modules.Drivers.Repositories;
@@ -95,6 +97,11 @@ builder.Services.AddTransient<IClaimsTransformation, KeycloakClaimsTransformer>(
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+// MinIO object storage
+builder.Services.Configure<MinioOptions>(
+    builder.Configuration.GetSection(MinioOptions.SectionName));
+builder.Services.AddScoped<IStorageService, MinioStorageService>();
 
 // Module Users
 builder.Services.AddScoped<IUserRepository, UserRepository>();
