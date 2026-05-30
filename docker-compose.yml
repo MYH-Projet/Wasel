@@ -20,6 +20,8 @@ services:
       - MinIO__Endpoint=wasel-minio:9000
       - MinIO__AccessKey=${MINIO_ROOT_USER}
       - MinIO__SecretKey=${MINIO_ROOT_PASSWORD}
+      - MinIO__BucketName=wasel-files
+      - MinIO__UseSSL=false
       - Keycloak__Authority=http://localhost:8080/auth/realms/${KEYCLOAK_REALM}
       - Keycloak__InternalAuthority=http://wasel-keycloak:8080/auth/realms/${KEYCLOAK_REALM}
       - Keycloak__NginxAuthority=http://localhost:8000/auth/realms/${KEYCLOAK_REALM}

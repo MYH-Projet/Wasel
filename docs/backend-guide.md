@@ -325,6 +325,133 @@ Présent pour le futur. Utilisé pour cacher des données fréquentes ou gérer 
 ### MinIO
 Utilisé pour sauvegarder des fichiers physiques (Permis de conduire, photos de profil, preuves de livraison). La base de données PostgreSQL ne stockera que l'**URL** ou le chemin d'accès vers MinIO, jamais le fichier physique. L'image de dev local est volontairement figée sur une version Release stable.
 
+### Module Files / URLs presignees MinIO
+
+Le module `Files` expose uniquement des endpoints de generation d'URLs presignees. Le backend ne recoit jamais le contenu binaire du fichier : le client demande une URL temporaire, puis uploade directement le fichier vers MinIO avec cette URL. PostgreSQL ne stocke pas le fichier; les modules metier conservent seulement l'`objectKey` quand ils doivent rattacher un fichier a une ressource.
+
+Configuration:
+- Section `MinIO` dans `appsettings.json` / `appsettings.Development.json`.
+- Variables Docker Compose: `MinIO__Endpoint`, `MinIO__AccessKey`, `MinIO__SecretKey`, `MinIO__BucketName`, `MinIO__UseSSL`.
+- Bucket par defaut: `wasel-files`.
+
+Endpoints ajoutes:
+
+```http
+POST /api/files/upload-url
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+```
+
+```json
+{
+  "fileName": "permis.pdf",
+  "fileType": "pdf",
+  "context": "DOCUMENT"
+}
+```
+
+Reponse:
+
+```json
+{
+  "uploadUrl": "https://...",
+  "objectKey": "documents/<userId>/<guid>.pdf",
+  "expiresInSeconds": 600
+}
+```
+
+`fileType` autorises: `jpg`, `jpeg`, `png`, `pdf`.
+`context` autorises: `PROFILE_PHOTO`, `DOCUMENT`, `DELIVERY_PROOF`, `COMPLAINT_EVIDENCE`.
+
+Formats d'object keys:
+- `profile-photos/{userId}/{guid}.{extension}`
+- `documents/{userId}/{guid}.{extension}`
+- `delivery-proofs/{userId}/{guid}.{extension}`
+- `complaint-evidence/{userId}/{guid}.{extension}`
+
+```http
+GET /api/files/view-url?objectKey=<OBJECT_KEY>
+Authorization: Bearer <TOKEN>
+```
+
+Reponse:
+
+```json
+{
+  "viewUrl": "https://...",
+  "expiresInSeconds": 300
+}
+```
+
+Regles d'acces de cette premiere version:
+- un utilisateur peut consulter un fichier si l'`objectKey` contient son `userId`;
+- un `ADMIN` peut consulter tous les fichiers;
+- sinon l'API retourne `403`.
+
+Exemples cURL:
+
+```bash
+TOKEN="VOTRE_TOKEN_ICI"
+
+curl -X POST "http://localhost:5000/api/files/upload-url" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"fileName":"permis.pdf","fileType":"pdf","context":"DOCUMENT"}'
+```
+
+```bash
+curl -X POST "http://localhost:5000/api/files/upload-url" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"fileName":"script.exe","fileType":"exe","context":"DOCUMENT"}'
+```
+
+```bash
+curl -X GET "http://localhost:5000/api/files/view-url?objectKey=documents/<userId>/<guid>.pdf" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Upload direct vers MinIO apres generation de l'URL:
+
+```bash
+curl -X PUT "$UPLOAD_URL" \
+  -H "Content-Type: application/pdf" \
+  --upload-file ./permis.pdf
+```
+
+### Test automatique Files / MinIO
+
+Un script d'integration valide automatiquement les endpoints Files et la connexion MinIO :
+
+```bash
+bash scripts/test-files-minio.sh
+```
+
+Variables d'environnement optionnelles :
+
+| Variable       | Defaut                          |
+|----------------|---------------------------------|
+| API_BASE_URL   | http://localhost:5000           |
+| KEYCLOAK_URL   | http://localhost:8080/auth      |
+| ADMIN_USER     | admin@wasel.ma                  |
+| ADMIN_PASS     | admin123                        |
+| CLIENT_USER    | client@wasel.ma                 |
+| CLIENT_PASS    | client123                       |
+| CLIENT_ID      | wasel-api                       |
+| REALM          | wasel                           |
+
+Le script valide :
+- Recuperation des tokens admin et client.
+- `POST /api/files/upload-url` avec chaque contexte (DOCUMENT, PROFILE_PHOTO, COMPLAINT_EVIDENCE, DELIVERY_PROOF).
+- Verification des objectKeys generes (prefix, extension, userId).
+- `GET /api/files/view-url` pour le proprietaire et l'admin.
+- Refus d'acces (403) pour un non-proprietaire non-admin.
+- Rejet des fileType invalides (400).
+- Rejet des context invalides (400).
+- PUT reel vers l'URL presignee MinIO (optionnel, depend de l'accessibilite du hostname MinIO).
+
+Pre-requis : Docker Compose lance (`docker compose up -d`). Le script utilise `jq` s'il est disponible, sinon `python3` comme fallback JSON.
+
 ---
 
 ## 14. Gestion des branches Git (Workflow)
