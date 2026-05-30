@@ -100,4 +100,167 @@ public class UserServiceTests
             u.Email == email &&
             u.Status == UserStatus.Pending)), Times.Once);
     }
+
+    [Fact]
+    public async Task UpdateMyProfileAsync_ValidPhone_UpdatesAllowedFields()
+    {
+        // Arrange
+        var keycloakId = "kc-123";
+        var existingUser = new User
+        {
+            Id = Guid.NewGuid(),
+            KeycloakId = keycloakId,
+            FirstName = "OldName",
+            LastName = "OldLastName",
+            Phone = "0600000000",
+            ProfileObjectKey = "old-key"
+        };
+
+        _userRepositoryMock.Setup(x => x.GetByKeycloakIdAsync(keycloakId)).ReturnsAsync(existingUser);
+
+        var request = new Modules.Users.DTOs.UpdateMyProfileRequestDto
+        {
+            FirstName = "NewName",
+            LastName = "NewLastName",
+            Phone = "0611111111",
+            ProfileObjectKey = "new-key"
+        };
+
+        // Act
+        var result = await _sut.UpdateMyProfileAsync(keycloakId, request);
+
+        // Assert
+        result.FirstName.Should().Be("NewName");
+        result.LastName.Should().Be("NewLastName");
+        result.Phone.Should().Be("0611111111");
+        result.ProfileObjectKey.Should().Be("new-key");
+
+        _userRepositoryMock.Verify(x => x.UpdateAsync(It.Is<User>(u => 
+            u.FirstName == "NewName" && 
+            u.Phone == "0611111111")), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateMyProfileAsync_PartialBody_UpdatesOnlyProvidedFields()
+    {
+        // Arrange
+        var keycloakId = "kc-123";
+        var existingUser = new User
+        {
+            Id = Guid.NewGuid(),
+            KeycloakId = keycloakId,
+            FirstName = "OldName",
+            LastName = "OldLastName",
+            Phone = "0600000000"
+        };
+
+        _userRepositoryMock.Setup(x => x.GetByKeycloakIdAsync(keycloakId)).ReturnsAsync(existingUser);
+
+        var request = new Modules.Users.DTOs.UpdateMyProfileRequestDto
+        {
+            FirstName = "NewName"
+            // LastName, Phone, ProfileObjectKey are null
+        };
+
+        // Act
+        var result = await _sut.UpdateMyProfileAsync(keycloakId, request);
+
+        // Assert
+        result.FirstName.Should().Be("NewName");
+        result.LastName.Should().Be("OldLastName"); // Should remain unchanged
+        result.Phone.Should().Be("0600000000"); // Should remain unchanged
+
+        _userRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<User>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateMyPreferencesAsync_ClientMode_CreatesOrUpdatesPreferences()
+    {
+        // Arrange
+        var keycloakId = "kc-123";
+        var existingUser = new User
+        {
+            Id = Guid.NewGuid(),
+            KeycloakId = keycloakId,
+            Preference = null
+        };
+
+        _userRepositoryMock.Setup(x => x.GetUserWithPreferenceAndDriverAsync(keycloakId)).ReturnsAsync(existingUser);
+
+        var request = new Modules.Users.DTOs.UpdateUserPreferencesRequestDto
+        {
+            ActiveAppMode = ActiveAppMode.CLIENT,
+            PreferredMode = ActiveAppMode.CLIENT
+        };
+
+        // Act
+        var result = await _sut.UpdateMyPreferencesAsync(keycloakId, request);
+
+        // Assert
+        result.ActiveAppMode.Should().Be(ActiveAppMode.CLIENT);
+        result.PreferredMode.Should().Be(ActiveAppMode.CLIENT);
+
+        _userRepositoryMock.Verify(x => x.UpdateAsync(It.Is<User>(u => 
+            u.Preference != null && 
+            u.Preference.ActiveAppMode == ActiveAppMode.CLIENT)), Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateMyPreferencesAsync_DriverMode_WithoutDriverProfile_ThrowsException()
+    {
+        // Arrange
+        var keycloakId = "kc-123";
+        var existingUser = new User
+        {
+            Id = Guid.NewGuid(),
+            KeycloakId = keycloakId,
+            Driver = null // No driver profile
+        };
+
+        _userRepositoryMock.Setup(x => x.GetUserWithPreferenceAndDriverAsync(keycloakId)).ReturnsAsync(existingUser);
+
+        var request = new Modules.Users.DTOs.UpdateUserPreferencesRequestDto
+        {
+            ActiveAppMode = ActiveAppMode.DRIVER,
+            PreferredMode = ActiveAppMode.CLIENT
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<Shared.Exceptions.ApiException>(() => _sut.UpdateMyPreferencesAsync(keycloakId, request));
+    }
+
+    [Fact]
+    public async Task UpdateMyPreferencesAsync_DriverMode_WithDriverProfile_Succeeds()
+    {
+        // Arrange
+        var keycloakId = "kc-123";
+        var existingUser = new User
+        {
+            Id = Guid.NewGuid(),
+            KeycloakId = keycloakId,
+            Driver = new Modules.Drivers.Entities.Driver(), // Driver profile exists
+            Preference = new UserPreference
+            {
+                ActiveAppMode = ActiveAppMode.CLIENT,
+                PreferredMode = ActiveAppMode.CLIENT
+            }
+        };
+
+        _userRepositoryMock.Setup(x => x.GetUserWithPreferenceAndDriverAsync(keycloakId)).ReturnsAsync(existingUser);
+
+        var request = new Modules.Users.DTOs.UpdateUserPreferencesRequestDto
+        {
+            ActiveAppMode = ActiveAppMode.DRIVER,
+            PreferredMode = ActiveAppMode.DRIVER
+        };
+
+        // Act
+        var result = await _sut.UpdateMyPreferencesAsync(keycloakId, request);
+
+        // Assert
+        result.ActiveAppMode.Should().Be(ActiveAppMode.DRIVER);
+        result.PreferredMode.Should().Be(ActiveAppMode.DRIVER);
+
+        _userRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<User>()), Times.Once);
+    }
 }

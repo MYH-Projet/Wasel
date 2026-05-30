@@ -3,10 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication;
+using Minio;
 
 using Wasel.Api.Shared.Database;
 using Wasel.Api.Shared.Security;
+using Wasel.Api.Shared.Middleware;
 using Wasel.Api.Infrastructure.Keycloak;
+using Wasel.Api.Infrastructure.MinIO;
 using Wasel.Api.Modules.Users.Repositories;
 using Wasel.Api.Modules.Users.Services;
 using Wasel.Api.Modules.Drivers.Repositories;
@@ -14,8 +17,21 @@ using Wasel.Api.Modules.Drivers.Services;
 using Wasel.Api.Modules.Documents.Repositories;
 using Wasel.Api.Modules.Documents.Services;
 using Wasel.Api.Modules.Auth.Services;
-
-
+using Wasel.Api.Modules.Tracking.Hubs;
+using Wasel.Api.Modules.Tracking.Repositories;
+using Wasel.Api.Modules.Tracking.Services;
+using Wasel.Api.Modules.Deliveries.Repositories;
+using Wasel.Api.Modules.Deliveries.Services;
+using System.Text.Json.Serialization;
+using Wasel.Api.Modules.Complaints.Repositories;
+using Wasel.Api.Modules.Complaints.Services;
+using Wasel.Api.Modules.Messaging.Hubs;
+using Wasel.Api.Modules.Messaging.Repositories;
+using Wasel.Api.Modules.Messaging.Services;
+using Wasel.Api.Modules.Payments.Repositories;
+using Wasel.Api.Modules.Payments.Services;
+using Wasel.Api.Modules.Wallets.Repositories;
+using Wasel.Api.Modules.Wallets.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -53,6 +69,23 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false, // TODO: Audience validation can be reinforced later if needed
             ValidateLifetime = true
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/api/hubs/gps"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization(options =>
@@ -70,9 +103,22 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// MinIO object storage
+builder.Services.Configure<MinioOptions>(
+    builder.Configuration.GetSection(MinioOptions.SectionName));
+builder.Services.AddScoped<IStorageService, MinioStorageService>();
+
 // Module Users
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+// Module Tracking
+builder.Services.AddScoped<ITrackingRepository, TrackingRepository>();
+builder.Services.AddScoped<ITrackingService, TrackingService>();
+
+// Memory Cache & SignalR
+builder.Services.AddMemoryCache();
+builder.Services.AddSignalR();
 
 // Module Drivers
 builder.Services.AddScoped<IDriverRepository, DriverRepository>();
@@ -84,8 +130,36 @@ builder.Services.AddScoped<IDriverDossierService, DriverDossierService>();
 builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 
+//module deliveries
+builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
+builder.Services.AddScoped<IDeliveryService, DeliveryService>();
+builder.Services.AddScoped<IAddressRepository, AddressRepository>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+
+//module reclamations
+builder.Services.AddScoped<IComplaintRepository, ComplaintRepository>();
+builder.Services.AddScoped<IComplaintService, ComplaintService>();
+
+//module message
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessagingService, MessagingService>();
+
+//module payments
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<ISavedPaymentMethodRepository, SavedPaymentMethodRepository>();
+builder.Services.AddScoped<IPaymentGateway, FakePaymentGateway>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IPaymentMethodService, PaymentMethodService>();
+
+//module wallets
+builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+builder.Services.AddScoped<IWalletService, WalletService>();
 // Controllers
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 // CORS — permissive for development
 builder.Services.AddCors(options =>
@@ -114,6 +188,8 @@ if (app.Environment.IsDevelopment())
 // Middleware Pipeline
 // ──────────────────────────────────────────────
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -127,7 +203,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.MapHub<GpsHub>("/api/hubs/gps");
+app.MapHub<MessagingHub>("/hubs/messaging");
 // ──────────────────────────────────────────────
 // Health Check Endpoint
 // ──────────────────────────────────────────────
