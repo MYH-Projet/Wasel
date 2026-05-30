@@ -177,6 +177,81 @@ public class UserService : IUserService
         return MapToResponseDto(user);
     }
 
+    public async Task<UserResponseDto> UpdateMyProfileAsync(string keycloakId, UpdateMyProfileRequestDto request)
+    {
+        var user = await _userRepository.GetByKeycloakIdAsync(keycloakId);
+
+        if (user is null)
+        {
+            throw new Shared.Exceptions.ApiException("User not found locally", 404);
+        }
+
+        bool updated = false;
+
+        if (request.FirstName is not null && user.FirstName != request.FirstName) { user.FirstName = request.FirstName; updated = true; }
+        if (request.LastName is not null && user.LastName != request.LastName) { user.LastName = request.LastName; updated = true; }
+        if (request.Phone is not null && user.Phone != request.Phone) { user.Phone = request.Phone; updated = true; }
+        if (request.ProfileObjectKey is not null && user.ProfileObjectKey != request.ProfileObjectKey) { user.ProfileObjectKey = request.ProfileObjectKey; updated = true; }
+
+        if (updated)
+        {
+            await _userRepository.UpdateAsync(user);
+        }
+
+        return MapToResponseDto(user);
+    }
+
+    public async Task<UserPreferencesResponseDto> UpdateMyPreferencesAsync(string keycloakId, UpdateUserPreferencesRequestDto request)
+    {
+        var user = await _userRepository.GetUserWithPreferenceAndDriverAsync(keycloakId);
+
+        if (user is null)
+        {
+            throw new Shared.Exceptions.ApiException("User not found locally", 404);
+        }
+
+        if (request.ActiveAppMode == ActiveAppMode.DRIVER && user.Driver is null)
+        {
+            throw new Shared.Exceptions.ApiException("Cannot set active mode to DRIVER: no driver profile exists.", 400);
+        }
+
+        if (user.Preference is null)
+        {
+            user.Preference = new UserPreference
+            {
+                Id = Guid.Empty,
+                ActiveAppMode = request.ActiveAppMode,
+                PreferredMode = request.PreferredMode
+            };
+            await _userRepository.UpdateAsync(user);
+        }
+        else
+        {
+            bool updated = false;
+            if (user.Preference.ActiveAppMode != request.ActiveAppMode)
+            {
+                user.Preference.ActiveAppMode = request.ActiveAppMode;
+                updated = true;
+            }
+            if (user.Preference.PreferredMode != request.PreferredMode)
+            {
+                user.Preference.PreferredMode = request.PreferredMode;
+                updated = true;
+            }
+
+            if (updated)
+            {
+                await _userRepository.UpdateAsync(user);
+            }
+        }
+
+        return new UserPreferencesResponseDto
+        {
+            ActiveAppMode = user.Preference.ActiveAppMode,
+            PreferredMode = user.Preference.PreferredMode
+        };
+    }
+
     private static UserResponseDto MapToResponseDto(User user)
     {
         return new UserResponseDto

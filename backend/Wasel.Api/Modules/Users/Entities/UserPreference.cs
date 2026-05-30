@@ -10,4 +10,6 @@ public class UserPreference : BaseEntity
     public User User { get; set; } = null!;
 
     public ActiveAppMode ActiveAppMode { get; set; } = ActiveAppMode.CLIENT;
+
+    public ActiveAppMode PreferredMode { get; set; } = ActiveAppMode.CLIENT;
 }

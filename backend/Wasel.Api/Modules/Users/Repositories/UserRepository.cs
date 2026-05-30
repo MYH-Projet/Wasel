@@ -34,6 +34,14 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
     }
 
+    public async Task<User?> GetUserWithPreferenceAndDriverAsync(string keycloakId)
+    {
+        return await _context.Users
+            .Include(u => u.Preference)
+            .Include(u => u.Driver)
+            .FirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
+    }
+
     public async Task<User?> GetByEmailAsync(string email)
     {
         return await _context.Users
