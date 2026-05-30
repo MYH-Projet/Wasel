@@ -21,6 +21,7 @@ public interface IDriverRepository
     DateTime? endDate);
 
     Task<Driver?> GetByUserIdWithDossierAndVehicleAsync(Guid userId);
+    Task<Driver?> GetByUserIdWithDossierAndDocumentsAsync(Guid userId);
     Task<bool> ExistsByUserIdAsync(Guid userId);
     Task<bool> ExistsByPermitNumberAsync(string permitNumber);
     Task AddAsync(Driver driver);

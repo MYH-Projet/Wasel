@@ -27,6 +27,24 @@ public class DocumentRepository : IDocumentRepository
             .AllAsync(d => d.Status == DocumentStatus.Approved);
     }
 
+    public async Task<Document?> GetByDossierIdAndTypeAsync(Guid driverDossierId, DocumentType type)
+    {
+        return await _context.Documents
+            .FirstOrDefaultAsync(d => d.DriverDossierId == driverDossierId && d.DocumentType == type);
+    }
+
+    public async Task<IEnumerable<Document>> GetByDossierIdAsync(Guid driverDossierId)
+    {
+        return await _context.Documents
+            .Where(d => d.DriverDossierId == driverDossierId)
+            .ToListAsync();
+    }
+
+    public async Task AddAsync(Document document)
+    {
+        await _context.Documents.AddAsync(document);
+    }
+
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();
