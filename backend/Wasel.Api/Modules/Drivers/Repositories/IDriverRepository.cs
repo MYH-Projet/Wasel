@@ -22,6 +22,7 @@ public interface IDriverRepository
 
     Task<Driver?> GetByUserIdWithDossierAndVehicleAsync(Guid userId);
     Task<bool> ExistsByUserIdAsync(Guid userId);
+    Task<bool> ExistsByIdAsync(Guid driverId);
     Task<bool> ExistsByPermitNumberAsync(string permitNumber);
     Task AddAsync(Driver driver);
     Task SaveChangesAsync();

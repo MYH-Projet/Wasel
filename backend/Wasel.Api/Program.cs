@@ -32,6 +32,8 @@ using Wasel.Api.Modules.Payments.Repositories;
 using Wasel.Api.Modules.Payments.Services;
 using Wasel.Api.Modules.Wallets.Repositories;
 using Wasel.Api.Modules.Wallets.Services;
+using Wasel.Api.Modules.Reviews.Repositories;
+using Wasel.Api.Modules.Reviews.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -154,6 +156,10 @@ builder.Services.AddScoped<IPaymentMethodService, PaymentMethodService>();
 //module wallets
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 builder.Services.AddScoped<IWalletService, WalletService>();
+
+// Module Reviews
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 // Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

@@ -10,6 +10,7 @@ using Wasel.Api.Modules.Complaints.Entities;
 using Wasel.Api.Modules.Messaging.Entities;
 using Wasel.Api.Modules.Payments.Entities;
 using Wasel.Api.Modules.Wallets.Entities;
+using Wasel.Api.Modules.Reviews.Entities;
 
 namespace Wasel.Api.Shared.Database;
 
@@ -58,6 +59,9 @@ public class WaselDbContext : DbContext
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
     public DbSet<WalletTransfer> WalletTransfers => Set<WalletTransfer>();
     
+    // Module: Reviews
+    public DbSet<Review> Reviews => Set<Review>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -333,6 +337,31 @@ public class WaselDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(t => t.Status);
+        });
+
+        // Reviews
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.ToTable("reviews");
+            entity.HasKey(r => r.Id);
+            
+            entity.HasIndex(r => r.DeliveryId).IsUnique();
+            entity.HasIndex(r => r.ReviewedDriverId);
+            
+            entity.HasOne(r => r.ReviewerUser)
+                .WithMany()
+                .HasForeignKey(r => r.ReviewerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            entity.HasOne(r => r.ReviewedDriver)
+                .WithMany()
+                .HasForeignKey(r => r.ReviewedDriverId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            entity.HasOne(r => r.Delivery)
+                .WithMany()
+                .HasForeignKey(r => r.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 
