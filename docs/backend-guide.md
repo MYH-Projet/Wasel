@@ -463,7 +463,46 @@ Pre-requis : Docker Compose lance (`docker compose up -d`). Le script utilise `j
 
 ---
 
-## 14. Gestion des branches Git (Workflow)
+## 14. Profil utilisateur et Préférences
+
+Le module `Users` expose deux endpoints pour permettre à l'utilisateur connecté de modifier son profil local et ses préférences de navigation.
+
+### Profil utilisateur
+
+Permet à l'utilisateur connecté de mettre à jour ses informations de base. Note : L'email et le CIN ne sont pas modifiables via cet endpoint. L'email est géré par Keycloak.
+
+**`PATCH /api/users/me`** (Nécessite un token valide)
+
+**Exemple de requête :**
+```json
+{
+  "firstName": "Yassine",
+  "lastName": "Amrani",
+  "phone": "0600000000",
+  "profileObjectKey": "profile-photos/userId/file.jpg"
+}
+```
+*Le `profileObjectKey` doit provenir du module Files / MinIO.*
+
+### Préférences utilisateur
+
+Permet de mettre à jour le mode actif et le mode préféré de l'application (Client / Driver).
+
+**`PATCH /api/users/me/preferences`** (Nécessite un token valide)
+
+**Exemple de requête :**
+```json
+{
+  "activeAppMode": "CLIENT",
+  "preferredMode": "CLIENT"
+}
+```
+
+⚠️ **Important :** Le mode `DRIVER` nécessite obligatoirement que l'utilisateur possède un profil `Driver` enregistré en base de données. Si un utilisateur essaie de passer en mode `DRIVER` sans profil, l'API renverra une erreur `400 Bad Request`.
+
+---
+
+## 15. Gestion des branches Git (Workflow)
 
 Stratégie de branchenement stricte :
 - `main` : Version en production (Stable).
