@@ -8,7 +8,7 @@ export default function Sidebar({ children, admin }: { children: React.ReactNode
     return (
         <SidebarProvider open={open} onOpenChange={setOpen}>
             <AdminSidebar admin={admin} />
-            <main>
+            <main className="w-full flex-1">
                 {children}
             </main>
         </SidebarProvider>

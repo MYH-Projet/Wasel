@@ -9,11 +9,22 @@ using Wasel.Api.Shared.Security;
 using Wasel.Api.Infrastructure.Keycloak;
 using Wasel.Api.Modules.Users.Repositories;
 using Wasel.Api.Modules.Users.Services;
+using Wasel.Api.Modules.Drivers.Repositories;
+using Wasel.Api.Modules.Drivers.Services;
+using Wasel.Api.Modules.Documents.Repositories;
+using Wasel.Api.Modules.Documents.Services;
 using Wasel.Api.Modules.Auth.Services;
 using Wasel.Api.Modules.Tracking.Hubs;
 using Wasel.Api.Modules.Tracking.Repositories;
 using Wasel.Api.Modules.Tracking.Services;
-
+using Wasel.Api.Modules.Deliveries.Repositories;
+using Wasel.Api.Modules.Deliveries.Services;
+using System.Text.Json.Serialization;
+using Wasel.Api.Modules.Complaints.Repositories;
+using Wasel.Api.Modules.Complaints.Services;
+using Wasel.Api.Modules.Messaging.Hubs;
+using Wasel.Api.Modules.Messaging.Repositories;
+using Wasel.Api.Modules.Messaging.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -97,8 +108,35 @@ builder.Services.AddScoped<ITrackingService, TrackingService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddSignalR();
 
+// Module Drivers
+builder.Services.AddScoped<IDriverRepository, DriverRepository>();
+builder.Services.AddScoped<IDriverService, DriverService>();
+builder.Services.AddScoped<IDriverDossierRepository, DriverDossierRepository>();
+builder.Services.AddScoped<IDriverDossierService, DriverDossierService>();
+
+// Module Documents
+builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+
+//module deliveries
+builder.Services.AddScoped<IDeliveryRepository, DeliveryRepository>();
+builder.Services.AddScoped<IDeliveryService, DeliveryService>();
+builder.Services.AddScoped<IAddressRepository, AddressRepository>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+
+//module reclamations
+builder.Services.AddScoped<IComplaintRepository, ComplaintRepository>();
+builder.Services.AddScoped<IComplaintService, ComplaintService>();
+
+//module message
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessagingService, MessagingService>();
 // Controllers
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 // CORS — permissive for development
 builder.Services.AddCors(options =>
@@ -141,7 +179,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<GpsHub>("/api/hubs/gps");
-
+app.MapHub<MessagingHub>("/hubs/messaging");
 // ──────────────────────────────────────────────
 // Health Check Endpoint
 // ──────────────────────────────────────────────

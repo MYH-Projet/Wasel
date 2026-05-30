@@ -123,7 +123,7 @@ services:
     volumes:
       - wasel-keycloak-data:/opt/keycloak/data:z
       - ./infra/keycloak/my-theme:/opt/keycloak/themes/my-theme:ro,z
-      - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro,z
+      - ./infra/keycloak/realm-import.json:/opt/keycloak/data/import/realm-import.json:ro,z
     healthcheck:
       test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080" ]
       interval: 15s

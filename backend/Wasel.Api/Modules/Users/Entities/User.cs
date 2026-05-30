@@ -1,6 +1,6 @@
 using Wasel.Api.Modules.Users.Enums;
 using Wasel.Api.Shared.Common;
-
+using Wasel.Api.Modules.Drivers.Entities;
 namespace Wasel.Api.Modules.Users.Entities;
 
 public class User : BaseEntity
@@ -20,4 +20,8 @@ public class User : BaseEntity
     public UserStatus Status { get; set; } = UserStatus.Active;
 
     public string? ProfileObjectKey { get; set; }
+
+    public Driver? Driver { get; set; }
+
+    public UserPreference? Preference { get; set; }
 }
