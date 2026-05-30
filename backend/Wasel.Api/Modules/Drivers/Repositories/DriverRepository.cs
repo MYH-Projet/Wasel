@@ -150,6 +150,11 @@ public class DriverRepository : IDriverRepository
         return await _context.Drivers.AnyAsync(d => d.UserId == userId);
     }
 
+    public async Task<bool> ExistsByIdAsync(Guid driverId)
+    {
+        return await _context.Drivers.AnyAsync(d => d.Id == driverId);
+    }
+
     public async Task<bool> ExistsByPermitNumberAsync(string permitNumber)
     {
         return await _context.Drivers.AnyAsync(d => d.PermitNumber == permitNumber);

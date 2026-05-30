@@ -887,6 +887,24 @@ API_BASE_URL=http://localhost KEYCLOAK_URL=http://localhost/auth bash scripts/te
 
 ---
 
+## 24. Reviews / Notation & Avis
+
+Le module `Reviews` gère la notation et les avis des livreurs par les clients.
+
+### Concepts Clés
+
+- **Propriété** : Un client ne peut évaluer qu'une livraison lui appartenant.
+- **Statut** : La livraison doit être à l'état `DELIVERED`.
+- **Unicité** : Une seule évaluation par livraison.
+- **Pagination** : Les avis d'un livreur sont retournés de manière paginée.
+
+### Endpoints
+
+- `POST /api/reviews` : Soumet un avis. (Requiert le rôle Client)
+- `GET /api/drivers/{driverId}/reviews` : Retourne de manière paginée les avis et la note moyenne d'un livreur. (Public)
+
+---
+
 > Ce guide est un document vivant. Si une nouvelle règle architecturale est décidée par l'équipe, n'hésitez pas à la documenter ici !
 
 ---
