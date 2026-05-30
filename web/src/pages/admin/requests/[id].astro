@@ -22,10 +22,13 @@ interface DriverData {
         brand: string;
         model: string;
     };
+    dossierId: string;
+    dossierStatus: string;
     documents: Documant[];
 }
 
 const INTERNAL_API_URL = import.meta.env.INTERNAL_API_URL;
+const MINIO_URL = import.meta.env.MINIO_URL;
 const { id } = Astro.params;
 const user = Astro.locals.user;
 
@@ -53,11 +56,13 @@ const mapedDriverData: DriverData = {
         brand: driverData.vehicle.brand || "NA",
         model: driverData.vehicle.model || "NA",
     },
+    dossierId: driverData.dossier.id,
+    dossierStatus: driverData.dossier.status,
     documents: driverData.documents.map((doc: any) => {
         return {
             docId: doc.id,
             documentType: doc.documentType,
-            minioUrl: import.meta.env.INTERNAL_API_URL + doc.docUrl,
+            minioUrl: MINIO_URL + doc.docUrl,
         };
     }),
 };
@@ -181,7 +186,8 @@ const mapedDriverData: DriverData = {
                 <DriverReviewActions
                     client:load
                     driverId={id!}
-                    currentStatus={driverData.status}
+                    dossierId={mapedDriverData.dossierId}
+                    currentStatus={mapedDriverData.dossierStatus}
                 />
             </div>
         </div>

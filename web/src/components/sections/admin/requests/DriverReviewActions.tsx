@@ -3,11 +3,12 @@ import { CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 interface Props {
-    driverId: string
+    driverId: string;
+    dossierId: string;
     currentStatus: string;
 }
 
-export function DriverReviewActions({ driverId, currentStatus }: Props) {
+export function DriverReviewActions({ driverId, dossierId, currentStatus }: Props) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showApproveModal, setShowApproveModal] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
@@ -20,7 +21,8 @@ export function DriverReviewActions({ driverId, currentStatus }: Props) {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    id: driverId,
+                    driverId,
+                    dossierId,
                     action: endpoint,
                     ...payload
                 })

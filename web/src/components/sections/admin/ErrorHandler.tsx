@@ -38,13 +38,11 @@ export function ErrorHandler() {
         // Run this once when the component mounts
         const searchParams = new URLSearchParams(window.location.search);
         const errorCode = searchParams.get("error");
-        const errorType = searchParams.get("errorType") || "toast"; // Default to toast if not specified
+        const errorType = searchParams.get("errorType") || "toast";
 
         if (errorCode) {
-            // Get the message, or fallback to default if the code isn't in our dictionary
             const errorDetails = ERROR_MESSAGES[errorCode] || ERROR_MESSAGES.default;
 
-            // Trigger the correct UI
             if (errorType === "modal") {
                 setModalError(errorDetails);
             } else {

@@ -69,20 +69,19 @@ export const GET: APIRoute = async (context) => {
     }
 }
 
-export const POST: APIRoute = async (context) => {
+export const PATCH: APIRoute = async (context) => {
     try {
         const user = context.locals.user;
         const body = await context.request.json();
-        const action = body.action;
 
-        const operation = await fetch(`${INTERNAL_API_URL}/api/admin/drivers/${body.id}/${action}`,
+        const operation = await fetch(`${INTERNAL_API_URL}/api/admin/driver-dossiers/${body.dossierId}/status`,
             {
-                method: "POST",
+                method: "PATCH",
                 headers: {
                     "Authorization": `Bearer ${user?.token}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(body.payload)
+                body: JSON.stringify({ status: body.action, reason: body.payload?.reason })
             }
         )
         if (!operation.ok) {
