@@ -18,4 +18,10 @@ public interface IDriverRepository
     List<DriverDossierStatus>? dossierStatuses,
     DateTime? startDate,
     DateTime? endDate);
+
+    Task<Driver?> GetByUserIdWithDossierAndVehicleAsync(Guid userId);
+    Task<bool> ExistsByUserIdAsync(Guid userId);
+    Task<bool> ExistsByPermitNumberAsync(string permitNumber);
+    Task AddAsync(Driver driver);
+    Task SaveChangesAsync();
 }
