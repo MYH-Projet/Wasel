@@ -4,6 +4,7 @@ namespace Wasel.Api.Modules.Drivers.Entities;
 
 public class Vehicle : BaseEntity
 {
+    public string Type { get; set; } = string.Empty;
     public string Matricule { get; set; } = string.Empty;
     public string Marque { get; set; } = string.Empty;
     public string Model { get; set; } = string.Empty;

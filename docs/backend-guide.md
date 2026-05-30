@@ -502,7 +502,46 @@ Permet de mettre à jour le mode actif et le mode préféré de l'application (C
 
 ---
 
-## 15. Gestion des branches Git (Workflow)
+## 15. Driver Onboarding
+
+Le module `Drivers` expose des endpoints permettant à l'utilisateur de soumettre son dossier de chauffeur pour vérification par l'administrateur.
+
+### S'inscrire comme Driver
+
+Permet à l'utilisateur de créer un profil Driver, avec un dossier initialement en statut `Draft` et un véhicule associé.
+
+**`POST /api/drivers/register`** (Nécessite un token valide)
+
+**Exemple de requête :**
+```json
+{
+  "permisNumber": "B123456",
+  "vehicle": {
+    "type": "MOTORCYCLE",
+    "matricule": "12345-A-6",
+    "model": "Click 125",
+    "marque": "Honda"
+  }
+}
+```
+
+### Consulter son profil Driver
+
+Permet de récupérer les informations de son propre profil Driver, incluant le statut du chauffeur et le statut de son dossier.
+
+**`GET /api/drivers/me`** (Nécessite un token valide)
+
+### Soumettre son dossier
+
+Une fois les documents uploadés (via MinIO) et associés, l'utilisateur peut soumettre son dossier. Le dossier passe alors du statut `Draft` à `Submitted`.
+
+**`POST /api/drivers/dossier/submit`** (Nécessite un token valide)
+
+L'administrateur pourra par la suite traiter ce dossier via les endpoints admin existants.
+
+---
+
+## 16. Gestion des branches Git (Workflow)
 
 Stratégie de branchenement stricte :
 - `main` : Version en production (Stable).
