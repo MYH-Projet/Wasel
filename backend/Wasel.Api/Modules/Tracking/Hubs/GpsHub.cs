@@ -26,7 +26,16 @@ public class GpsHub : Hub
     {
         // Auto-sync au démarrage de la connexion WebSocket
         // Si l'utilisateur n'existe pas en local, il est créé. S'il existe, on l'a récupéré.
-        await _authService.EnsureCurrentUserExistsAsync();
+        try
+        {
+            await _authService.EnsureCurrentUserExistsAsync();
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
+        {
+            // Ignorer l'erreur de concurrence : 
+            // L'utilisateur a déjà été mis à jour par une requête API exécutée exactement en même temps.
+        }
+        
         await base.OnConnectedAsync();
     }
 
