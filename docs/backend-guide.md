@@ -888,3 +888,22 @@ API_BASE_URL=http://localhost KEYCLOAK_URL=http://localhost/auth bash scripts/te
 ---
 
 > Ce guide est un document vivant. Si une nouvelle règle architecturale est décidée par l'équipe, n'hésitez pas à la documenter ici !
+
+---
+
+## 23. Documents du dossier livreur
+
+Pour permettre à un livreur de fournir ses pièces justificatives, le backend expose les endpoints suivants dans `api/drivers/dossier/documents`.
+
+### Workflow frontend
+
+1. **Génération d'URL présignée** : L'application cliente fait un `POST /api/files/upload-url` avec le contexte `DOCUMENT`. Elle reçoit une `uploadUrl` (ex: vers MinIO) et un `objectKey`.
+2. **Upload direct** : Le client fait un `PUT` avec le binaire vers l'`uploadUrl`. Les fichiers volumineux ne transitent jamais par l'API backend.
+3. **Association au dossier** : Le client fait un `POST /api/drivers/dossier/documents` en fournissant le `documentType` (ex: `Permit`, `Cin`) et l'`objectKey` obtenu à l'étape 1.
+
+### Règles métier
+
+- L'utilisateur connecté doit exister et avoir un profil Driver avec un Dossier associé.
+- Un seul document par type (`Cin`, `Permit`, `VehicleCard`, `Insurance`, `ProfilePhoto`, `Other`) peut exister par dossier.
+- Si le document existe déjà, le backend remplace simplement l'`ObjectKey`, remet le statut du document à `Pending`, et efface toute `RejectionReason` (utile suite à un refus par l'admin).
+- L'administration (via les routes admin existantes) se charge de la vérification (statut `Approved` ou `Rejected`).

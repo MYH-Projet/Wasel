@@ -137,6 +137,14 @@ public class DriverRepository : IDriverRepository
             .FirstOrDefaultAsync(d => d.UserId == userId);
     }
 
+    public async Task<Driver?> GetByUserIdWithDossierAndDocumentsAsync(Guid userId)
+    {
+        return await _context.Drivers
+            .Include(d => d.Dossier)
+                .ThenInclude(d => d!.Documents)
+            .FirstOrDefaultAsync(d => d.UserId == userId);
+    }
+
     public async Task<bool> ExistsByUserIdAsync(Guid userId)
     {
         return await _context.Drivers.AnyAsync(d => d.UserId == userId);
