@@ -17,7 +17,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
       - ConnectionStrings__DefaultConnection=Host=wasel-postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
       - Redis__ConnectionString=${REDIS_CONNECTION_STRING}
-      - MinIO__Endpoint=wasel-minio:9000
+      - MinIO__InternalEndpoint=wasel-minio:9000
+      - MinIO__PublicEndpoint=localhost:9000
       - MinIO__AccessKey=${MINIO_ROOT_USER}
       - MinIO__SecretKey=${MINIO_ROOT_PASSWORD}
       - MinIO__BucketName=wasel-files

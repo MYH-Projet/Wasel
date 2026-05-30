@@ -6,13 +6,25 @@ namespace Wasel.Api.Infrastructure.MinIO;
 
 public class MinioStorageService : IStorageService
 {
-    private readonly IMinioClient _minioClient;
+    private readonly IMinioClient _internalClient;
+    private readonly IMinioClient _publicClient;
     private readonly MinioOptions _options;
 
-    public MinioStorageService(IMinioClient minioClient, IOptions<MinioOptions> options)
+    public MinioStorageService(IOptions<MinioOptions> options)
     {
-        _minioClient = minioClient;
         _options = options.Value;
+
+        _internalClient = new MinioClient()
+            .WithEndpoint(_options.InternalEndpoint)
+            .WithCredentials(_options.AccessKey, _options.SecretKey)
+            .WithSSL(_options.UseSSL)
+            .Build();
+
+        _publicClient = new MinioClient()
+            .WithEndpoint(_options.PublicEndpoint)
+            .WithCredentials(_options.AccessKey, _options.SecretKey)
+            .WithSSL(_options.UseSSL)
+            .Build();
     }
 
     public async Task<string> GenerateUploadUrlAsync(string objectKey, string contentType, TimeSpan expiry)
@@ -24,7 +36,7 @@ public class MinioStorageService : IStorageService
             .WithObject(objectKey)
             .WithExpiry(ToExpirySeconds(expiry));
 
-        return await _minioClient.PresignedPutObjectAsync(args);
+        return await _publicClient.PresignedPutObjectAsync(args);
     }
 
     public async Task<string> GenerateViewUrlAsync(string objectKey, TimeSpan expiry)
@@ -36,7 +48,7 @@ public class MinioStorageService : IStorageService
             .WithObject(objectKey)
             .WithExpiry(ToExpirySeconds(expiry));
 
-        return await _minioClient.PresignedGetObjectAsync(args);
+        return await _publicClient.PresignedGetObjectAsync(args);
     }
 
     public async Task EnsureBucketExistsAsync()
@@ -44,7 +56,7 @@ public class MinioStorageService : IStorageService
         var bucketExistsArgs = new BucketExistsArgs()
             .WithBucket(_options.BucketName);
 
-        var exists = await _minioClient.BucketExistsAsync(bucketExistsArgs);
+        var exists = await _internalClient.BucketExistsAsync(bucketExistsArgs);
         if (exists)
         {
             return;
@@ -53,7 +65,7 @@ public class MinioStorageService : IStorageService
         var makeBucketArgs = new MakeBucketArgs()
             .WithBucket(_options.BucketName);
 
-        await _minioClient.MakeBucketAsync(makeBucketArgs);
+        await _internalClient.MakeBucketAsync(makeBucketArgs);
     }
 
     private static int ToExpirySeconds(TimeSpan expiry)

@@ -101,18 +101,6 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // MinIO object storage
 builder.Services.Configure<MinioOptions>(
     builder.Configuration.GetSection(MinioOptions.SectionName));
-builder.Services.AddSingleton<IMinioClient>(serviceProvider =>
-{
-    var options = serviceProvider
-        .GetRequiredService<Microsoft.Extensions.Options.IOptions<MinioOptions>>()
-        .Value;
-
-    return new MinioClient()
-        .WithEndpoint(options.Endpoint)
-        .WithCredentials(options.AccessKey, options.SecretKey)
-        .WithSSL(options.UseSSL)
-        .Build();
-});
 builder.Services.AddScoped<IStorageService, MinioStorageService>();
 
 // Module Users

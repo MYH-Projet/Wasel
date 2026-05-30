@@ -419,6 +419,15 @@ curl -X PUT "$UPLOAD_URL" \
   --upload-file ./permis.pdf
 ```
 
+### Architecture MinIO: InternalEndpoint vs PublicEndpoint
+
+Pour que les URLs présignées générées par le backend soient utilisables par le frontend tout en préservant la validité des signatures S3 AWS, la configuration MinIO utilise deux endpoints distincts :
+
+1. **`InternalEndpoint`** (ex: `wasel-minio:9000`) : Utilisé par le backend pour communiquer avec MinIO de manière interne (ex: vérifier l'existence d'un bucket). Ce hostname est valide uniquement à l'intérieur du réseau Docker.
+2. **`PublicEndpoint`** (ex: `localhost:9000` en dév, ou `storage.wasel.ma` en prod) : Utilisé **exclusivement** pour générer les URLs présignées envoyées au client. MinIO signera l'URL avec ce domaine public.
+
+⚠️ **Très important :** Le Frontend (ou l'application mobile) doit utiliser l'URL générée **telle quelle**. Il ne faut **jamais** modifier manuellement le hostname (`localhost:9000` ou autre) d'une URL présignée côté client. Toute modification du hostname après génération invalidera la signature cryptographique et entraînera une erreur `403 SignatureDoesNotMatch` par MinIO.
+
 ### Test automatique Files / MinIO
 
 Un script d'integration valide automatiquement les endpoints Files et la connexion MinIO :

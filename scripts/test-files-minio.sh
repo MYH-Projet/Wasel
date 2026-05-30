@@ -475,49 +475,21 @@ fi
 # ══════════════════════════════════════════════════════════════
 print_section "Test 14 — PUT file to presigned upload URL (optional)"
 if [ -n "$SAVED_UPLOAD_URL" ]; then
-    # Check if the URL contains an internal Docker hostname
-    if echo "$SAVED_UPLOAD_URL" | grep -qi "wasel-minio"; then
-        warn "Presigned URL uses internal Docker hostname (wasel-minio:9000)."
-        warn "URL not directly usable from host. This is expected in local Docker setup."
-        warn "Frontend/mobile should use an externally accessible MinIO endpoint."
+    TMP_FILE=$(mktemp /tmp/wasel-minio-test-XXXXXX.txt 2>/dev/null || echo "/tmp/wasel-minio-test.txt")
+    echo "wasel test file content" > "$TMP_FILE"
 
-        # Try replacing internal hostname with localhost for local testing
-        LOCAL_UPLOAD_URL=$(echo "$SAVED_UPLOAD_URL" | sed 's|wasel-minio:9000|localhost:9000|g')
-        echo "  Attempting with localhost:9000 ..."
+    UPLOAD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+        -X PUT "$SAVED_UPLOAD_URL" \
+        -H "Content-Type: application/pdf" \
+        --upload-file "$TMP_FILE" 2>/dev/null)
 
-        TMP_FILE=$(mktemp /tmp/wasel-minio-test-XXXXXX.txt 2>/dev/null || echo "/tmp/wasel-minio-test.txt")
-        echo "wasel test file content" > "$TMP_FILE"
+    rm -f "$TMP_FILE" 2>/dev/null
 
-        UPLOAD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
-            -X PUT "$LOCAL_UPLOAD_URL" \
-            -H "Content-Type: application/pdf" \
-            --upload-file "$TMP_FILE" 2>/dev/null)
-
-        rm -f "$TMP_FILE" 2>/dev/null
-
-        if [ "$UPLOAD_STATUS" = "200" ] || [ "$UPLOAD_STATUS" = "204" ]; then
-            pass "PUT to presigned URL via localhost:9000 (HTTP $UPLOAD_STATUS)"
-        else
-            warn "PUT to presigned URL via localhost:9000 returned HTTP $UPLOAD_STATUS"
-            warn "This may be due to MinIO not being exposed on localhost:9000 or signature mismatch."
-            skip "PUT upload — presigned URL not usable from host (internal Docker hostname)"
-        fi
+    if [ "$UPLOAD_STATUS" = "200" ] || [ "$UPLOAD_STATUS" = "204" ]; then
+        pass "PUT to presigned URL (HTTP $UPLOAD_STATUS)"
     else
-        TMP_FILE=$(mktemp /tmp/wasel-minio-test-XXXXXX.txt 2>/dev/null || echo "/tmp/wasel-minio-test.txt")
-        echo "wasel test file content" > "$TMP_FILE"
-
-        UPLOAD_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
-            -X PUT "$SAVED_UPLOAD_URL" \
-            -H "Content-Type: application/pdf" \
-            --upload-file "$TMP_FILE" 2>/dev/null)
-
-        rm -f "$TMP_FILE" 2>/dev/null
-
-        if [ "$UPLOAD_STATUS" = "200" ] || [ "$UPLOAD_STATUS" = "204" ]; then
-            pass "PUT to presigned URL (HTTP $UPLOAD_STATUS)"
-        else
-            fail "PUT to presigned URL failed (HTTP $UPLOAD_STATUS)"
-        fi
+        fail "PUT to presigned URL failed (HTTP $UPLOAD_STATUS)"
+        echo "  If testing locally, ensure MinIO is accessible on PublicEndpoint (e.g. localhost:9000)."
     fi
 else
     skip "PUT upload — no upload URL saved from Test 4"
