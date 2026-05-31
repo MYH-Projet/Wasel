@@ -10,7 +10,7 @@ namespace Wasel.Api.Modules.Tracking.Controllers;
 
 [ApiController]
 [Route("api/tracking")]
-[Authorize]
+[Authorize(Policy = "ActiveUserOnly")]
 public class TrackingController : ControllerBase
 {
     private readonly ITrackingService _trackingService;

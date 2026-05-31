@@ -12,7 +12,7 @@ namespace Wasel.Api.Modules.Wallets.Controllers;
 
 [ApiController]
 [Route("api/wallet")]
-[Authorize]
+[Authorize(Policy = "ActiveUserOnly")]
 public class WalletsController : ControllerBase
 {
     private readonly IWalletService _walletService;

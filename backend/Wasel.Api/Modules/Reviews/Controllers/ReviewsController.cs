@@ -17,7 +17,7 @@ public class ReviewsController : ControllerBase
     }
 
     [HttpPost("api/reviews")]
-    [Authorize]
+    [Authorize(Policy = "ActiveUserOnly")]
     public async Task<ActionResult<ReviewResponseDto>> CreateReview([FromBody] CreateReviewRequestDto request)
     {
         try
