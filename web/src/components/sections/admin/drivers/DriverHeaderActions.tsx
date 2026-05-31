@@ -17,12 +17,13 @@ export function DriverHeaderActions({ driverId, driverName }: Props) {
         setIsSubmitting(true);
         try {
             // Call your BFF (Backend-For-Frontend) endpoint
-            const response = await fetch(`/api/admin/drivers/${driverId}`, {
-                method: "POST",
+            const response = await fetch(`/endpiont/drivers/`, {
+                method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    action: "suspend",
-                    payload: { reason: suspendReason } // Just send the reason, backend knows the ID from the URL
+                    driverId: driverId,
+                    action: "Blocked",
+                    payload: { reason: suspendReason }
                 }),
             });
 

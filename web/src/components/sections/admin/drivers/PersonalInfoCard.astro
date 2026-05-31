@@ -1,20 +1,13 @@
 ---
 import { User } from "lucide-react";
+import type { DriverDetails } from "@/types/driver";
 
 interface Props {
-    driverId: string | undefined;
+    driverData: DriverDetails;
 }
-const { driverId } = Astro.props;
 
-// Simulate API Fetch
-await new Promise((r) => setTimeout(r, 600));
-
-const personalInfo = {
-    fullName: "Julian Alexander Rossi",
-    email: "j.rossi@logistics.com",
-    phone: "+1 (555) 234-5678",
-    address: "4522 Sunset Blvd, Los Angeles, CA 90027",
-};
+const { driverData } = Astro.props;
+const fullName = `${driverData.firstName} ${driverData.lastName}`;
 ---
 
 <div class="bg-card rounded-xl shadow-sm p-6 h-full">
@@ -32,7 +25,7 @@ const personalInfo = {
             >
                 Full Name
             </p>
-            <p class="text-foreground font-medium">{personalInfo.fullName}</p>
+            <p class="text-foreground font-medium">{fullName}</p>
         </div>
 
         <div>
@@ -41,7 +34,7 @@ const personalInfo = {
             >
                 Email Address
             </p>
-            <p class="text-foreground font-medium">{personalInfo.email}</p>
+            <p class="text-foreground font-medium">{driverData.email}</p>
         </div>
 
         <div>
@@ -50,17 +43,17 @@ const personalInfo = {
             >
                 Phone Number
             </p>
-            <p class="text-foreground font-medium">{personalInfo.phone}</p>
+            <p class="text-foreground font-medium">{driverData.phone}</p>
         </div>
 
         <div>
             <p
                 class="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1"
             >
-                Residential Address
+                CIN
             </p>
-            <p class="text-foreground font-medium leading-relaxed max-w-[200px]">
-                {personalInfo.address}
+            <p class="text-foreground font-medium">
+                {driverData.cin || "N/A"}
             </p>
         </div>
     </div>

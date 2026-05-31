@@ -1,77 +1,49 @@
 ---
 import AdminLayout from "@/layouts/AdminLayout.astro";
-import DriverHeader from "@/components/sections/admin/drivers/DriverHeader.astro";
-import PersonalInfoCard from "@/components/sections/admin/drivers/PersonalInfoCard.astro";
-import VehicleInfoCard from "@/components/sections/admin/drivers/VehicleInfoCard.astro";
-import PerformanceCard from "@/components/sections/admin/drivers/PerformanceCard.astro";
-import ComplianceDocuments from "@/components/sections/admin/drivers/ComplianceDocuments.astro";
-import ActivityFeed from "@/components/sections/admin/drivers/ActivityFeed.astro";
+import DriverDetailsWrapper from "@/components/sections/admin/drivers/DriverDetailsWrapper.astro";
 
 const { id } = Astro.params;
 ---
 
 <AdminLayout title="Détails du Livreur">
     <div class="px-6 py-4 text-sm text-muted-foreground font-medium">
-        <a href="/admin/users" class="hover:text-secondary-foreground">Users</a> &gt;
-        <a href="/admin/drivers" class="hover:text-secondary-foreground">Driver Details</a> &gt;
-        <span class="text-muted-foreground">Julian Rossi</span>
+        <a href="/admin/users" class="hover:text-secondary-foreground">Users</a
+        > &gt;
+        <a href="/admin/drivers" class="hover:text-secondary-foreground"
+            >Drivers</a
+        > &gt;
+        <span class="text-foreground">{id}</span>
     </div>
 
     <div class="p-6 max-w-7xl mx-auto space-y-6">
-        <DriverHeader server:defer driverId={id}>
-            <div
-                slot="fallback"
-                class="h-32 bg-secondary animate-pulse rounded-xl"
-            >
-            </div>
-        </DriverHeader>
+        <DriverDetailsWrapper server:defer driverId={id!}>
+            <div slot="fallback" class="space-y-6">
+                <div class="h-32 bg-secondary animate-pulse rounded-xl"></div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <PersonalInfoCard server:defer driverId={id}>
-                <div
-                    slot="fallback"
-                    class="h-64 bg-secondary animate-pulse rounded-xl"
-                >
-                </div>
-            </PersonalInfoCard>
-
-            <VehicleInfoCard server:defer driverId={id}>
-                <div
-                    slot="fallback"
-                    class="h-64 bg-secondary animate-pulse rounded-xl"
-                >
-                </div>
-            </VehicleInfoCard>
-
-            <PerformanceCard server:defer driverId={id}>
-                <div
-                    slot="fallback"
-                    class="h-64 bg-secondary animate-pulse rounded-xl"
-                >
-                </div>
-            </PerformanceCard>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="md:col-span-2">
-                <ComplianceDocuments server:defer driverId={id}>
-                    <div
-                        slot="fallback"
-                        class="h-80 bg-secondary animate-pulse rounded-xl"
-                    >
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="h-64 bg-secondary animate-pulse rounded-xl">
                     </div>
-                </ComplianceDocuments>
-            </div>
-
-            <div class="md:col-span-1">
-                <ActivityFeed server:defer driverId={id}>
-                    <div
-                        slot="fallback"
-                        class="h-80 bg-secondary animate-pulse rounded-xl"
-                    >
+                    <div class="h-64 bg-secondary animate-pulse rounded-xl">
                     </div>
-                </ActivityFeed>
+                    <div class="h-64 bg-secondary animate-pulse rounded-xl">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2">
+                        <div
+                            class="h-80 bg-secondary animate-pulse rounded-xl"
+                        >
+                        </div>
+                    </div>
+                    <div class="md:col-span-1">
+                        <div
+                            class="h-80 bg-secondary animate-pulse rounded-xl"
+                        >
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </DriverDetailsWrapper>
     </div>
 </AdminLayout>
