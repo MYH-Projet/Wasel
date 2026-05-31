@@ -3,13 +3,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wasel.Api.Modules.Deliveries.DTOs;
 using Wasel.Api.Modules.Deliveries.Services;
-using System.Security.Claims;
 
 namespace Wasel.Api.Modules.Deliveries.Controllers;
 
 [ApiController]
 [Route("api/deliveries")]
-[Authorize]
+[Authorize(Policy = "ActiveUserOnly")]
 public class DeliveriesController : ControllerBase
 {
     private readonly IDeliveryService _deliveryService;

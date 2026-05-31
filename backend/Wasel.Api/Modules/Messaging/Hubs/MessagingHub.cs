@@ -6,7 +6,7 @@ using Wasel.Api.Modules.Messaging.Services;
 
 namespace Wasel.Api.Modules.Messaging.Hubs;
 
-[Authorize]
+[Authorize(Policy = "ActiveUserOnly")]
 public class MessagingHub : Hub
 {
     private readonly IMessagingService _messagingService;

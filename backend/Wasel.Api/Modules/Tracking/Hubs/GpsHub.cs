@@ -8,7 +8,7 @@ using Wasel.Api.Modules.Tracking.Services;
 
 namespace Wasel.Api.Modules.Tracking.Hubs;
 
-[Authorize]
+[Authorize(Policy = "ActiveUserOnly")]
 public class GpsHub : Hub
 {
     private readonly ITrackingService _trackingService;

@@ -7,6 +7,7 @@ using Minio;
 
 using Wasel.Api.Shared.Database;
 using Wasel.Api.Shared.Security;
+using Microsoft.AspNetCore.Authorization;
 using Wasel.Api.Shared.Middleware;
 using Wasel.Api.Infrastructure.Keycloak;
 using Wasel.Api.Infrastructure.MinIO;
@@ -96,6 +97,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", p => p.RequireRole(KeycloakConstants.RoleAdmin));
+    options.AddPolicy("ActiveUserOnly", p => 
+        p.RequireAuthenticatedUser()
+         .AddRequirements(new ActiveUserRequirement()));
     options.AddPolicy("DriverOnly", p => p.RequireRole(KeycloakConstants.RoleDriver));
     options.AddPolicy("ClientOnly", p => p.RequireRole(KeycloakConstants.RoleClient));
 });
@@ -186,6 +190,8 @@ builder.Services.AddCors(options =>
                .AllowAnyHeader();
     });
 });
+
+builder.Services.AddScoped<IAuthorizationHandler, ActiveUserRequirementHandler>();
 
 var app = builder.Build();
 
