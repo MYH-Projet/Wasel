@@ -507,9 +507,11 @@ public class DeliveryService : IDeliveryService
     var user = await _deliveryRepository.GetUserByKeycloakIdAsync(keycloakId)
         ?? throw new UnauthorizedAccessException("Utilisateur introuvable.");
 
+    var driver = await _driverRepository.GetByUserIdAsync(user.Id);
+
     bool isAdmin  = roles.Contains("ADMIN");
     bool isOwner  = delivery.ClientId == user.Id;
-    bool isDriver = delivery.DriverId == user.Id;
+    bool isDriver = delivery.DriverId.HasValue && driver != null && delivery.DriverId == driver.Id;
 
     if (!isAdmin && !isOwner && !isDriver)
         throw new UnauthorizedAccessException("Accès refusé à cette livraison.");
@@ -708,5 +710,77 @@ public class DeliveryService : IDeliveryService
         CreatedAt = d.CreatedAt
     }).ToList()
 };
+    }
+
+    public DeliveryEstimateResponseDto EstimateDelivery(DeliveryEstimateRequestDto request)
+    {
+        if (request.Weight <= 0)
+            throw new ArgumentException("Weight must be greater than zero.");
+        
+        if (request.PickupLat < -90 || request.PickupLat > 90 || request.DropoffLat < -90 || request.DropoffLat > 90 ||
+            request.PickupLng < -180 || request.PickupLng > 180 || request.DropoffLng < -180 || request.DropoffLng > 180)
+        {
+            throw new ArgumentException("Invalid coordinates.");
+        }
+
+        var distanceKm = CalculateDistanceKm(request.PickupLat, request.PickupLng, request.DropoffLat, request.DropoffLng);
+        
+        decimal baseFee = 10m;
+        decimal distanceFee = (decimal)distanceKm * 2.5m;
+        decimal weightFee = (decimal)request.Weight * 2m;
+        decimal fragileFee = request.IsFragile ? 5m : 0m;
+        
+        decimal estimatedPrice = Math.Round(baseFee + distanceFee + weightFee + fragileFee, 2);
+
+        return new DeliveryEstimateResponseDto
+        {
+            EstimatedPrice = estimatedPrice,
+            Currency = "MAD",
+            DistanceKm = Math.Round(distanceKm, 2),
+            Breakdown = new DeliveryEstimateBreakdownDto
+            {
+                BaseFee = baseFee,
+                DistanceFee = distanceFee,
+                WeightFee = weightFee,
+                FragileFee = fragileFee
+            }
+        };
+    }
+
+    public async Task<List<ActiveDeliveryResponseDto>> GetMyActiveDeliveriesAsync(string keycloakId)
+    {
+        var user = await _deliveryRepository.GetUserByKeycloakIdAsync(keycloakId);
+        if (user == null)
+            throw new UnauthorizedAccessException("Utilisateur introuvable.");
+
+        var driver = await _driverRepository.GetByUserIdAsync(user.Id);
+
+        var activeStatuses = new List<DeliveryStatus>
+        {
+            DeliveryStatus.CREATED,
+            DeliveryStatus.WAITING_DRIVER,
+            DeliveryStatus.ASSIGNED,
+            DeliveryStatus.ACCEPTED,
+            DeliveryStatus.ARRIVED_AT_PICKUP,
+            DeliveryStatus.PICKED_UP,
+            DeliveryStatus.IN_TRANSIT,
+            DeliveryStatus.ARRIVED_AT_DROPOFF
+        };
+
+        var deliveries = await _deliveryRepository.GetActiveDeliveriesForUserAsync(user.Id, driver?.Id, activeStatuses);
+
+        return deliveries.Select(d => new ActiveDeliveryResponseDto
+        {
+            Id = d.Id,
+            Status = d.Status.ToString(),
+            ClientId = d.ClientId,
+            DriverId = d.DriverId,
+            PickupAddress = MapAddress(d.PickupAddress),
+            DropoffAddress = MapAddress(d.DropoffAddress),
+            ParcelSummary = d.Parcel?.Description ?? string.Empty,
+            Price = d.Price,
+            CreatedAt = d.CreatedAt,
+            UpdatedAt = d.UpdatedAt
+        }).ToList();
     }
 }
