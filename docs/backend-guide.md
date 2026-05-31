@@ -905,6 +905,25 @@ Le module `Reviews` gère la notation et les avis des livreurs par les clients.
 
 ---
 
+## 25. Messaging Hub Security
+
+La sécurité du WebSockets pour la messagerie des livraisons est critique pour garantir la confidentialité des échanges entre le client et le livreur.
+
+### Route du Hub
+- `/hubs/messaging`
+
+### Règles d'accès à un groupe de livraison (JoinDeliveryGroup)
+L'accès au groupe SignalR (`delivery-{deliveryId}`) est restreint :
+- Seul le **Client propriétaire** de la livraison est autorisé.
+- Seul le **Livreur assigné** à la livraison (vérifié via `Driver.Id`) est autorisé.
+- Les **Administrateurs** (rôle `ADMIN`) sont autorisés.
+
+### Comportement en cas de refus
+- Si un utilisateur tente de rejoindre une livraison qui ne le concerne pas, le backend rejette la connexion au groupe de manière silencieuse ou explicite via une `HubException` ("You are not allowed to join this delivery chat.").
+- Aucun code HTTP 403 n'est envoyé sur la requête WebSocket elle-même, l'erreur est attrapée et transmise sous forme de message d'erreur SignalR.
+
+---
+
 > Ce guide est un document vivant. Si une nouvelle règle architecturale est décidée par l'équipe, n'hésitez pas à la documenter ici !
 
 ---

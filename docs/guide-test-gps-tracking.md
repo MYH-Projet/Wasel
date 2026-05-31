@@ -22,7 +22,7 @@ Il couvre la connexion WebSocket (SignalR), l'envoi de positions simulées, et l
 
 ---
 
-## 1. 📦 Pré-requis
+## 1.  Pré-requis
 
 Assurez-vous d'avoir installé :
 

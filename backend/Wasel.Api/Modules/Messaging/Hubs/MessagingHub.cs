@@ -18,7 +18,28 @@ public class MessagingHub : Hub
 
     public async Task JoinDeliveryGroup(Guid deliveryId)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"delivery-{deliveryId}");
+        var keycloakId = Context.User?.FindFirstValue("sub")
+                      ?? Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+                      ?? Context.User?.Claims.FirstOrDefault(c => c.Type.EndsWith("/nameidentifier"))?.Value;
+
+        if (keycloakId is null)
+            throw new HubException("Utilisateur non authentifié.");
+
+        var roles = Context.User?.FindAll(ClaimTypes.Role).Select(c => c.Value) ?? new List<string>();
+
+        try
+        {
+            await _messagingService.EnsureCanAccessDeliveryChatAsync(deliveryId, keycloakId, roles);
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"delivery-{deliveryId}");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            throw new HubException("You are not allowed to join this delivery chat.");
+        }
+        catch (InvalidOperationException)
+        {
+            throw new HubException("Delivery chat not available.");
+        }
     }
 
     public async Task SendMessage(SendMessageRequestDto request)
