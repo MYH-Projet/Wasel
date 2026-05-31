@@ -146,4 +146,27 @@ public class MessagingService : IMessagingService
             IsRead = m.ReadAt != null
         }).ToList();
     }
+
+    public async Task EnsureCanAccessDeliveryChatAsync(Guid deliveryId, string keycloakId, IEnumerable<string> roles)
+    {
+        if (roles.Contains(Wasel.Api.Infrastructure.Keycloak.KeycloakConstants.RoleAdmin))
+            return;
+
+        var user = await _userRepository.GetByKeycloakIdAsync(keycloakId);
+        if (user == null)
+            throw new UnauthorizedAccessException("Utilisateur introuvable.");
+
+        var delivery = await _deliveryRepository.GetByIdAsync(deliveryId);
+        if (delivery == null)
+            throw new InvalidOperationException("Livraison introuvable.");
+
+        if (delivery.ClientId == user.Id)
+            return;
+
+        var driver = await _driverRepository.GetByUserIdAsync(user.Id);
+        if (driver != null && delivery.DriverId == driver.Id)
+            return;
+
+        throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à rejoindre ce chat.");
+    }
 }

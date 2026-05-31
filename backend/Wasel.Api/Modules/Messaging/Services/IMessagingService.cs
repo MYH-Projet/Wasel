@@ -6,4 +6,5 @@ public interface IMessagingService
 {
     Task<object> SendMessageAsync(SendMessageRequestDto request, string keycloakId);
     Task<List<MessageHistoryItemDto>> GetMessageHistoryAsync(Guid deliveryId, string keycloakId);
+    Task EnsureCanAccessDeliveryChatAsync(Guid deliveryId, string keycloakId, IEnumerable<string> roles);
 }
