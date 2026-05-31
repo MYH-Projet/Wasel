@@ -1,59 +1,98 @@
 import type { APIRoute } from "astro";
 
+const INTERNAL_API_URL = import.meta.env.INTERNAL_API_URL;
+
 export const GET: APIRoute = async (context) => {
-    // ⏳ Simulate network delay
-    await new Promise((resolve) => setTimeout(resolve, 600));
 
-    // ✅ MOCK DATA FOR DELIVERIES
-    const mockData = {
-        totalPages: 5,
-        totalCount: 42,
-        items: [
+    const user = context.locals.user;
+    try {
+        const queryParams = new URL(context.request.url).search;
+        const response = await fetch(
+            `${INTERNAL_API_URL}/api/deliveries/available${queryParams}`,
             {
-                id: "DEL-9001",
-                customerName: "Youssef Alaoui",
-                driverName: "Ahmed Benali",
-                status: "IN_TRANSIT",
-                createdAt: "2026-05-23T10:30:00Z",
-                price: 45.00
-            },
-            {
-                id: "DEL-9002",
-                customerName: "Acme Corp (B2B)",
-                driverName: "Julian Rossi",
-                status: "PICKED_UP",
-                createdAt: "2026-05-23T14:15:00Z",
-                price: 120.50
-            },
-            {
-                id: "DEL-9003",
-                customerName: "Sara Mansouri",
-                driverName: null, // Unassigned
-                status: "PENDING",
-                createdAt: "2026-05-23T15:00:00Z",
-                price: 30.00
-            },
-            {
-                id: "DEL-9004",
-                customerName: "Karim Idrissi",
-                driverName: "Omar Chraibi",
-                status: "DELIVERED",
-                createdAt: "2026-05-22T09:45:00Z",
-                price: 55.00
-            },
-            {
-                id: "DEL-9005",
-                customerName: "Nour El Fassi",
-                driverName: "Khadija Idrissi",
-                status: "ACCEPTED",
-                createdAt: "2026-05-23T14:50:00Z",
-                price: 40.00
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${user?.token}`,
+                },
             }
-        ]
-    };
+        )
+        if (!response.ok) {
+            const isJson = response.headers.get("content-type")?.includes("application/json");
+            const errorMessage = isJson
+                ? (await response.json()).message || "Backend error"
+                : response.statusText;
 
-    return new Response(JSON.stringify(mockData), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-    });
+            return new Response(JSON.stringify({ message: errorMessage }), {
+                status: response.status,
+                headers: { "Content-Type": "application/json" },
+            });
+        }
+        const data = await response.json();
+
+        // Map backend AdminDeliveryListItemDto to frontend Delivery format
+        const mappedData = {
+            totalPages: data.totalPages || 1,
+            totalCount: data.totalItems || 0,
+            items: (data.items || []).map((item: any) => ({
+                id: item.id,
+                customer: { name: item.clientName || "Unknown Client", id: item.clientId },
+                driver: item.driverId ? { id: item.driverId, name: "Assigned" } : null,
+                status: item.status,
+                createdAt: item.createdAt,
+                price: item.price
+            }))
+        };
+
+        return new Response(JSON.stringify(mappedData), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+        });
+    } catch (error) {
+        console.error("Error fetching deliveries:", error);
+        return new Response(JSON.stringify({ message: "Error fetching deliveries" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
+};
+
+
+export const POST: APIRoute = async (context) => {
+    const user = context.locals.user;
+    try {
+        const body = await context.request.json();
+        const response = await fetch(
+            `${INTERNAL_API_URL}/api/deliveries/${body.id}/cancel`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ reason: body.reason }),
+            }
+        );
+        if (!response.ok) {
+            const isJson = response.headers.get("content-type")?.includes("application/json");
+            const errorMessage = isJson
+                ? (await response.json()).message || "Backend error"
+                : response.statusText;
+
+            return new Response(JSON.stringify({ message: errorMessage }), {
+                status: response.status,
+                headers: { "Content-Type": "application/json" },
+            });
+        }
+        const responseData = await response.json();
+        return new Response(JSON.stringify(responseData), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+        });
+    } catch (error) {
+        console.error("Error fetching deliveries:", error);
+        return new Response(JSON.stringify({ message: "Error fetching deliveries" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+        });
+    }
 };

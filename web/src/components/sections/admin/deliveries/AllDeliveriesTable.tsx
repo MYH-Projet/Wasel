@@ -12,8 +12,8 @@ import { toast } from "sonner";
 
 interface Delivery {
     id: string;
-    customerName: string;
-    driverName: string | null;
+    customer: { id: string; name: string };
+    driver: { id: string; name: string } | null;
     status: "PENDING" | "ACCEPTED" | "PICKED_UP" | "IN_TRANSIT" | "DELIVERED" | "CANCELLED";
     createdAt: string;
     price: number;
@@ -30,7 +30,7 @@ export function AllDeliveriesTable() {
     const [isCancelling, setIsCancelling] = useState(false);
 
     // Fetch Hook
-    const { data, isLoading, page, totalPages, setPage } = useTableFetch<Delivery>({
+    const { data, isLoading, page, totalPages, setPage, setData } = useTableFetch<Delivery>({
         endpoint: "/endpoint/deliveries",
         filters: {
             search,
@@ -43,12 +43,30 @@ export function AllDeliveriesTable() {
     const handleCancelDelivery = async () => {
         setIsCancelling(true);
         try {
-            await new Promise(r => setTimeout(r, 800)); // Simulate API call
+            const response = await fetch(
+                `/endpoint/deliveries/${cancelModalData.deliveryId}`,
+                {
+                    method: "POST",
+                    body: JSON.stringify({ status: "CANCELLED", cancelReason }),
+                },
+            );
 
+            if (!response.ok) {
+                const error = await response.json();
+                toast.error(error.message || "Failed to cancel delivery.");
+                setIsCancelling(false);
+                return;
+            }
             toast.success(`Delivery ${cancelModalData.deliveryId} cancelled.`);
 
             // Optimistically update the table data without a full reload
-
+            setData((prevData) =>
+                prevData.map((delivery) =>
+                    delivery.id === cancelModalData.deliveryId
+                        ? { ...delivery, status: "CANCELLED" }
+                        : delivery,
+                ),
+            );
 
             setCancelModalData({ isOpen: false, deliveryId: null });
             setCancelReason("");
@@ -75,13 +93,13 @@ export function AllDeliveriesTable() {
         { header: "Tracking ID", render: (row: Delivery) => <span className="font-bold text-foreground">{row.id}</span> },
         {
             header: "Customer",
-            render: (row: Delivery) => <span className="font-medium text-foreground/90">{row.customerName}</span>
+            render: (row: Delivery) => <span className="font-medium text-foreground/90">{row.customer.name}</span>
         },
         {
             header: "Assigned Driver",
             render: (row: Delivery) => (
-                <span className={row.driverName ? "text-foreground/90" : "text-muted-foreground/80 italic"}>
-                    {row.driverName || "Unassigned"}
+                <span className={row.driver ? "text-foreground/90" : "text-muted-foreground/80 italic"}>
+                    {row.driver ? row.driver.name : "Unassigned"}
                 </span>
             )
         },

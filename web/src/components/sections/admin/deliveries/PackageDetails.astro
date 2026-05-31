@@ -1,12 +1,13 @@
 ---
 import { Package, AlertTriangle } from "lucide-react";
+import type { DeliveryDetails } from "@/types/delivery";
 
 interface Props {
-    deliveryId: string;
+    deliveryData: DeliveryDetails;
 }
-const { deliveryId } = Astro.props;
 
-await new Promise((r) => setTimeout(r, 500));
+const { deliveryData } = Astro.props;
+const parcel = deliveryData?.parcel;
 ---
 
 <div class="bg-card rounded-xl shadow-sm p-6 border border-border">
@@ -20,9 +21,13 @@ await new Promise((r) => setTimeout(r, 500));
         </div>
         <div>
             <p class="font-bold text-foreground leading-tight">
-                Premium Bond Paper (10 Cases)
+                {parcel?.description || "No description provided"}
             </p>
-            <p class="text-sm text-muted-foreground mt-1">ID: PKG-2281-B</p>
+            <p class="text-sm text-muted-foreground mt-1">
+                ID: PKG-{
+                    deliveryData?.id.slice(0, 8).toUpperCase() || "UNKNOWN"
+                }
+            </p>
         </div>
     </div>
 
@@ -33,20 +38,23 @@ await new Promise((r) => setTimeout(r, 500));
             >
                 Weight
             </p>
-            <p class="font-bold text-foreground">45.5 kg</p>
+            <p class="font-bold text-foreground">
+                {parcel?.weight ? `${parcel.weight} kg` : "Unknown"}
+            </p>
         </div>
-        <div
-            class="flex-1 bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex justify-between items-center"
-        >
-            <div>
-                <p
-                    class="text-[10px] font-bold text-destructive/80 uppercase tracking-wider mb-1"
-                >
-                    Status
-                </p>
-                <p class="font-bold text-destructive">Fragile</p>
-            </div>
-            <AlertTriangle className="w-5 h-5 text-destructive" />
-        </div>
+
+        {
+            parcel?.isFragile && (
+                <div class="flex-1 bg-destructive/10 border border-destructive/20 rounded-lg p-3 flex justify-between items-center">
+                    <div>
+                        <p class="text-[10px] font-bold text-destructive/80 uppercase tracking-wider mb-1">
+                            Status
+                        </p>
+                        <p class="font-bold text-destructive">Fragile</p>
+                    </div>
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                </div>
+            )
+        }
     </div>
 </div>

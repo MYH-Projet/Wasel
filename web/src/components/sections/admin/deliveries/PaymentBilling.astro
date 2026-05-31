@@ -1,12 +1,28 @@
 ---
-import { CreditCard } from "lucide-react";
+import { CreditCard, Wallet, Banknote } from "lucide-react";
+import type { DeliveryDetails } from "@/types/delivery";
 
 interface Props {
-    deliveryId: string;
+    deliveryData: DeliveryDetails;
 }
-const { deliveryId } = Astro.props;
 
-await new Promise((r) => setTimeout(r, 650));
+const { deliveryData } = Astro.props;
+const payment = deliveryData?.payment;
+
+const getPaymentIcon = (method: string) => {
+    switch (method?.toLowerCase()) {
+        case 'card':
+        case 'visa':
+        case 'mastercard':
+            return CreditCard;
+        case 'cash':
+            return Banknote;
+        default:
+            return Wallet;
+    }
+};
+
+const PaymentIcon = getPaymentIcon(payment?.method || '');
 ---
 
 <div class="bg-card rounded-xl shadow-sm p-6 border border-border">
@@ -19,28 +35,17 @@ await new Promise((r) => setTimeout(r, 650));
     >
         <p class="text-sm text-muted-foreground">Method</p>
         <div class="flex items-center gap-2 font-bold text-foreground">
-            <CreditCard className="w-5 h-5 text-muted-foreground/60" />
+            <PaymentIcon className="w-5 h-5 text-muted-foreground/60" />
             <div class="text-right leading-tight">
-                <p>Corporate Visa</p>
-                <p class="text-xs text-muted-foreground">****4242</p>
+                <p>{payment?.method || "Unknown"}</p>
+                <p class="text-xs text-muted-foreground">{payment?.status || "Pending"}</p>
             </div>
-        </div>
-    </div>
-
-    <div class="space-y-3 mb-6">
-        <div class="flex justify-between items-center text-sm">
-            <p class="text-muted-foreground">Service Fee</p>
-            <p class="font-medium text-foreground">$24.50</p>
-        </div>
-        <div class="flex justify-between items-center text-sm">
-            <p class="text-muted-foreground">Distance Charge</p>
-            <p class="font-medium text-foreground">$152.00</p>
         </div>
     </div>
 
     <div class="flex justify-between items-end mb-6">
         <p class="font-bold text-foreground">Total Amount</p>
-        <p class="text-2xl font-black text-foreground">$176.50</p>
+        <p class="text-2xl font-black text-foreground">{payment?.amount ? `${payment.amount.toFixed(2)} MAD` : "--- MAD"}</p>
     </div>
 
     <button

@@ -1,61 +1,62 @@
 ---
 import { MapPin } from "lucide-react";
+import type { DeliveryDetails } from "@/types/delivery";
 
 interface Props {
-    deliveryId: string;
+    deliveryData: DeliveryDetails;
 }
-const { deliveryId } = Astro.props;
 
-// Simulate API Fetch
-await new Promise((r) => setTimeout(r, 800));
+const { deliveryData } = Astro.props;
+
+const pickup = deliveryData?.pickupAddress;
+const delivery = deliveryData?.deliveryAddress;
+
+// Fallback to Pickup Address since live driver coords are pending
+const locationFallback = pickup
+    ? `${pickup.street}, ${pickup.city}`
+    : "Location tracking pending...";
 
 const trackingData = {
-    currentLocation: "452 Market St, San Francisco, CA",
-    heading: "Heading North - 35 mph",
-    lastUpdated: "2m ago",
+    currentLocation: locationFallback,
+    heading:
+        deliveryData?.deliveryStatus === "IN_TRANSIT"
+            ? "Tracking..."
+            : deliveryData?.deliveryStatus?.replace(/_/g, " ") || "Pending",
+    lastUpdated: "Just now",
 };
 ---
 
 <div
-    class="relative bg-slate-900 rounded-xl shadow-sm overflow-hidden h-[400px] border border-border flex flex-col"
+    class="relative bg-slate-100 rounded-xl shadow-sm overflow-hidden h-[400px] border border-border flex flex-col"
 >
     <div
-        class="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10 bg-gradient-to-b from-slate-900/80 to-transparent"
+        class="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-[1000] bg-gradient-to-b from-slate-900/80 to-transparent pointer-events-none"
     >
-        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+        <h2
+            class="text-lg font-bold text-white flex items-center gap-2 pointer-events-auto"
+        >
             <MapPin className="w-5 h-5 text-primary" /> Live Tracking Map
         </h2>
         <div class="flex items-center gap-2 text-sm text-slate-300 font-medium">
-            <span class="w-2 h-2 rounded-full bg-primary animate-pulse"
-            ></span>
+            <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
             Last updated {trackingData.lastUpdated}
         </div>
     </div>
 
-    <img
-        src="https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=1200&auto=format&fit=crop"
-        alt="Map Background"
-        class="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-luminosity"
-    />
-
-    <div class="absolute inset-0 flex items-center justify-center">
-        <svg
-            class="w-full h-full drop-shadow-lg"
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-        >
-            <path
-                d="M 20 80 L 40 80 L 50 40 L 80 20"
-                fill="none"
-                stroke="var(--primary)"
-                stroke-width="2"
-                class="animate-[dash_3s_linear_infinite]"
-                stroke-dasharray="4 4"></path>
-        </svg>
-    </div>
+    <delivery-map
+        class="absolute inset-0 z-0 w-full h-full"
+        data-plat={pickup?.latitude}
+        data-plng={pickup?.longitude}
+        data-pname={pickup?.label}
+        data-dlat={delivery?.latitude}
+        data-dlng={delivery?.longitude}
+        data-dname={delivery?.label}
+    >
+        <div id="map" class="w-full h-full z-0"></div>
+    </delivery-map>
 
     <div
-        class="absolute bottom-6 left-6 bg-card p-4 rounded-lg shadow-xl border border-border min-w-[280px] z-10"
+        class="absolute bottom-6 left-6 bg-card p-4 rounded-lg shadow-xl border border-border min-w-[280px] z-[1000] pointer-events-auto"
     >
         <p
             class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1"
@@ -63,6 +64,101 @@ const trackingData = {
             Current Location
         </p>
         <p class="font-bold text-foreground">{trackingData.currentLocation}</p>
-        <p class="text-sm text-muted-foreground/90 mt-1">{trackingData.heading}</p>
+        <p class="text-sm text-muted-foreground/90 mt-1">
+            {trackingData.heading}
+        </p>
     </div>
 </div>
+
+<script>
+    import L from "leaflet";
+    import "leaflet/dist/leaflet.css";
+
+    class DeliveryMap extends HTMLElement {
+        connectedCallback() {
+            const mapContainer = this.querySelector("#map") as HTMLElement;
+            // Prevent double initialization during HMR (Hot Module Replacement) in dev mode
+            if (!mapContainer || (mapContainer as any)._leaflet_id) return;
+
+            // 1. Grab coordinates from the data attributes
+            const pLat = parseFloat(this.dataset.plat || "");
+            const pLng = parseFloat(this.dataset.plng || "");
+            const dLat = parseFloat(this.dataset.dlat || "");
+            const dLng = parseFloat(this.dataset.dlng || "");
+
+            if (isNaN(pLat) || isNaN(pLng)) return;
+
+            // 2. Initialize the Map
+            const map = L.map(mapContainer, {
+                zoomControl: false, // Hiding default zoom controls for a cleaner dashboard look
+            }).setView([pLat, pLng], 13);
+
+            // 3. Add a modern, clean map tile layer (CartoDB Positron)
+            L.tileLayer(
+                "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+                {
+                    attribution:
+                        "&copy; OpenStreetMap contributors &copy; CARTO",
+                },
+            ).addTo(map);
+
+            // 4. Create custom HTML markers (Avoids missing image bugs in Vite/Astro)
+            const createDotIcon = (colorClass: string) =>
+                L.divIcon({
+                    className: "custom-leaflet-icon",
+                    html: `<div class="w-4 h-4 ${colorClass} rounded-full border-2 border-white shadow-md"></div>`,
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8],
+                });
+
+            // 5. Place the Pickup and Delivery markers
+            const pickupMarker = L.marker([pLat, pLng], {
+                icon: createDotIcon("bg-slate-900"),
+            })
+                .addTo(map)
+                .bindPopup(this.dataset.pname || "Pickup");
+
+            if (!isNaN(dLat) && !isNaN(dLng)) {
+                const deliveryMarker = L.marker([dLat, dLng], {
+                    icon: createDotIcon("bg-primary"),
+                })
+                    .addTo(map)
+                    .bindPopup(this.dataset.dname || "Delivery");
+
+                // 6. Draw a dashed route line between them using Shadcn CSS variables!
+                const routeLine = L.polyline(
+                    [
+                        [pLat, pLng],
+                        [dLat, dLng],
+                    ],
+                    {
+                        color: "hsl(var(--primary))", // Dynamically uses your Shadcn primary color
+                        weight: 3,
+                        dashArray: "5, 10",
+                    },
+                ).addTo(map);
+
+                // 7. Auto-zoom the map so both points fit perfectly on the screen
+                map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+            }
+        }
+    }
+
+    customElements.define("delivery-map", DeliveryMap);
+</script>
+
+<style is:global>
+    /* Ensures Leaflet popup layers don't overlap our Tailwind Absolute overlays */
+    .leaflet-pane {
+        z-index: 1 !important;
+    }
+    .leaflet-top,
+    .leaflet-bottom {
+        z-index: 10 !important;
+    }
+    /* Removes the white background from our custom markers */
+    .custom-leaflet-icon {
+        background: transparent;
+        border: none;
+    }
+</style>

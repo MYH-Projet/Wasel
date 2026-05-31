@@ -1,39 +1,22 @@
 ---
 import { Check } from "lucide-react";
+import { format } from "date-fns";
+import type { DeliveryDetails } from "@/types/delivery";
 
 interface Props {
-    deliveryId: string;
+    deliveryData: DeliveryDetails;
 }
-const { deliveryId } = Astro.props;
 
-await new Promise((r) => setTimeout(r, 1100));
+const { deliveryData } = Astro.props;
 
-const timeline = [
-    {
-        title: "Delivery Requested",
-        date: "Oct 24, 2023 • 09:12 AM",
-        desc: "Order received and processed via automated dispatcher.",
-        status: "completed",
-    },
-    {
-        title: "Driver Assigned",
-        date: "Oct 24, 2023 • 09:45 AM",
-        desc: "Michael Scott (ID: #DR-992) accepted the request.",
-        status: "completed",
-    },
-    {
-        title: "Package Picked Up",
-        date: "Oct 24, 2023 • 10:20 AM",
-        desc: "Pickup verified at South Hub Terminal A.",
-        status: "completed",
-    },
-    {
-        title: "In Transit",
-        date: "Oct 24, 2023 • 10:45 AM",
-        desc: "On the way to the delivery destination. Estimated arrival: 11:30 AM.",
-        status: "current",
-    },
-];
+
+const history = deliveryData?.statusHistory || [];
+const timeline = history.map((item: any, index: number) => ({
+    title: item.status.replace(/_/g, ' '),
+    date: format(new Date(item.timestamp), "MMM dd, yyyy • hh:mm a"),
+    desc: item.note,
+    status: index === history.length - 1 ? "current" : "completed",
+}));
 ---
 
 <div class="bg-card rounded-xl shadow-sm p-6 lg:p-8 border border-border">
