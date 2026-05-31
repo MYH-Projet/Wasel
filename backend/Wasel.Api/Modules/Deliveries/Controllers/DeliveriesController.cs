@@ -286,6 +286,41 @@ public class DeliveriesController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("estimate")]
+    public IActionResult EstimateDelivery([FromQuery] DeliveryEstimateRequestDto request)
+    {
+        try
+        {
+            var result = _deliveryService.EstimateDelivery(request);
+            return Ok(result);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("my/active")]
+    [Authorize]
+    public async Task<IActionResult> GetMyActiveDeliveries()
+    {
+        var keycloakId = User.FindFirst("sub")?.Value
+            ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (string.IsNullOrEmpty(keycloakId))
+            return Unauthorized(new { message = "Token invalide." });
+
+        try
+        {
+            var result = await _deliveryService.GetMyActiveDeliveriesAsync(keycloakId);
+            return Ok(result);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { message = ex.Message });
+        }
+    }
+
     [HttpGet("/api/admin/deliveries")]
     [Authorize(Policy = "AdminOnly")]
     public async Task<IActionResult> GetAdminDeliveries(

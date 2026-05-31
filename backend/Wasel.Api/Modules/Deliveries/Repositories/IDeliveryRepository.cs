@@ -1,6 +1,7 @@
 using Wasel.Api.Modules.Deliveries.Entities;
 using Wasel.Api.Modules.Users.Entities;
 using Wasel.Api.Modules.Deliveries.Enums;
+
 namespace Wasel.Api.Modules.Deliveries.Repositories;
 
 public interface IDeliveryRepository
@@ -47,4 +48,9 @@ public interface IDeliveryRepository
     List<DeliveryStatus>? statuses,
     DateTime? startDate,
     DateTime? endDate);
+
+    Task<List<Delivery>> GetActiveDeliveriesForUserAsync(
+        Guid userId, 
+        Guid? driverId, 
+        IEnumerable<DeliveryStatus> activeStatuses);
 }

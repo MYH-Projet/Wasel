@@ -238,5 +238,28 @@ public class DeliveryRepository : IDeliveryRepository
         return (items, totalCount);
     }
 
-    
+    public async Task<List<Delivery>> GetActiveDeliveriesForUserAsync(
+        Guid userId, 
+        Guid? driverId, 
+        IEnumerable<DeliveryStatus> activeStatuses)
+    {
+        var query = _context.Deliveries
+            .Include(d => d.PickupAddress)
+            .Include(d => d.DropoffAddress)
+            .Include(d => d.Parcel)
+            .Where(d => activeStatuses.Contains(d.Status));
+
+        if (driverId.HasValue)
+        {
+            query = query.Where(d => d.ClientId == userId || d.DriverId == driverId.Value);
+        }
+        else
+        {
+            query = query.Where(d => d.ClientId == userId);
+        }
+
+        return await query
+            .OrderByDescending(d => d.CreatedAt)
+            .ToListAsync();
+    }
 }

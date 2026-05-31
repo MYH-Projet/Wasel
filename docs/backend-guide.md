@@ -944,3 +944,65 @@ Pour permettre à un livreur de fournir ses pièces justificatives, le backend e
 - Un seul document par type (`Cin`, `Permit`, `VehicleCard`, `Insurance`, `ProfilePhoto`, `Other`) peut exister par dossier.
 - Si le document existe déjà, le backend remplace simplement l'`ObjectKey`, remet le statut du document à `Pending`, et efface toute `RejectionReason` (utile suite à un refus par l'admin).
 - L'administration (via les routes admin existantes) se charge de la vérification (statut `Approved` ou `Rejected`).
+
+---
+
+## 26. Delivery Estimate and Active Deliveries
+
+Le module `Deliveries` expose deux nouveaux endpoints pour améliorer l'expérience client et livreur.
+
+### Estimation de livraison
+Permet d'estimer le prix d'une course en fonction des coordonnées GPS, du poids et de la fragilité. Cet endpoint ne crée pas la livraison et ne nécessite pas que le token (bien que requis) appartienne à un rôle spécifique.
+
+**`GET /api/deliveries/estimate`** (Nécessite un token valide)
+
+**Paramètres Query :**
+- `pickupLat`, `pickupLng`, `dropoffLat`, `dropoffLng` (Obligatoires, Plages valides)
+- `weight` (Obligatoire, > 0)
+- `isFragile` (Booléen)
+
+**Exemple de réponse :**
+```json
+{
+  "estimatedPrice": 45.50,
+  "currency": "MAD",
+  "distanceKm": 12.4,
+  "breakdown": {
+    "baseFee": 10.0,
+    "distanceFee": 24.8,
+    "weightFee": 5.0,
+    "fragileFee": 5.0
+  }
+}
+```
+
+> [!NOTE]
+> La formule d'estimation actuelle est basique et déterministe (basée sur la distance de Haversine). Elle pourra être remplacée plus tard par une stratégie tarifaire avancée.
+
+### Livraisons actives de l'utilisateur
+Retourne toutes les livraisons en cours de l'utilisateur connecté, avec les statuts suivants : `CREATED`, `WAITING_DRIVER`, `ASSIGNED`, `ACCEPTED`, `ARRIVED_AT_PICKUP`, `PICKED_UP`, `IN_TRANSIT`, `ARRIVED_AT_DROPOFF`.
+
+**`GET /api/deliveries/my/active`** (Nécessite un token valide)
+
+**Règles de visibilité :**
+- Si l'utilisateur est un client, il voit ses propres commandes (`ClientId == User.Id`).
+- Si l'utilisateur est aussi livreur (profil existant), il voit les missions qui lui sont assignées (`DriverId == Driver.Id`).
+- Exclut les livraisons terminées (`DELIVERED`) ou annulées.
+
+**Exemple de réponse :**
+```json
+[
+  {
+    "id": "guid",
+    "status": "IN_TRANSIT",
+    "clientId": "guid",
+    "driverId": "guid",
+    "pickupAddress": { ... },
+    "dropoffAddress": { ... },
+    "parcelSummary": "Colis standard",
+    "price": 45.50,
+    "createdAt": "2026-06-01T00:00:00Z",
+    "updatedAt": "2026-06-01T00:10:00Z"
+  }
+]
+```
