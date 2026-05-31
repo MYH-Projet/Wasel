@@ -1,7 +1,7 @@
 ---
 import "../styles/global.css";
-import { NavBar } from "../components/sections/NavBar.tsx";
-import Footer from "../components/sections/Footer.astro";
+import { NavBar } from "../components/sections/home/NavBar.tsx";
+import Footer from "../components/sections/home/Footer.astro";
 import { getImage } from "astro:assets";
 import logoImage from "../assets/images/wasel-logo.png";
 
@@ -20,11 +20,14 @@ const logo = await getImage({
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
+		<link rel="icon" type="image/svg+xml" href="/wasel.svg" />
+		<link rel="icon" href="/wasel.svg" />
 		<meta name="generator" content={Astro.generator} />
 		<title>Wasel — Fast, Flexible Local Delivery on Demand</title>
-		<meta name="description" content="Get your packages delivered across town in minutes with Wasel. Reliable, secure, and always at your fingertips. Track in real-time, pay flexibly, and trust our drivers." />
+		<meta
+			name="description"
+			content="Get your packages delivered across town in minutes with Wasel. Reliable, secure, and always at your fingertips. Track in real-time, pay flexibly, and trust our drivers."
+		/>
 	</head>
 	<body
 		class="min-h-screen bg-background font-sans text-foreground antialiased flex flex-col"

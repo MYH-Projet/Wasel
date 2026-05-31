@@ -22,6 +22,143 @@ namespace Wasel.Api.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Wasel.Api.Modules.Complaints.Entities.Complaint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AdminComment")
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("ApprovedAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("ComplaintType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("RequestedAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId");
+
+                    b.ToTable("Complaints");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Complaints.Entities.ComplaintEvidence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ComplaintId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FileType")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ComplaintId");
+
+                    b.ToTable("ComplaintEvidences");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Deliveries.Entities.Address", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AdditionalInfo")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("ClientId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Instructions")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Street")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.ToTable("addresses", (string)null);
+                });
+
             modelBuilder.Entity("Wasel.Api.Modules.Deliveries.Entities.Delivery", b =>
                 {
                     b.Property<Guid>("Id")
@@ -34,18 +171,147 @@ namespace Wasel.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("DeliveryAddress")
+                    b.Property<string>("Currency")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<decimal>("DistanceKm")
+                        .HasColumnType("numeric");
 
                     b.Property<Guid?>("DriverId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("EstimatedDeliveryTime")
+                    b.Property<Guid>("DropoffAddressId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ParcelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("PickupAddressId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("PickupAddress")
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("DropoffAddressId");
+
+                    b.HasIndex("ParcelId")
+                        .IsUnique();
+
+                    b.HasIndex("PickupAddressId");
+
+                    b.ToTable("deliveries", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Deliveries.Entities.DeliveryStatusHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ChangedByDriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Status")
                         .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId");
+
+                    b.ToTable("delivery_status_histories", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Deliveries.Entities.Parcel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Instructions")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsFragile")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Volume")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal>("Weight")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("parcels", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Documents.Entities.Document", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DocumentType")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("DriverDossierId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ObjectKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RejectionReason")
                         .HasColumnType("text");
 
                     b.Property<int>("Status")
@@ -54,9 +320,17 @@ namespace Wasel.Api.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.HasKey("Id");
 
-                    b.ToTable("deliveries", (string)null);
+                    b.HasIndex("DriverDossierId");
+
+                    b.ToTable("documents", (string)null);
                 });
 
             modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.Driver", b =>
@@ -68,10 +342,7 @@ namespace Wasel.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsAvailable")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LicenseNumber")
+                    b.Property<string>("PermitNumber")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -84,16 +355,351 @@ namespace Wasel.Api.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("VehicleType")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("LicenseNumber")
+                    b.HasIndex("PermitNumber")
+                        .IsUnique();
+
+                    b.HasIndex("UserId")
                         .IsUnique();
 
                     b.ToTable("drivers", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.DriverDossier", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("SubmissionDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("VerificationDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId")
+                        .IsUnique();
+
+                    b.ToTable("driver_dossiers", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.Vehicle", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Marque")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Matricule")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DriverId")
+                        .IsUnique();
+
+                    b.ToTable("Vehicles");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Messaging.Entities.Message", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Notifications.Entities.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.HasIndex("UserId", "Status");
+
+                    b.ToTable("notifications", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Payments.Entities.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("TransactionReference")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId")
+                        .IsUnique();
+
+                    b.ToTable("payments", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Payments.Entities.SavedPaymentMethod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CardBrand")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("CardLast4")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ProviderCustomerId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProviderName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ProviderPaymentMethodId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("saved_payment_methods", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Reviews.Entities.Review", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ReviewedDriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ReviewerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId")
+                        .IsUnique();
+
+                    b.HasIndex("ReviewedDriverId");
+
+                    b.HasIndex("ReviewerUserId");
+
+                    b.ToTable("reviews", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Tracking.Entities.TrackingPoint", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<double?>("AccuracyMeters")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<double?>("Heading")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime>("RecordedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double?>("SpeedKmh")
+                        .HasColumnType("double precision");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryId", "RecordedAt");
+
+                    b.HasIndex("DriverId", "RecordedAt");
+
+                    b.ToTable("tracking_points", (string)null);
                 });
 
             modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.User", b =>
@@ -147,6 +753,525 @@ namespace Wasel.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("users", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.UserPreference", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ActiveAppMode")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PreferredMode")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("UserPreferences");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Wallets.Entities.Wallet", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Balance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WalletType")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("wallets", (string)null);
+
+                    b.HasDiscriminator<string>("WalletType").HasValue("Wallet");
+
+                    b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Wallets.Entities.WalletTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("DeliveryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("WalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("WalletTransferId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("DeliveryId");
+
+                    b.HasIndex("WalletId");
+
+                    b.HasIndex("WalletTransferId");
+
+                    b.ToTable("wallet_transactions", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Wallets.Entities.WalletTransfer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("FromWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid?>("ToWalletId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromWalletId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("ToWalletId");
+
+                    b.ToTable("wallet_transfers", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Wallets.Entities.ClientWallet", b =>
+                {
+                    b.HasBaseType("Wasel.Api.Modules.Wallets.Entities.Wallet");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.HasDiscriminator().HasValue("CLIENT");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Wallets.Entities.DriverWallet", b =>
+                {
+                    b.HasBaseType("Wasel.Api.Modules.Wallets.Entities.Wallet");
+
+                    b.Property<Guid>("DriverId")
+                        .HasColumnType("uuid");
+
+                    b.HasIndex("DriverId")
+                        .IsUnique();
+
+                    b.HasDiscriminator().HasValue("DRIVER");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Wallets.Entities.PlatformWallet", b =>
+                {
+                    b.HasBaseType("Wasel.Api.Modules.Wallets.Entities.Wallet");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasDiscriminator().HasValue("PLATFORM");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Complaints.Entities.Complaint", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Deliveries.Entities.Delivery", "Delivery")
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Delivery");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Complaints.Entities.ComplaintEvidence", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Complaints.Entities.Complaint", "Complaint")
+                        .WithMany("Evidences")
+                        .HasForeignKey("ComplaintId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Complaint");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Deliveries.Entities.Address", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Deliveries.Entities.Delivery", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "Client")
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasel.Api.Modules.Deliveries.Entities.Address", "DropoffAddress")
+                        .WithMany()
+                        .HasForeignKey("DropoffAddressId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasel.Api.Modules.Deliveries.Entities.Parcel", "Parcel")
+                        .WithOne()
+                        .HasForeignKey("Wasel.Api.Modules.Deliveries.Entities.Delivery", "ParcelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Wasel.Api.Modules.Deliveries.Entities.Address", "PickupAddress")
+                        .WithMany()
+                        .HasForeignKey("PickupAddressId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Client");
+
+                    b.Navigation("DropoffAddress");
+
+                    b.Navigation("Parcel");
+
+                    b.Navigation("PickupAddress");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Deliveries.Entities.DeliveryStatusHistory", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Deliveries.Entities.Delivery", "Delivery")
+                        .WithMany("StatusHistories")
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Delivery");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Documents.Entities.Document", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Drivers.Entities.DriverDossier", "DriverDossier")
+                        .WithMany("Documents")
+                        .HasForeignKey("DriverDossierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DriverDossier");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.Driver", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "User")
+                        .WithOne("Driver")
+                        .HasForeignKey("Wasel.Api.Modules.Drivers.Entities.Driver", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.DriverDossier", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Drivers.Entities.Driver", "Driver")
+                        .WithOne("Dossier")
+                        .HasForeignKey("Wasel.Api.Modules.Drivers.Entities.DriverDossier", "DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.Vehicle", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Drivers.Entities.Driver", "Driver")
+                        .WithOne("Vehicle")
+                        .HasForeignKey("Wasel.Api.Modules.Drivers.Entities.Vehicle", "DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Messaging.Entities.Message", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Deliveries.Entities.Delivery", "Delivery")
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Delivery");
+
+                    b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Notifications.Entities.Notification", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Payments.Entities.Payment", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Deliveries.Entities.Delivery", "Delivery")
+                        .WithOne()
+                        .HasForeignKey("Wasel.Api.Modules.Payments.Entities.Payment", "DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Delivery");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Payments.Entities.SavedPaymentMethod", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Reviews.Entities.Review", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Deliveries.Entities.Delivery", "Delivery")
+                        .WithMany()
+                        .HasForeignKey("DeliveryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Wasel.Api.Modules.Drivers.Entities.Driver", "ReviewedDriver")
+                        .WithMany()
+                        .HasForeignKey("ReviewedDriverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "ReviewerUser")
+                        .WithMany()
+                        .HasForeignKey("ReviewerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Delivery");
+
+                    b.Navigation("ReviewedDriver");
+
+                    b.Navigation("ReviewerUser");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.UserPreference", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "User")
+                        .WithOne("Preference")
+                        .HasForeignKey("Wasel.Api.Modules.Users.Entities.UserPreference", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Wallets.Entities.WalletTransaction", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Deliveries.Entities.Delivery", "Delivery")
+                        .WithMany()
+                        .HasForeignKey("DeliveryId");
+
+                    b.HasOne("Wasel.Api.Modules.Wallets.Entities.Wallet", "Wallet")
+                        .WithMany("Transactions")
+                        .HasForeignKey("WalletId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Wasel.Api.Modules.Wallets.Entities.WalletTransfer", "WalletTransfer")
+                        .WithMany("Transactions")
+                        .HasForeignKey("WalletTransferId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Delivery");
+
+                    b.Navigation("Wallet");
+
+                    b.Navigation("WalletTransfer");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Wallets.Entities.WalletTransfer", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Wallets.Entities.Wallet", "FromWallet")
+                        .WithMany()
+                        .HasForeignKey("FromWalletId");
+
+                    b.HasOne("Wasel.Api.Modules.Wallets.Entities.Wallet", "ToWallet")
+                        .WithMany()
+                        .HasForeignKey("ToWalletId");
+
+                    b.Navigation("FromWallet");
+
+                    b.Navigation("ToWallet");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Wallets.Entities.ClientWallet", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Wallets.Entities.DriverWallet", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Drivers.Entities.Driver", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Complaints.Entities.Complaint", b =>
+                {
+                    b.Navigation("Evidences");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Deliveries.Entities.Delivery", b =>
+                {
+                    b.Navigation("StatusHistories");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.Driver", b =>
+                {
+                    b.Navigation("Dossier");
+
+                    b.Navigation("Vehicle");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Drivers.Entities.DriverDossier", b =>
+                {
+                    b.Navigation("Documents");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Users.Entities.User", b =>
+                {
+                    b.Navigation("Driver");
+
+                    b.Navigation("Preference");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Wallets.Entities.Wallet", b =>
+                {
+                    b.Navigation("Transactions");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Wallets.Entities.WalletTransfer", b =>
+                {
+                    b.Navigation("Transactions");
                 });
 #pragma warning restore 612, 618
         }

@@ -325,9 +325,223 @@ Présent pour le futur. Utilisé pour cacher des données fréquentes ou gérer 
 ### MinIO
 Utilisé pour sauvegarder des fichiers physiques (Permis de conduire, photos de profil, preuves de livraison). La base de données PostgreSQL ne stockera que l'**URL** ou le chemin d'accès vers MinIO, jamais le fichier physique. L'image de dev local est volontairement figée sur une version Release stable.
 
+### Module Files / URLs presignees MinIO
+
+Le module `Files` expose uniquement des endpoints de generation d'URLs presignees. Le backend ne recoit jamais le contenu binaire du fichier : le client demande une URL temporaire, puis uploade directement le fichier vers MinIO avec cette URL. PostgreSQL ne stocke pas le fichier; les modules metier conservent seulement l'`objectKey` quand ils doivent rattacher un fichier a une ressource.
+
+Configuration:
+- Section `MinIO` dans `appsettings.json` / `appsettings.Development.json`.
+- Variables Docker Compose: `MinIO__Endpoint`, `MinIO__AccessKey`, `MinIO__SecretKey`, `MinIO__BucketName`, `MinIO__UseSSL`.
+- Bucket par defaut: `wasel-files`.
+
+Endpoints ajoutes:
+
+```http
+POST /api/files/upload-url
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+```
+
+```json
+{
+  "fileName": "permis.pdf",
+  "fileType": "pdf",
+  "context": "DOCUMENT"
+}
+```
+
+Reponse:
+
+```json
+{
+  "uploadUrl": "https://...",
+  "objectKey": "documents/<userId>/<guid>.pdf",
+  "expiresInSeconds": 600
+}
+```
+
+`fileType` autorises: `jpg`, `jpeg`, `png`, `pdf`.
+`context` autorises: `PROFILE_PHOTO`, `DOCUMENT`, `DELIVERY_PROOF`, `COMPLAINT_EVIDENCE`.
+
+Formats d'object keys:
+- `profile-photos/{userId}/{guid}.{extension}`
+- `documents/{userId}/{guid}.{extension}`
+- `delivery-proofs/{userId}/{guid}.{extension}`
+- `complaint-evidence/{userId}/{guid}.{extension}`
+
+```http
+GET /api/files/view-url?objectKey=<OBJECT_KEY>
+Authorization: Bearer <TOKEN>
+```
+
+Reponse:
+
+```json
+{
+  "viewUrl": "https://...",
+  "expiresInSeconds": 300
+}
+```
+
+Regles d'acces de cette premiere version:
+- un utilisateur peut consulter un fichier si l'`objectKey` contient son `userId`;
+- un `ADMIN` peut consulter tous les fichiers;
+- sinon l'API retourne `403`.
+
+Exemples cURL:
+
+```bash
+TOKEN="VOTRE_TOKEN_ICI"
+
+curl -X POST "http://localhost:5000/api/files/upload-url" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"fileName":"permis.pdf","fileType":"pdf","context":"DOCUMENT"}'
+```
+
+```bash
+curl -X POST "http://localhost:5000/api/files/upload-url" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"fileName":"script.exe","fileType":"exe","context":"DOCUMENT"}'
+```
+
+```bash
+curl -X GET "http://localhost:5000/api/files/view-url?objectKey=documents/<userId>/<guid>.pdf" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+Upload direct vers MinIO apres generation de l'URL:
+
+```bash
+curl -X PUT "$UPLOAD_URL" \
+  -H "Content-Type: application/pdf" \
+  --upload-file ./permis.pdf
+```
+
+### Architecture MinIO: InternalEndpoint vs PublicEndpoint
+
+Pour que les URLs présignées générées par le backend soient utilisables par le frontend tout en préservant la validité des signatures S3 AWS, la configuration MinIO utilise deux endpoints distincts :
+
+1. **`InternalEndpoint`** (ex: `wasel-minio:9000`) : Utilisé par le backend pour communiquer avec MinIO de manière interne (ex: vérifier l'existence d'un bucket). Ce hostname est valide uniquement à l'intérieur du réseau Docker.
+2. **`PublicEndpoint`** (ex: `localhost:9000` en dév, ou `storage.wasel.ma` en prod) : Utilisé **exclusivement** pour générer les URLs présignées envoyées au client. MinIO signera l'URL avec ce domaine public.
+
+⚠️ **Très important :** Le Frontend (ou l'application mobile) doit utiliser l'URL générée **telle quelle**. Il ne faut **jamais** modifier manuellement le hostname (`localhost:9000` ou autre) d'une URL présignée côté client. Toute modification du hostname après génération invalidera la signature cryptographique et entraînera une erreur `403 SignatureDoesNotMatch` par MinIO.
+
+### Test automatique Files / MinIO
+
+Un script d'integration valide automatiquement les endpoints Files et la connexion MinIO :
+
+```bash
+bash scripts/test-files-minio.sh
+```
+
+Variables d'environnement optionnelles :
+
+| Variable       | Defaut                          |
+|----------------|---------------------------------|
+| API_BASE_URL   | http://localhost:5000           |
+| KEYCLOAK_URL   | http://localhost:8080/auth      |
+| ADMIN_USER     | admin@wasel.ma                  |
+| ADMIN_PASS     | admin123                        |
+| CLIENT_USER    | client@wasel.ma                 |
+| CLIENT_PASS    | client123                       |
+| CLIENT_ID      | wasel-api                       |
+| REALM          | wasel                           |
+
+Le script valide :
+- Recuperation des tokens admin et client.
+- `POST /api/files/upload-url` avec chaque contexte (DOCUMENT, PROFILE_PHOTO, COMPLAINT_EVIDENCE, DELIVERY_PROOF).
+- Verification des objectKeys generes (prefix, extension, userId).
+- `GET /api/files/view-url` pour le proprietaire et l'admin.
+- Refus d'acces (403) pour un non-proprietaire non-admin.
+- Rejet des fileType invalides (400).
+- Rejet des context invalides (400).
+- PUT reel vers l'URL presignee MinIO (optionnel, depend de l'accessibilite du hostname MinIO).
+
+Pre-requis : Docker Compose lance (`docker compose up -d`). Le script utilise `jq` s'il est disponible, sinon `python3` comme fallback JSON.
+
 ---
 
-## 14. Gestion des branches Git (Workflow)
+## 14. Profil utilisateur et Préférences
+
+Le module `Users` expose deux endpoints pour permettre à l'utilisateur connecté de modifier son profil local et ses préférences de navigation.
+
+### Profil utilisateur
+
+Permet à l'utilisateur connecté de mettre à jour ses informations de base. Note : L'email et le CIN ne sont pas modifiables via cet endpoint. L'email est géré par Keycloak.
+
+**`PATCH /api/users/me`** (Nécessite un token valide)
+
+**Exemple de requête :**
+```json
+{
+  "firstName": "Yassine",
+  "lastName": "Amrani",
+  "phone": "0600000000",
+  "profileObjectKey": "profile-photos/userId/file.jpg"
+}
+```
+*Le `profileObjectKey` doit provenir du module Files / MinIO.*
+
+### Préférences utilisateur
+
+Permet de mettre à jour le mode actif et le mode préféré de l'application (Client / Driver).
+
+**`PATCH /api/users/me/preferences`** (Nécessite un token valide)
+
+**Exemple de requête :**
+```json
+{
+  "activeAppMode": "CLIENT",
+  "preferredMode": "CLIENT"
+}
+```
+
+⚠️ **Important :** Le mode `DRIVER` nécessite obligatoirement que l'utilisateur possède un profil `Driver` enregistré en base de données. Si un utilisateur essaie de passer en mode `DRIVER` sans profil, l'API renverra une erreur `400 Bad Request`.
+
+---
+
+## 15. Driver Onboarding
+
+Le module `Drivers` expose des endpoints permettant à l'utilisateur de soumettre son dossier de chauffeur pour vérification par l'administrateur.
+
+### S'inscrire comme Driver
+
+Permet à l'utilisateur de créer un profil Driver, avec un dossier initialement en statut `Draft` et un véhicule associé.
+
+**`POST /api/drivers/register`** (Nécessite un token valide)
+
+**Exemple de requête :**
+```json
+{
+  "permisNumber": "B123456",
+  "vehicle": {
+    "type": "MOTORCYCLE",
+    "matricule": "12345-A-6",
+    "model": "Click 125",
+    "marque": "Honda"
+  }
+}
+```
+
+### Consulter son profil Driver
+
+Permet de récupérer les informations de son propre profil Driver, incluant le statut du chauffeur et le statut de son dossier.
+
+**`GET /api/drivers/me`** (Nécessite un token valide)
+
+### Soumettre son dossier
+
+Une fois les documents uploadés (via MinIO) et associés, l'utilisateur peut soumettre son dossier. Le dossier passe alors du statut `Draft` à `Submitted`.
+
+**`POST /api/drivers/dossier/submit`** (Nécessite un token valide)
+
+L'administrateur pourra par la suite traiter ce dossier via les endpoints admin existants.
+
+---
+
+## 16. Gestion des branches Git (Workflow)
 
 Stratégie de branchenement stricte :
 - `main` : Version en production (Stable).
@@ -426,7 +640,7 @@ Voici l'ordre logique conseillé pour la suite du projet :
 4. **Module Documents / MinIO** : Permettre l'upload de fichiers.
 5. **Module Deliveries** : Le cœur de l'application (Création de commande, affectation, statuts).
 6. **Module Payments** : Systèmes de transactions.
-7. **Module Tracking (Redis)** : Localisation en temps réel.
+7. **Module Tracking (SignalR)** 🚧 En cours d'intégration — Localisation en temps réel via WebSockets. (Voir [realtime-gps-guide.md](./realtime-gps-guide.md)).
 8. ~~**Mise en place CI/CD**~~ ✅ Fait — voir section 20.
 
 ---
@@ -673,4 +887,60 @@ API_BASE_URL=http://localhost KEYCLOAK_URL=http://localhost/auth bash scripts/te
 
 ---
 
+## 24. Reviews / Notation & Avis
+
+Le module `Reviews` gère la notation et les avis des livreurs par les clients.
+
+### Concepts Clés
+
+- **Propriété** : Un client ne peut évaluer qu'une livraison lui appartenant.
+- **Statut** : La livraison doit être à l'état `DELIVERED`.
+- **Unicité** : Une seule évaluation par livraison.
+- **Pagination** : Les avis d'un livreur sont retournés de manière paginée.
+
+### Endpoints
+
+- `POST /api/reviews` : Soumet un avis. (Requiert le rôle Client)
+- `GET /api/drivers/{driverId}/reviews` : Retourne de manière paginée les avis et la note moyenne d'un livreur. (Public)
+
+---
+
+## 25. Messaging Hub Security
+
+La sécurité du WebSockets pour la messagerie des livraisons est critique pour garantir la confidentialité des échanges entre le client et le livreur.
+
+### Route du Hub
+- `/hubs/messaging`
+
+### Règles d'accès à un groupe de livraison (JoinDeliveryGroup)
+L'accès au groupe SignalR (`delivery-{deliveryId}`) est restreint :
+- Seul le **Client propriétaire** de la livraison est autorisé.
+- Seul le **Livreur assigné** à la livraison (vérifié via `Driver.Id`) est autorisé.
+- Les **Administrateurs** (rôle `ADMIN`) sont autorisés.
+
+### Comportement en cas de refus
+- Si un utilisateur tente de rejoindre une livraison qui ne le concerne pas, le backend rejette la connexion au groupe de manière silencieuse ou explicite via une `HubException` ("You are not allowed to join this delivery chat.").
+- Aucun code HTTP 403 n'est envoyé sur la requête WebSocket elle-même, l'erreur est attrapée et transmise sous forme de message d'erreur SignalR.
+
+---
+
 > Ce guide est un document vivant. Si une nouvelle règle architecturale est décidée par l'équipe, n'hésitez pas à la documenter ici !
+
+---
+
+## 23. Documents du dossier livreur
+
+Pour permettre à un livreur de fournir ses pièces justificatives, le backend expose les endpoints suivants dans `api/drivers/dossier/documents`.
+
+### Workflow frontend
+
+1. **Génération d'URL présignée** : L'application cliente fait un `POST /api/files/upload-url` avec le contexte `DOCUMENT`. Elle reçoit une `uploadUrl` (ex: vers MinIO) et un `objectKey`.
+2. **Upload direct** : Le client fait un `PUT` avec le binaire vers l'`uploadUrl`. Les fichiers volumineux ne transitent jamais par l'API backend.
+3. **Association au dossier** : Le client fait un `POST /api/drivers/dossier/documents` en fournissant le `documentType` (ex: `Permit`, `Cin`) et l'`objectKey` obtenu à l'étape 1.
+
+### Règles métier
+
+- L'utilisateur connecté doit exister et avoir un profil Driver avec un Dossier associé.
+- Un seul document par type (`Cin`, `Permit`, `VehicleCard`, `Insurance`, `ProfilePhoto`, `Other`) peut exister par dossier.
+- Si le document existe déjà, le backend remplace simplement l'`ObjectKey`, remet le statut du document à `Pending`, et efface toute `RejectionReason` (utile suite à un refus par l'admin).
+- L'administration (via les routes admin existantes) se charge de la vérification (statut `Approved` ou `Rejected`).

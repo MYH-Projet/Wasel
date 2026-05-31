@@ -1,0 +1,343 @@
+\documentclass[11pt,a4paper]{report}
+
+% =====================================================
+% 1. PACKAGES FONDAMENTAUX & TYPOGRAPHIE
+% =====================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% Typographie moderne : Palatino pour le texte, Helvetica pour les titres
+\usepackage{mathpazo}
+\usepackage[scaled=0.95]{helvet}
+\usepackage[final]{microtype}
+
+\usepackage{geometry}
+\geometry{top=3cm, bottom=3cm, left=2.5cm, right=2.5cm}
+
+\usepackage{setspace}
+\setstretch{1.25}
+
+\usepackage{graphicx}
+\usepackage[table]{xcolor} % option table indispensable pour \rowcolor
+\usepackage{colortbl}
+\usepackage{array}
+
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{listings}
+\usepackage{fontawesome5}
+\usepackage{tikz}
+
+\usepackage[most]{tcolorbox}
+
+% =====================================================
+% 2. PALETTE DE COULEURS (Corporate & Moderne)
+% =====================================================
+\definecolor{mainblue}{RGB}{0, 51, 102}
+\definecolor{accentblue}{RGB}{0, 102, 204}
+\definecolor{softgray}{RGB}{245, 247, 250}
+\definecolor{codebg}{RGB}{250, 250, 250}
+\definecolor{alertred}{RGB}{204, 51, 51}
+\definecolor{tealgreen}{RGB}{0, 128, 128}
+\definecolor{darkgray}{RGB}{80,80,80} % (sécurise la compilation si non défini)
+
+% =====================================================
+% 3. HYPERREF
+% =====================================================
+\usepackage{hyperref}
+\newcommand{\ReportTitle}{Implémentation du Module GPS Tracking}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=mainblue,
+    filecolor=magenta,
+    urlcolor=teal,
+    pdftitle={\ReportTitle},
+}
+
+% =====================================================
+% 4. DESIGN DES TITRES
+% =====================================================
+\titleformat{\chapter}[display]
+  {\fontfamily{phv}\selectfont\huge\bfseries\color{mainblue}}
+  {\flushright\fontsize{60}{60}\selectfont\color{gray!20}\thechapter}
+  {-20pt}
+  {\Huge}
+  [\vspace{1ex}\titlerule]
+
+\titleformat{\section}
+  {\fontfamily{phv}\selectfont\Large\bfseries\color{mainblue}}
+  {\thesection}{1em}{}
+
+\titleformat{\subsection}
+  {\fontfamily{phv}\selectfont\large\bfseries\color{accentblue}}
+  {\thesubsection}{1em}{}
+
+% =====================================================
+% 5. STYLE DU CODE (VS Code Light Theme Vibe)
+% =====================================================
+\newtcolorbox{codebox}[1][]{
+  enhanced,
+  colback=codebg,
+  colframe=gray!20,
+  boxrule=0.5pt,
+  arc=3mm,
+  drop shadow small,
+  title={#1},
+  coltitle=black,
+  fonttitle=\bfseries\sffamily\footnotesize,
+  attach boxed title to top left={xshift=3mm, yshift=-3mm},
+  boxed title style={colback=white, colframe=gray!20}
+}
+
+\lstdefinestyle{javastyle}{
+  language=Java,
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{black!80},
+  keywordstyle=\color{blue!70!black}\bfseries,
+  commentstyle=\color{gray}\itshape,
+  stringstyle=\color{tealgreen},
+  numbers=left,
+  numberstyle=\tiny\color{gray!50},
+  frame=none,
+  breaklines=true,
+  showstringspaces=false,
+  aboveskip=0pt,
+  belowskip=0pt,
+  captionpos=b
+}
+
+% =====================================================
+% 6. BOÎTES PÉDAGOGIQUES (Style Flat Design)
+% =====================================================
+\newtcolorbox{definitionbox}{
+    enhanced,
+    breakable,
+    colback=blue!5!white,
+    colframe=mainblue,
+    borderline west={4pt}{0pt}{mainblue},
+    frame hidden,
+    title={\faBook\ \textbf{Définition}},
+    coltitle=mainblue,
+    fonttitle=\sffamily,
+    attach title to upper,
+    after title={\par\vspace{5pt}}
+}
+
+\newtcolorbox{analysisbox}{
+    enhanced,
+    breakable,
+    colback=red!5!white,
+    colframe=alertred,
+    borderline west={4pt}{0pt}{alertred},
+    frame hidden,
+    title={\faMicroscope\ \textbf{Analyse (Points clés)}},
+    coltitle=alertred,
+    fonttitle=\sffamily,
+    attach title to upper,
+    after title={\par\vspace{5pt}}
+}
+
+\newtcolorbox{notebox}{
+    enhanced,
+    breakable,
+    colback=teal!5!white,
+    colframe=teal,
+    borderline west={4pt}{0pt}{teal},
+    frame hidden,
+    title={\faLightbulb\ \textbf{À retenir}},
+    coltitle=teal,
+    fonttitle=\sffamily,
+    attach title to upper,
+    after title={\par\vspace{5pt}}
+}
+
+% =====================================================
+% 7. METADONNÉES (À REMPLIR)
+% =====================================================
+\newcommand{\ReportSubtitle}{SignalR Temps Réel \& API REST}
+\newcommand{\AuthorNames}{L'Équipe Backend Wasel}
+\newcommand{\Supervisor}{Pr. NOM PRENOM}
+\newcommand{\Institution}{École / Université}
+\newcommand{\Context}{Projet Wasel - Développement Backend}
+\newcommand{\AcademicYear}{ANNÉE UNIVERSITAIRE 2025 -- 2026}
+
+% Logos (mets tes fichiers dans le même dossier ou adapte les chemins)
+\newcommand{\LogoLeft}{cropped-ensa.png}
+\newcommand{\LogoRight}{images.png}
+
+\begin{document}
+
+% =====================================================
+% PAGE DE GARDE
+% =====================================================
+\begin{titlepage}
+\newgeometry{left=0cm, top=0cm, right=0cm, bottom=0cm}
+
+\begin{tikzpicture}[remember picture,overlay]
+    \fill[mainblue] (current page.north west) rectangle ([xshift=4cm]current page.south west);
+
+    \node[circle, fill=white, inner sep=15pt, opacity=1] at ([xshift=2cm, yshift=-5cm]current page.north west) {
+        \color{mainblue}\fontsize{40}{40}\selectfont \faProjectDiagram
+    };
+
+    \node[anchor=south, rotate=90, text=white, font=\bfseries\Large] at ([xshift=3.5cm, yshift=6cm]current page.south west) {
+        \AcademicYear
+    };
+
+    \node[anchor=north west] at ([xshift=6cm, yshift=-1.5cm]current page.north west) {
+       % \includegraphics[height=3cm, width=4cm]{\LogoLeft}
+    };
+
+    \node[anchor=north east] at ([xshift=-3cm, yshift=-1cm]current page.north east) {
+       % \includegraphics[height=4cm, width=4cm]{\LogoRight}
+    };
+\end{tikzpicture}
+
+\vspace*{6cm}
+\hspace{5cm}
+\begin{minipage}{0.65\paperwidth}
+    \centering
+
+    {\scshape\Large \color{darkgray} \Institution \par}
+
+    \vspace{0.5cm}
+    {\color{mainblue}\rule{0.4\textwidth}{1pt}}
+    \vspace{2cm}
+
+    {
+        \Huge \bfseries \fontfamily{phv}\selectfont
+        \color{mainblue}
+        \ReportTitle \par
+    }
+
+    \vspace{0.8cm}
+    {\Large \itshape \color{darkgray} \ReportSubtitle \par}
+
+    \vspace{2.2cm}
+
+    \begin{tcolorbox}[
+        colback=white,
+        colframe=mainblue,
+        boxrule=1pt,
+        width=0.9\textwidth,
+        arc=4pt,
+        enhanced,
+        drop shadow small
+    ]
+        \centering \bfseries \Context
+    \end{tcolorbox}
+
+    \vspace{2.2cm}
+
+    \begin{tabular}{p{0.55\textwidth} p{0.45\textwidth}}
+        \small \itshape Réalisé par : & \small \itshape Encadré par : \\
+        \bfseries \AuthorNames & \bfseries \Supervisor
+    \end{tabular}
+
+\end{minipage}
+
+\restoregeometry
+\end{titlepage}
+
+% =====================================================
+% TABLE DES MATIÈRES + EN-TÊTES
+% =====================================================
+\setcounter{tocdepth}{2}
+{
+  \hypersetup{linkcolor=black}
+  \tableofcontents
+}
+\newpage
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\sffamily\small \color{gray} \Context}
+\fancyhead[R]{\sffamily\small \color{mainblue} \leftmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{mainblue}\leaders\hrule height \headrulewidth\hfill}}
+
+% =====================================================
+% STRUCTURE (RÉDIGÉE)
+% =====================================================
+
+\chapter*{Introduction générale}
+\addcontentsline{toc}{chapter}{Introduction générale}
+Dans le cadre de l'évolution de la plateforme Wasel, l'implémentation d'un système de suivi GPS en temps réel s'est avérée essentielle pour garantir une meilleure traçabilité des livraisons. Ce rapport documente la réalisation technique de ce module, qui a été divisé en deux tâches majeures (SCRUM-39 et SCRUM-40). 
+
+La première tâche (SCRUM-39) concerne la mise en place d'un serveur WebSocket (SignalR) permettant la réception à haute fréquence des coordonnées GPS envoyées par les livreurs (drivers), et leur diffusion instantanée aux clients concernés. La seconde tâche (SCRUM-40) traite la persistance de ces données ainsi que l'exposition d'une API REST pour interroger les dernières positions connues.
+
+Ce document présente l'architecture retenue, les choix techniques, particulièrement les mécanismes d'optimisation (throttling), et le fonctionnement global du module de géolocalisation.
+
+\chapter{Architecture du Système GPS}
+\section{Vue d'ensemble du flux de données}
+Le système de suivi repose sur une architecture hybride exploitant à la fois des WebSockets pour le temps réel et une API REST pour les interrogations ponctuelles. Le point d'entrée principal est un reverse proxy (Nginx) qui route les requêtes vers l'API .NET.
+
+\begin{definitionbox}
+Le module GPS garantit un suivi fluide des livreurs avec une mise à jour côté client en temps réel, tout en préservant la base de données PostgreSQL d'une surcharge d'écritures.
+\end{definitionbox}
+
+\section{Composants principaux}
+Le module est divisé en plusieurs composants clés au sein du projet \texttt{Wasel.Api} :
+\begin{itemize}
+    \item \textbf{GpsHub (SignalR)} : Reçoit les positions des drivers et gère les groupes de diffusion.
+    \item \textbf{TrackingService} : Implémente la logique métier (validation, throttling) avant sauvegarde.
+    \item \textbf{PostgreSQL} : Base de données relationnelle stockant l'historique des positions (table \texttt{tracking\_points}).
+    \item \textbf{TrackingController} : Expose les endpoints REST (GET).
+\end{itemize}
+
+\chapter{Réception et Diffusion Temps Réel (SCRUM-39)}
+\section{Le Hub SignalR (\texttt{GpsHub})}
+Le Hub SignalR constitue le cœur du système temps réel. Un livreur authentifié s'y connecte et invoque la méthode \texttt{SendPosition} en envoyant sa latitude et sa longitude via WebSocket.
+
+\begin{codebox}[Exemple conceptuel d'envoi de position]
+\begin{lstlisting}[style=javastyle]
+public async Task SendPosition(TrackingPointUpdateDto dto)
+{
+    // Récupération de l'utilisateur depuis le JWT
+    var user = Context.User;
+    
+    // Traitement, vérification des rôles et sauvegarde en base
+    await _trackingService.SavePosition(dto, user);
+}
+\end{lstlisting}
+\end{codebox}
+
+\section{Gestion de la charge : Le Throttling}
+Afin d'éviter de saturer la base de données avec de multiples requêtes d'insertion (un livreur pouvant envoyer une position chaque seconde), nous avons mis en place une logique de \textit{throttling}.
+
+\begin{analysisbox}
+Bien que le Hub SignalR diffuse la position aux clients en temps réel à chaque réception, l'écriture dans PostgreSQL n'est effectuée que toutes les \textbf{5 secondes} par livreur.
+Ce mécanisme utilise un \texttt{IMemoryCache} pour vérifier le délai écoulé depuis la dernière insertion persistée pour un chauffeur donné. 
+\end{analysisbox}
+
+\section{Sécurité et Diffusion par groupes}
+L'accès au Hub est strictement protégé par JWT. Seuls les utilisateurs disposant du rôle \textbf{DRIVER} (et ayant un profil approuvé) peuvent émettre des positions. 
+La diffusion s'effectue via des groupes SignalR : un client peut rejoindre un groupe spécifique à sa commande (ex: \texttt{delivery-\{id\}}) via la méthode \texttt{JoinDeliveryGroup} afin de recevoir uniquement les positions de sa livraison en cours.
+
+\chapter{API REST : Récupération des positions (SCRUM-40)}
+\section{Persistance des données}
+Les positions validées et soumises au throttling par le \texttt{TrackingService} sont enregistrées dans la table \texttt{tracking\_points}. Chaque point contient des informations précises : identifiant du driver, de la livraison associée, latitude, longitude, vitesse, précision et date de l'enregistrement.
+
+\section{Endpoints de l'API}
+Plusieurs points d'accès REST ont été développés afin de consulter ces données à la demande :
+\begin{itemize}
+    \item \texttt{GET /api/tracking/drivers/\{id\}/last-position} : Retourne la dernière position connue d'un livreur spécifique.
+    \item \texttt{GET /api/tracking/me/last-position} : Permet à un livreur de consulter sa propre dernière position stockée.
+    \item \texttt{GET /api/tracking/deliveries/\{id\}/last-position} : Fournit la position la plus récente associée à une livraison active.
+\end{itemize}
+
+\begin{notebox}
+Ces endpoints sont très utiles lors du chargement initial de la carte côté client ou côté interface d'administration, permettant d'afficher l'emplacement avant même que la connexion WebSocket ne prenne le relais pour les mises à jour en continu.
+\end{notebox}
+
+\chapter*{Conclusion et Synthèse}
+\addcontentsline{toc}{chapter}{Conclusion et Synthèse}
+Le développement du module de Tracking GPS de Wasel a été mené à bien en répondant aux exigences techniques de performance, de sécurité et de fiabilité. 
+L'utilisation de SignalR assure une expérience en temps réel fluide pour le client final, tandis que la stratégie de throttling en mémoire protège efficacement l'infrastructure backend d'une surcharge d'écritures. 
+
+Enfin, l'API REST vient parfaire ce dispositif en offrant des points de consultation simples pour récupérer l'état initial des acteurs sur le terrain. L'application est maintenant prête à intégrer visuellement ce suivi GPS dans ses interfaces clientes et à passer aux étapes suivantes du projet.
+
+\end{document}

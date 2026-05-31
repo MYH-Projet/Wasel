@@ -1,0 +1,69 @@
+---
+import { BarChart2, Banknote } from "lucide-react";
+
+interface Props {
+    driverId: string | undefined;
+}
+const { driverId } = Astro.props;
+
+// Simulate API Fetch
+await new Promise((r) => setTimeout(r, 700));
+
+const performance = {
+    totalMissions: 156,
+    avgRating: 4.8,
+    totalEarnings: "$12,450.00",
+};
+---
+
+<div class="bg-slate-600 rounded-xl shadow-sm p-6 h-full flex flex-col">
+    <h2 class="text-lg font-bold text-white flex items-center gap-3 mb-8">
+        <span class="p-2 bg-slate-700/50 text-yellow-400 rounded-lg">
+            <BarChart2 className="w-5 h-5" />
+        </span>
+        Performance
+    </h2>
+
+    <div class="grid grid-cols-2 gap-4 mb-4">
+        <div class="bg-slate-500/40 rounded-xl p-4">
+            <p
+                class="text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1"
+            >
+                Total Missions
+            </p>
+            <p class="text-3xl font-bold text-white">
+                {performance.totalMissions}
+            </p>
+        </div>
+
+        <div class="bg-slate-500/40 rounded-xl p-4">
+            <p
+                class="text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1"
+            >
+                Avg Rating
+            </p>
+            <p class="text-3xl font-bold text-yellow-400">
+                {performance.avgRating}<span class="text-lg text-slate-400"
+                    >/5</span
+                >
+            </p>
+        </div>
+    </div>
+
+    <div class="bg-yellow-600 rounded-xl p-5 mt-auto relative overflow-hidden">
+        <p
+            class="text-[11px] font-bold text-yellow-900/80 uppercase tracking-wider mb-1 relative z-10"
+        >
+            Total Earnings
+        </p>
+        <p
+            class="text-3xl font-black text-slate-900 tracking-tight relative z-10"
+        >
+            {performance.totalEarnings}
+        </p>
+
+        <Banknote
+            className="absolute -bottom-4 -right-2 w-24 h-24 text-yellow-700/30 -rotate-12"
+        />
+    </div>
+</div>

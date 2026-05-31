@@ -1,9 +1,10 @@
 namespace Wasel.Api.Modules.Drivers.Enums;
 
-public enum DriverStatus
-{
-    Pending,
-    Approved,
-    Rejected,
-    Suspended
-}
+    public enum DriverStatus
+    {
+        PendingVerification,
+        Approved,
+        Rejected,
+        Suspended
+    }
+
