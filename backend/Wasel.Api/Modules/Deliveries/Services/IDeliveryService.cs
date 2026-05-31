@@ -19,10 +19,10 @@ public interface IDeliveryService
         int pageSize);
 
     Task<(bool Success, string Message, DeliveryStatus Status)> RespondToDeliveryAsync(
-            Guid deliveryId, Guid driverId, bool accept);
+            Guid deliveryId, string keycloakId, bool accept);
 
     Task<(bool Success, string Message, DeliveryStatus Status)> UpdateDeliveryStatusAsync(
-    Guid deliveryId, Guid driverId, DeliveryStatus newStatus, string? note);
+    Guid deliveryId, string keycloakId, DeliveryStatus newStatus, string? note);
 
     Task<User?> GetUserByKeycloakIdAsync(string keycloakId);
 

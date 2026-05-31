@@ -8,6 +8,8 @@ using Wasel.Api.Modules.Users.Entities;
 using Wasel.Api.Modules.Users.Enums;
 using Wasel.Api.Modules.Drivers.Entities;
 using Wasel.Api.Modules.Drivers.Repositories;
+using Wasel.Api.Modules.Notifications.Enums;
+using Wasel.Api.Modules.Notifications.Services;
 
 namespace Wasel.Api.Modules.Deliveries.Services;
 
@@ -16,15 +18,18 @@ public class DeliveryService : IDeliveryService
     private readonly IDeliveryRepository _deliveryRepository;
     private readonly WaselDbContext _context;
     private readonly IDriverRepository _driverRepository;
+    private readonly INotificationService _notificationService;
 
     public DeliveryService(
     IDeliveryRepository deliveryRepository,
     IDriverRepository driverRepository,
-    WaselDbContext context)
+    WaselDbContext context,
+    INotificationService notificationService)
     {
         _deliveryRepository = deliveryRepository;
         _driverRepository = driverRepository;
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<CreateDeliveryResponseDto> CreateDeliveryAsync(
@@ -333,7 +338,7 @@ public class DeliveryService : IDeliveryService
     }
 
     public async Task<(bool Success, string Message, DeliveryStatus Status)> RespondToDeliveryAsync(
-    Guid deliveryId, Guid driverId, bool accept)
+    Guid deliveryId, string keycloakId, bool accept)
     {
                 using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -341,12 +346,20 @@ public class DeliveryService : IDeliveryService
         if (delivery == null)
             return (false, "Delivery not found", DeliveryStatus.WAITING_DRIVER);
 
+        var user = await _deliveryRepository.GetUserByKeycloakIdAsync(keycloakId);
+        if (user == null)
+            return (false, "User not found", delivery.Status);
+
+        var driver = await _driverRepository.GetByUserIdAsync(user.Id);
+        if (driver == null)
+            return (false, "Driver profile not found", delivery.Status);
+
         if (accept)
         {
             if (delivery.Status == DeliveryStatus.ASSIGNED)
                 return (false, "Delivery already assigned", delivery.Status);
 
-            delivery.DriverId = driverId;
+            delivery.DriverId = driver.Id;
             delivery.Status = DeliveryStatus.ASSIGNED;
 
             await _deliveryRepository.UpdateAsync(delivery);
@@ -355,10 +368,22 @@ public class DeliveryService : IDeliveryService
                 DeliveryId = delivery.Id,
                 Status = DeliveryStatus.ASSIGNED,
                 ChangedAt = DateTime.UtcNow,
-                ChangedByDriverId = driverId
+                ChangedByDriverId = driver.Id
             });
 
             await transaction.CommitAsync();
+
+            // Notify client — after commit, non-blocking
+            try
+            {
+                await _notificationService.CreateAsync(
+                    delivery.ClientId,
+                    NotificationType.DELIVERY_ASSIGNED,
+                    "Livreur assigné",
+                    "Un livreur a accepté votre livraison.");
+            }
+            catch { /* notification failure must not affect delivery */ }
+
             return (true, "Delivery accepted", delivery.Status);
         }
         else
@@ -370,13 +395,21 @@ public class DeliveryService : IDeliveryService
 
 
     public async Task<(bool Success, string Message, DeliveryStatus Status)> UpdateDeliveryStatusAsync(
-    Guid deliveryId, Guid driverId, DeliveryStatus newStatus, string? note)
+    Guid deliveryId, string keycloakId, DeliveryStatus newStatus, string? note)
     {
         var delivery = await _deliveryRepository.GetByIdAsync(deliveryId);
         if (delivery == null)
             return (false, "Delivery not found", delivery?.Status ?? DeliveryStatus.CREATED);
 
-        if (delivery.DriverId != driverId)
+        var user = await _deliveryRepository.GetUserByKeycloakIdAsync(keycloakId);
+        if (user == null)
+            return (false, "User not found", delivery.Status);
+
+        var driver = await _driverRepository.GetByUserIdAsync(user.Id);
+        if (driver == null)
+            return (false, "Driver profile not found", delivery.Status);
+
+        if (delivery.DriverId != driver.Id)
             return (false, "Driver not assigned to this delivery", delivery.Status);
 
         
@@ -394,13 +427,27 @@ public class DeliveryService : IDeliveryService
             Status = newStatus,
             ChangedAt = DateTime.UtcNow,
             Note = note,
-            ChangedByDriverId = driverId
+            ChangedByDriverId = driver.Id
         };
 
         await _deliveryRepository.AddStatusHistoryAsync(history);
 
         delivery.Status = newStatus;
         await _deliveryRepository.UpdateAsync(delivery);
+
+        // Notify client on ARRIVED_AT_PICKUP — non-blocking
+        if (newStatus == DeliveryStatus.ARRIVED_AT_PICKUP)
+        {
+            try
+            {
+                await _notificationService.CreateAsync(
+                    delivery.ClientId,
+                    NotificationType.DRIVER_ARRIVING,
+                    "Livreur en approche",
+                    "Votre livreur est arrivé au point de retrait.");
+            }
+            catch { /* notification failure must not affect delivery */ }
+        }
 
         return (true, "Status updated successfully", newStatus);
     }

@@ -887,4 +887,60 @@ API_BASE_URL=http://localhost KEYCLOAK_URL=http://localhost/auth bash scripts/te
 
 ---
 
+## 24. Reviews / Notation & Avis
+
+Le module `Reviews` gère la notation et les avis des livreurs par les clients.
+
+### Concepts Clés
+
+- **Propriété** : Un client ne peut évaluer qu'une livraison lui appartenant.
+- **Statut** : La livraison doit être à l'état `DELIVERED`.
+- **Unicité** : Une seule évaluation par livraison.
+- **Pagination** : Les avis d'un livreur sont retournés de manière paginée.
+
+### Endpoints
+
+- `POST /api/reviews` : Soumet un avis. (Requiert le rôle Client)
+- `GET /api/drivers/{driverId}/reviews` : Retourne de manière paginée les avis et la note moyenne d'un livreur. (Public)
+
+---
+
+## 25. Messaging Hub Security
+
+La sécurité du WebSockets pour la messagerie des livraisons est critique pour garantir la confidentialité des échanges entre le client et le livreur.
+
+### Route du Hub
+- `/hubs/messaging`
+
+### Règles d'accès à un groupe de livraison (JoinDeliveryGroup)
+L'accès au groupe SignalR (`delivery-{deliveryId}`) est restreint :
+- Seul le **Client propriétaire** de la livraison est autorisé.
+- Seul le **Livreur assigné** à la livraison (vérifié via `Driver.Id`) est autorisé.
+- Les **Administrateurs** (rôle `ADMIN`) sont autorisés.
+
+### Comportement en cas de refus
+- Si un utilisateur tente de rejoindre une livraison qui ne le concerne pas, le backend rejette la connexion au groupe de manière silencieuse ou explicite via une `HubException` ("You are not allowed to join this delivery chat.").
+- Aucun code HTTP 403 n'est envoyé sur la requête WebSocket elle-même, l'erreur est attrapée et transmise sous forme de message d'erreur SignalR.
+
+---
+
 > Ce guide est un document vivant. Si une nouvelle règle architecturale est décidée par l'équipe, n'hésitez pas à la documenter ici !
+
+---
+
+## 23. Documents du dossier livreur
+
+Pour permettre à un livreur de fournir ses pièces justificatives, le backend expose les endpoints suivants dans `api/drivers/dossier/documents`.
+
+### Workflow frontend
+
+1. **Génération d'URL présignée** : L'application cliente fait un `POST /api/files/upload-url` avec le contexte `DOCUMENT`. Elle reçoit une `uploadUrl` (ex: vers MinIO) et un `objectKey`.
+2. **Upload direct** : Le client fait un `PUT` avec le binaire vers l'`uploadUrl`. Les fichiers volumineux ne transitent jamais par l'API backend.
+3. **Association au dossier** : Le client fait un `POST /api/drivers/dossier/documents` en fournissant le `documentType` (ex: `Permit`, `Cin`) et l'`objectKey` obtenu à l'étape 1.
+
+### Règles métier
+
+- L'utilisateur connecté doit exister et avoir un profil Driver avec un Dossier associé.
+- Un seul document par type (`Cin`, `Permit`, `VehicleCard`, `Insurance`, `ProfilePhoto`, `Other`) peut exister par dossier.
+- Si le document existe déjà, le backend remplace simplement l'`ObjectKey`, remet le statut du document à `Pending`, et efface toute `RejectionReason` (utile suite à un refus par l'admin).
+- L'administration (via les routes admin existantes) se charge de la vérification (statut `Approved` ou `Rejected`).

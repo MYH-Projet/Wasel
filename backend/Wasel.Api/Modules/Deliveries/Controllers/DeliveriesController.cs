@@ -3,13 +3,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wasel.Api.Modules.Deliveries.DTOs;
 using Wasel.Api.Modules.Deliveries.Services;
-using System.Security.Claims;
 
 namespace Wasel.Api.Modules.Deliveries.Controllers;
 
 [ApiController]
 [Route("api/deliveries")]
-[Authorize]
+[Authorize(Policy = "ActiveUserOnly")]
 public class DeliveriesController : ControllerBase
 {
     private readonly IDeliveryService _deliveryService;
@@ -126,16 +125,16 @@ public class DeliveriesController : ControllerBase
     [HttpPost("{id}/response")]
     public async Task<IActionResult> RespondToDelivery(Guid id, [FromBody] DeliveryResponseDto dto)
     {
-        var driverIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+        var keycloakId = User.FindFirstValue(ClaimTypes.NameIdentifier)
                             ?? User.FindFirstValue("sub");
 
-        if (!Guid.TryParse(driverIdClaim, out var driverId))
+        if (string.IsNullOrWhiteSpace(keycloakId))
         {
-            return Unauthorized(new { message = "Invalid driver id in token." });
+            return Unauthorized(new { message = "Invalid token: Keycloak user id not found." });
         }
 
         
-        var result = await _deliveryService.RespondToDeliveryAsync(id, driverId, dto.Accept);
+        var result = await _deliveryService.RespondToDeliveryAsync(id, keycloakId, dto.Accept);
 
         if (!result.Success)
         {
@@ -156,15 +155,15 @@ public class DeliveriesController : ControllerBase
     [Authorize(Roles = "DRIVER")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateDeliveryStatusRequestDto dto)
     {
-        var driverIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+        var keycloakId = User.FindFirstValue(ClaimTypes.NameIdentifier)
                             ?? User.FindFirstValue("sub");
 
-        if (!Guid.TryParse(driverIdClaim, out var driverId))
-            return Unauthorized(new { message = "Invalid driver id in token." });
+        if (string.IsNullOrWhiteSpace(keycloakId))
+            return Unauthorized(new { message = "Invalid token: Keycloak user id not found." });
 
         try
         {
-            var result = await _deliveryService.UpdateDeliveryStatusAsync(id, driverId, dto.NewStatus, dto.Note);
+            var result = await _deliveryService.UpdateDeliveryStatusAsync(id, keycloakId, dto.NewStatus, dto.Note);
 
             if (!result.Success)
             {

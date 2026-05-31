@@ -10,6 +10,9 @@ using Wasel.Api.Modules.Complaints.Entities;
 using Wasel.Api.Modules.Messaging.Entities;
 using Wasel.Api.Modules.Payments.Entities;
 using Wasel.Api.Modules.Wallets.Entities;
+using Wasel.Api.Modules.Reviews.Entities;
+using Wasel.Api.Modules.Notifications.Entities;
+using Wasel.Api.Modules.Notifications.Enums;
 
 namespace Wasel.Api.Shared.Database;
 
@@ -58,6 +61,12 @@ public class WaselDbContext : DbContext
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
     public DbSet<WalletTransfer> WalletTransfers => Set<WalletTransfer>();
     
+    // Module: Reviews
+    public DbSet<Review> Reviews => Set<Review>();
+
+    // Module: Notifications
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -333,6 +342,64 @@ public class WaselDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(t => t.Status);
+        });
+
+        // Reviews
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.ToTable("reviews");
+            entity.HasKey(r => r.Id);
+            
+            entity.HasIndex(r => r.DeliveryId).IsUnique();
+            entity.HasIndex(r => r.ReviewedDriverId);
+            
+            entity.HasOne(r => r.ReviewerUser)
+                .WithMany()
+                .HasForeignKey(r => r.ReviewerUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            entity.HasOne(r => r.ReviewedDriver)
+                .WithMany()
+                .HasForeignKey(r => r.ReviewedDriverId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            entity.HasOne(r => r.Delivery)
+                .WithMany()
+                .HasForeignKey(r => r.DeliveryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // Notifications
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.ToTable("notifications");
+            entity.HasKey(n => n.Id);
+
+            entity.Property(n => n.Type)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(n => n.Status)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(n => n.Title)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(n => n.Body)
+                .HasMaxLength(1000)
+                .IsRequired();
+
+            entity.HasIndex(n => new { n.UserId, n.CreatedAt });
+            entity.HasIndex(n => new { n.UserId, n.Status });
+
+            entity.HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 

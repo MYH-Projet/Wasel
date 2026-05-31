@@ -7,6 +7,7 @@ using Minio;
 
 using Wasel.Api.Shared.Database;
 using Wasel.Api.Shared.Security;
+using Microsoft.AspNetCore.Authorization;
 using Wasel.Api.Shared.Middleware;
 using Wasel.Api.Infrastructure.Keycloak;
 using Wasel.Api.Infrastructure.MinIO;
@@ -32,6 +33,11 @@ using Wasel.Api.Modules.Payments.Repositories;
 using Wasel.Api.Modules.Payments.Services;
 using Wasel.Api.Modules.Wallets.Repositories;
 using Wasel.Api.Modules.Wallets.Services;
+using Wasel.Api.Modules.Reviews.Repositories;
+using Wasel.Api.Modules.Reviews.Services;
+using Wasel.Api.Modules.Notifications.Repositories;
+using Wasel.Api.Modules.Notifications.Services;
+using Wasel.Api.Infrastructure.Firebase;
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -91,6 +97,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", p => p.RequireRole(KeycloakConstants.RoleAdmin));
+    options.AddPolicy("ActiveUserOnly", p => 
+        p.RequireAuthenticatedUser()
+         .AddRequirements(new ActiveUserRequirement()));
     options.AddPolicy("DriverOnly", p => p.RequireRole(KeycloakConstants.RoleDriver));
     options.AddPolicy("ClientOnly", p => p.RequireRole(KeycloakConstants.RoleClient));
 });
@@ -154,6 +163,16 @@ builder.Services.AddScoped<IPaymentMethodService, PaymentMethodService>();
 //module wallets
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
 builder.Services.AddScoped<IWalletService, WalletService>();
+
+// Module Reviews
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+
+// Module Notifications
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddSingleton<IPushNotificationSender, NoopPushNotificationSender>();
+
 // Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -171,6 +190,8 @@ builder.Services.AddCors(options =>
                .AllowAnyHeader();
     });
 });
+
+builder.Services.AddScoped<IAuthorizationHandler, ActiveUserRequirementHandler>();
 
 var app = builder.Build();
 
