@@ -1,32 +1,40 @@
 ---
 import { History } from "lucide-react";
+import type { DriverDetails } from "@/types/driver";
 
 interface Props {
-    driverId: string | undefined;
+    driverData: DriverDetails;
 }
-const { driverId } = Astro.props;
 
-// Simulate API Fetch
-await new Promise((r) => setTimeout(r, 1500));
+const { driverData } = Astro.props;
 
-const activities = [
-    { title: "Completed mission #1234", time: "2 hours ago", type: "mission" },
-    {
-        title: "Updated Insurance Document",
-        time: "Yesterday, 14:20",
+// Activity feed is not yet provided by the backend.
+// For now, we generate contextual entries from the driver's data.
+const activities: { title: string; time: string; type: string }[] = [];
+
+if (driverData.verificationDate) {
+    activities.push({
+        title: "Dossier verified by admin",
+        time: new Date(driverData.verificationDate).toLocaleDateString(),
         type: "system",
-    },
-    {
-        title: "Profile updated via Mobile App",
-        time: "3 days ago",
+    });
+}
+if (driverData.submissionDate) {
+    activities.push({
+        title: "Dossier submitted for review",
+        time: new Date(driverData.submissionDate).toLocaleDateString(),
         type: "system",
-    },
-    { title: "Completed mission #1209", time: "Oct 12, 2023", type: "mission" },
-];
+    });
+}
+activities.push({
+    title: "Account created",
+    time: new Date(driverData.createdAt).toLocaleDateString(),
+    type: "system",
+});
 ---
 
-<div class="bg-white rounded-xl shadow-sm p-6 h-full flex flex-col">
-    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-3 mb-8">
+<div class="bg-card rounded-xl shadow-sm p-6 h-full flex flex-col">
+    <h2 class="text-lg font-bold text-foreground flex items-center gap-3 mb-8">
         <span class="p-2 bg-orange-100 text-orange-700 rounded-lg">
             <History className="w-5 h-5" />
         </span>
@@ -34,7 +42,7 @@ const activities = [
     </h2>
 
     <div
-        class="relative border-l-2 border-slate-100 ml-3 space-y-8 flex-grow mb-8"
+        class="relative border-l-2 border-border ml-3 space-y-8 flex-grow mb-8"
     >
         {
             activities.map((activity) => (
@@ -43,21 +51,22 @@ const activities = [
                         class={`absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-4 border-white ${
                             activity.type === "mission"
                                 ? "bg-yellow-700"
-                                : "bg-slate-200"
+                                : "bg-muted"
                         }`}
                     />
-
-                    <p class="text-sm font-medium text-slate-800">
+                    <p class="text-sm font-medium text-foreground">
                         {activity.title}
                     </p>
-                    <p class="text-xs text-slate-500 mt-0.5">{activity.time}</p>
+                    <p class="text-xs text-muted-foreground mt-0.5">
+                        {activity.time}
+                    </p>
                 </div>
             ))
         }
     </div>
 
     <button
-        class="w-full py-2.5 border border-slate-200 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors mt-auto"
+        class="w-full py-2.5 border border-border text-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors mt-auto"
     >
         View Full History
     </button>

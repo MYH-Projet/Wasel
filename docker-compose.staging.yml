@@ -1,13 +1,9 @@
-# ══════════════════════════════════════════════════
-# Wasel — Docker Compose (Staging)
-# ══════════════════════════════════════════════════
-
 services:
   # ──────────────────────────────────────────────
-  # Wasel API (.NET 10)
+  # Backend API (.NET 10)
   # ──────────────────────────────────────────────
   wasel-api-staging:
-    image: ${DOCKERHUB_USERNAME}/wasel-api:latest
+    image: myelhadri/wasel-api:latest
     container_name: wasel-api-staging
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Staging}
@@ -16,9 +12,9 @@ services:
       - MinIO__Endpoint=wasel-minio-staging:9000
       - MinIO__AccessKey=${MINIO_ROOT_USER}
       - MinIO__SecretKey=${MINIO_ROOT_PASSWORD}
-      - Keycloak__Authority=http://${STAGING_DOMAIN}/auth/realms/${KEYCLOAK_REALM}
+      - Keycloak__Authority=https://${STAGING_DOMAIN}/auth/realms/${KEYCLOAK_REALM}
       - Keycloak__InternalAuthority=http://wasel-keycloak-staging:8080/auth/realms/${KEYCLOAK_REALM}
-      - Keycloak__NginxAuthority=http://${STAGING_DOMAIN}/auth/realms/${KEYCLOAK_REALM}
+      - Keycloak__NginxAuthority=https://${STAGING_DOMAIN}/auth/realms/${KEYCLOAK_REALM}
       - Keycloak__Realm=${KEYCLOAK_REALM}
       - Keycloak__ClientId=${KEYCLOAK_CLIENT_ID}
       - Keycloak__RequireHttpsMetadata=false
@@ -34,19 +30,34 @@ services:
     restart: unless-stopped
 
   # ──────────────────────────────────────────────
-  # PostgreSQL 18.3
+  # Frontend Astro
+  # ──────────────────────────────────────────────
+  wasel-frontend-staging:
+    image: myelhadri/wasel-frontend:latest
+    container_name: wasel-frontend-staging
+    environment:
+      - VITE_API_URL=/api
+      - VITE_KEYCLOAK_URL=/auth
+      - PUBLIC_API_URL=/api
+      - PUBLIC_KEYCLOAK_URL=/auth
+    networks:
+      - wasel-staging-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # PostgreSQL
   # ──────────────────────────────────────────────
   wasel-postgres-staging:
-    image: postgres:18.3
+    image: postgres:15-alpine
     container_name: wasel-postgres-staging
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     volumes:
-      - wasel-postgres-data-staging:/var/lib/postgresql/data:z
+      - wasel-postgres-data-staging:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -55,13 +66,13 @@ services:
     restart: unless-stopped
 
   # ──────────────────────────────────────────────
-  # Redis 8.6
+  # Redis
   # ──────────────────────────────────────────────
   wasel-redis-staging:
     image: redis:8.6
     container_name: wasel-redis-staging
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -70,19 +81,19 @@ services:
     restart: unless-stopped
 
   # ──────────────────────────────────────────────
-  # MinIO (Object Storage)
+  # MinIO
   # ──────────────────────────────────────────────
   wasel-minio-staging:
     image: minio/minio:RELEASE.2025-02-28T09-55-16Z
     container_name: wasel-minio-staging
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     command: server /data --console-address ":9001"
     volumes:
-      - wasel-minio-data-staging:/data:z
+      - wasel-minio-data-staging:/data
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -91,25 +102,26 @@ services:
     restart: unless-stopped
 
   # ──────────────────────────────────────────────
-  # Keycloak (IAM / Auth)
+  # Keycloak
   # ──────────────────────────────────────────────
   wasel-keycloak-staging:
-    image: quay.io/keycloak/keycloak:latest
+    image: ${KEYCLOAK_IMAGE:-myelhadri/wasel-keycloak:latest}
     container_name: wasel-keycloak-staging
-    command: start-dev --import-realm
+    command: start --import-realm
     environment:
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_HEALTH_ENABLED: "true"
-      KC_HTTP_RELATIVE_PATH: /auth
-      KC_PROXY_HEADERS: xforwarded
-      KC_HOSTNAME_URL: http://${STAGING_DOMAIN}/auth
-      KC_HOSTNAME_ADMIN_URL: http://${STAGING_DOMAIN}/auth
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+      - KC_HEALTH_ENABLED=true
+      - KC_HTTP_ENABLED=true
+      - KC_HTTP_RELATIVE_PATH=/auth
+      - KC_PROXY_HEADERS=xforwarded
+      - KC_HOSTNAME=https://${STAGING_DOMAIN}/auth
+      - KC_HOSTNAME_STRICT=false
     volumes:
-      - wasel-keycloak-data-staging:/opt/keycloak/data:z
-      - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro,z
+      - wasel-keycloak-data-staging:/opt/keycloak/data
+      - ./infra/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     healthcheck:
-      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080" ]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -119,46 +131,45 @@ services:
     restart: unless-stopped
 
   # ──────────────────────────────────────────────
-  # Astro Frontend (Web)
-  # ──────────────────────────────────────────────
-  wasel-frontend-staging:
-    image: ${DOCKERHUB_USERNAME}/wasel-frontend:latest
-    container_name: wasel-frontend-staging
-    environment:
-      - VITE_API_URL=/api
-    networks:
-      - wasel-staging-network
-    restart: unless-stopped
-
-  # ──────────────────────────────────────────────
-  # Nginx (Reverse Proxy)
+  # Nginx Reverse Proxy
   # ──────────────────────────────────────────────
   wasel-nginx-staging:
     image: nginx:alpine
     container_name: wasel-nginx-staging
     ports:
       - "80:80"
+      - "443:443"
     volumes:
-      - ./infra/nginx/staging.conf:/etc/nginx/nginx.conf:ro,z
+      - ./infra/nginx/staging.conf:/etc/nginx/nginx.conf:ro
+      - letsencrypt-staging:/etc/letsencrypt
+      - certbot-www-staging:/var/www/certbot
     depends_on:
       - wasel-api-staging
-      - wasel-keycloak-staging
       - wasel-frontend-staging
+      - wasel-keycloak-staging
     networks:
       - wasel-staging-network
     restart: unless-stopped
 
-# ──────────────────────────────────────────────
-# Volumes
-# ──────────────────────────────────────────────
+  # ──────────────────────────────────────────────
+  # Certbot
+  # ──────────────────────────────────────────────
+  certbot:
+    image: certbot/certbot
+    container_name: wasel-certbot-staging
+    volumes:
+      - letsencrypt-staging:/etc/letsencrypt
+      - certbot-www-staging:/var/www/certbot
+    networks:
+      - wasel-staging-network
+
 volumes:
   wasel-postgres-data-staging:
   wasel-minio-data-staging:
   wasel-keycloak-data-staging:
+  letsencrypt-staging:
+  certbot-www-staging:
 
-# ──────────────────────────────────────────────
-# Network
-# ──────────────────────────────────────────────
 networks:
   wasel-staging-network:
     driver: bridge

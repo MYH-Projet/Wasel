@@ -15,4 +15,41 @@ public class Driver : BaseEntity
     public User User { get; set; } = null!;
 
     public DriverDossier? Dossier { get; set; }
+
+    public Vehicle? Vehicle { get; set; }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

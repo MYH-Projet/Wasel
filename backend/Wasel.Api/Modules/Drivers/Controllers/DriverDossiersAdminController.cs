@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Wasel.Api.Modules.Drivers.DTOs;
 using Wasel.Api.Modules.Drivers.Services;
-
+using Microsoft.AspNetCore.Authorization;
 namespace Wasel.Api.Modules.Drivers.Controllers;
 
 [ApiController]
 [Route("api/admin/driver-dossiers")]
+[Authorize(Policy = "AdminOnly")]
 public class DriverDossiersAdminController : ControllerBase
 {
     private readonly IDriverDossierService _driverDossierService;
