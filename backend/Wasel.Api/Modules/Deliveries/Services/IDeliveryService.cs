@@ -45,4 +45,7 @@ public interface IDeliveryService
     DateTime? startDate,
     DateTime? endDate);
 
+    DeliveryEstimateResponseDto EstimateDelivery(DeliveryEstimateRequestDto request);
+
+    Task<List<ActiveDeliveryResponseDto>> GetMyActiveDeliveriesAsync(string keycloakId);
 }

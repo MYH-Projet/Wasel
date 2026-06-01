@@ -1,85 +1,77 @@
 ---
 import { FileText } from "lucide-react";
-// 1. Import the React Island
 import { DocumentViewerModal } from "./DocumentViewerModal";
+import type { DriverDetails } from "@/types/driver";
 
 interface Props {
-    driverId: string | undefined;
+    driverData: DriverDetails;
 }
-const { driverId } = Astro.props;
 
-// Fetch just the documents from .NET
-await new Promise((r) => setTimeout(r, 1200));
-
-const docs = [
-    {
-        docId: "doc-234",
-        documentType: "National ID Card",
-        status: "VERIFIED",
-        expiry: "N/A",
-        docUrl: "https://placehold.co/600x400/e2e8f0/475569?text=Carte+Nationale+(Recto)",
-    },
-    {
-        docId: "doc-235",
-        documentType: "Vehicle Insurance",
-        status: "PENDING",
-        expiry: "Dec 2024",
-        docUrl: "https://placehold.co/600x400/e2e8f0/475569?text=Assurance+Vehicule",
-    },
-];
+const { driverData } = Astro.props;
+const docs = driverData.documents || [];
 ---
 
-<div class="bg-white rounded-xl shadow-sm p-6 h-full">
-    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2 mb-6">
+<div class="bg-card rounded-xl shadow-sm p-6 h-full">
+    <h2 class="text-lg font-bold text-foreground flex items-center gap-2 mb-6">
         <span class="p-2 bg-teal-100 text-teal-700 rounded-lg">
             <FileText className="w-5 h-5" />
         </span>
         Compliance Documents
     </h2>
 
-    <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm">
-            <thead class="text-xs font-bold text-slate-400 uppercase border-b">
-                <tr>
-                    <th class="pb-3">Document Name</th>
-                    <th class="pb-3">Status</th>
-                    <th class="pb-3">Expiry</th>
-                    <th class="pb-3 text-right">Action</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y">
-                {
-                    docs.map((doc) => (
+    {
+        docs.length === 0 ? (
+            <p class="text-muted-foreground text-sm italic">
+                No documents uploaded yet.
+            </p>
+        ) : (
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="text-xs font-bold text-muted-foreground uppercase border-b">
                         <tr>
-                            <td class="py-4 font-medium text-slate-800 flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-slate-400" />{" "}
-                                {/* FIXED: Used doc.documentType instead of doc.name */}
-                                {doc.documentType}
-                            </td>
-                            <td class="py-4">
-                                <span
-                                    class={`px-2 py-1 text-xs font-bold rounded-md ${
-                                        doc.status === "VERIFIED"
-                                            ? "bg-green-100 text-green-700"
-                                            : "bg-yellow-100 text-yellow-700"
-                                    }`}
-                                >
-                                    {doc.status}
-                                </span>
-                            </td>
-                            <td class="py-4 text-slate-500">{doc.expiry}</td>
-                            <td class="py-4 text-right">
-                                {/* 2. Use the React Island with client:load! */}
-                                <DocumentViewerModal
-                                    client:load
-                                    docUrl={doc.docUrl}
-                                    documentType={doc.documentType}
-                                />
-                            </td>
+                            <th class="pb-3">Document Name</th>
+                            <th class="pb-3">Status</th>
+                            <th class="pb-3">Uploaded</th>
+                            <th class="pb-3 text-right">Action</th>
                         </tr>
-                    ))
-                }
-            </tbody>
-        </table>
-    </div>
+                    </thead>
+                    <tbody class="divide-y">
+                        {docs.map((doc) => (
+                            <tr>
+                                <td class="py-4 font-medium text-foreground flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-muted-foreground" />{" "}
+                                    {doc.documentType}
+                                </td>
+                                <td class="py-4">
+                                    <span
+                                        class={`px-2 py-1 text-xs font-bold rounded-md ${
+                                            doc.status === "Verified"
+                                                ? "bg-green-100 text-green-700"
+                                                : doc.status === "Rejected"
+                                                  ? "bg-red-100 text-red-700"
+                                                  : "bg-yellow-100 text-yellow-700"
+                                        }`}
+                                    >
+                                        {doc.status}
+                                    </span>
+                                </td>
+                                <td class="py-4 text-muted-foreground">
+                                    {new Date(
+                                        doc.uploadedAt,
+                                    ).toLocaleDateString()}
+                                </td>
+                                <td class="py-4 text-right">
+                                    <DocumentViewerModal
+                                        client:load
+                                        docUrl={`https://placehold.co/600x400/e2e8f0/475569?text=${encodeURIComponent(doc.documentType)}`}
+                                        documentType={doc.documentType}
+                                    />
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        )
+    }
 </div>

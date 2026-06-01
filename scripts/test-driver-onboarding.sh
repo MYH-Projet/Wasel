@@ -21,6 +21,19 @@ echo "✅ PASS: Client token retrieved"
 
 echo ""
 echo "========================================================"
+echo " ⚡ Test 1.5 — Trigger auto-sync and Set User Active"
+echo "========================================================"
+curl -s -o /dev/null -X GET "http://localhost:5000/api/auth/me" -H "Authorization: Bearer $TOKEN"
+
+if command -v docker &> /dev/null; then
+    docker exec wasel-postgres psql -U wasel_user -d wasel_db -t -c "UPDATE users SET \"Status\" = 1 WHERE \"Email\" = 'client@wasel.ma';" > /dev/null
+    echo "✅ PASS: User status set to Active via DB"
+else
+    echo "⚠️ WARNING: Docker not found. Cannot force Active status via DB. Next tests might fail if ActiveUserOnly is enforced."
+fi
+
+echo ""
+echo "========================================================"
 echo " ⚡ Test 2 — Register Driver (POST /api/drivers/register)"
 echo "========================================================"
 

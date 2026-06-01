@@ -8,7 +8,7 @@ namespace Wasel.Api.Modules.Drivers.Controllers;
 
 [ApiController]
 [Route("api/drivers/dossier/documents")]
-[Authorize]
+[Authorize(Policy = "ActiveUserOnly")]
 public class DriverDocumentsController : ControllerBase
 {
     private readonly IDocumentService _documentService;

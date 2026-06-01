@@ -1,0 +1,93 @@
+---
+import { Phone, MessageSquare, Mail } from "lucide-react";
+import type { DeliveryDetails } from "@/types/delivery";
+
+interface Props {
+    deliveryData: DeliveryDetails;
+}
+
+const { deliveryData } = Astro.props;
+
+const driver = deliveryData?.assignedDriver;
+// Note: Customer data is not returned by the backend yet, using placeholders for now.
+---
+
+<div class="bg-card rounded-xl shadow-sm p-6 border border-border">
+    <h3 class="text-xs font-bold text-foreground uppercase tracking-wider mb-6">
+        Contact Information
+    </h3>
+
+    <div class="space-y-4">
+        {
+            driver ? (
+                <div class="bg-muted/30 rounded-xl p-4 flex items-center gap-4">
+                    <img
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(driver.name)}&background=random`}
+                        alt="Driver"
+                        class="w-12 h-12 rounded-full object-cover shadow-sm border border-border"
+                    />
+                    <div class="flex-1">
+                        <p class="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5">
+                            Driver
+                        </p>
+                        <p class="font-bold text-foreground">{driver.name}</p>
+                        <div class="flex flex-col gap-3 mt-1.5 text-muted-foreground">
+                            {driver.phone && (
+                                <div class="flex  items-center gap-2">
+                                    <Phone className="w-4 h-4" />
+                                    <span
+                                        class="hover:text-foreground transition-colors"
+                                        title={`Call ${driver.phone}`}
+                                    >
+                                        {driver.phone}
+                                    </span>
+                                </div>
+                            )}
+                            <MessageSquare className="w-4 h-4 hover:text-foreground cursor-pointer transition-colors" />
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div class="bg-muted/30 rounded-xl p-4 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-muted shadow-sm border border-border flex items-center justify-center text-muted-foreground font-bold">
+                        ?
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5">
+                            Driver
+                        </p>
+                        <p class="font-bold text-muted-foreground italic">
+                            Unassigned
+                        </p>
+                    </div>
+                </div>
+            )
+        }
+
+        <div class="bg-muted/30 rounded-xl p-4 flex items-center gap-4">
+            <img
+                src="https://ui-avatars.com/api/?name=Customer&background=random"
+                alt="Customer"
+                class="w-12 h-12 rounded-full object-cover shadow-sm border border-border"
+            />
+            <div class="flex-1">
+                <p
+                    class="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5"
+                >
+                    Customer
+                </p>
+                <p class="font-bold text-foreground italic">
+                    Details pending...
+                </p>
+                <div class="flex gap-3 mt-1.5 text-muted-foreground">
+                    <Phone
+                        className="w-4 h-4 hover:text-foreground cursor-pointer transition-colors"
+                    />
+                    <Mail
+                        className="w-4 h-4 hover:text-foreground cursor-pointer transition-colors"
+                    />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -32,6 +32,13 @@ if [ -z "$CLIENT_TOKEN" ]; then
 fi
 echo -e "${GREEN}✅ PASS: Client token retrieved${NC}"
 
+# Test 1.5 - Auto-sync and Set Active
+echo -e "\n${YELLOW}==> 1.5 Auto-syncing and setting user active...${NC}"
+curl -s -o /dev/null -X GET "${API_URL}/api/auth/me" -H "Authorization: Bearer ${CLIENT_TOKEN}"
+if command -v docker &> /dev/null; then
+    docker exec wasel-postgres psql -U wasel_user -d wasel_db -t -c "UPDATE users SET \"Status\" = 1 WHERE \"Email\" = 'client@wasel.ma';" > /dev/null
+fi
+
 # Test 2 - Ensure Driver Profile Exists
 echo -e "\n${YELLOW}==> 2. Ensuring driver profile exists for the client...${NC}"
 curl -s -o /dev/null -X POST "${API_URL}/api/drivers/register" \

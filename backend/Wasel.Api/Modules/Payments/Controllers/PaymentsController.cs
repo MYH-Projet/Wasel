@@ -9,7 +9,7 @@ namespace Wasel.Api.Modules.Payments.Controllers;
 
 [ApiController]
 [Route("api/payments")]
-[Authorize]
+[Authorize(Policy = "ActiveUserOnly")]
 public class PaymentsController : ControllerBase
 {
     private readonly IPaymentService _paymentService;

@@ -65,7 +65,7 @@ export const GET: APIRoute = async ({ request, cookies, redirect }) => {
         });
 
         // 5. Send the user to the dashboard. They are now officially logged in!
-        return redirect("/admin/requests");
+        return redirect("/admin");
 
     } catch (error) {
         console.error("Callback error:", error);

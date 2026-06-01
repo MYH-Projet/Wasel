@@ -105,9 +105,9 @@ services:
   # Keycloak
   # ──────────────────────────────────────────────
   wasel-keycloak-staging:
-    image: quay.io/keycloak/keycloak:latest
+    image: ${KEYCLOAK_IMAGE:-myelhadri/wasel-keycloak:latest}
     container_name: wasel-keycloak-staging
-    command: start-dev --import-realm
+    command: start --import-realm
     environment:
       - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
       - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}

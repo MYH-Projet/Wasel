@@ -1,0 +1,107 @@
+---
+import DriverHeader from "./DriverHeader.astro";
+import PersonalInfoCard from "./PersonalInfoCard.astro";
+import VehicleInfoCard from "./VehicleInfoCard.astro";
+import PerformanceCard from "./PerformanceCard.astro";
+import ComplianceDocuments from "./ComplianceDocuments.astro";
+import ActivityFeed from "./ActivityFeed.astro";
+import type { DriverDetails } from "@/types/driver";
+
+interface Props {
+    driverId: string;
+}
+
+const { driverId } = Astro.props;
+const INTERNAL_API_URL = import.meta.env.INTERNAL_API_URL;
+const user = Astro.locals.user;
+
+let driverData: DriverDetails | null = null;
+
+const mockDriver: DriverDetails = {
+    driverId: driverId || "mock-driver",
+    userId: "usr-mock-001",
+    firstName: "Julian",
+    lastName: "Rossi",
+    email: "j.rossi@logistics.com",
+    phone: "+1 (555) 234-5678",
+    cin: "AB123456",
+    permitNumber: "P-789012",
+    driverStatus: "Approved",
+    createdAt: "2023-10-15T09:00:00Z",
+    dossierId: "dos-mock-001",
+    dossierStatus: "Approved",
+    submissionDate: "2023-10-15T09:30:00Z",
+    verificationDate: "2023-10-16T10:00:00Z",
+    vehicle: {
+        type: "Motorcycle",
+        matricule: "CA 882-XR9",
+        model: "SH125",
+        marque: "Honda",
+    },
+    documents: [
+        {
+            documentId: "doc-234",
+            documentType: "National ID Card",
+            objectKey: "drivers/docs/cin_front.jpg",
+            status: "Verified",
+            uploadedAt: "2023-10-15T09:10:00Z",
+            verifiedAt: "2023-10-16T10:00:00Z",
+        },
+        {
+            documentId: "doc-235",
+            documentType: "Vehicle Insurance",
+            objectKey: "drivers/docs/insurance.jpg",
+            status: "Pending",
+            uploadedAt: "2023-10-15T09:15:00Z",
+        },
+    ],
+    totalDeliveries: 156,
+    rating: 4.8,
+    completionRate: 98.5,
+};
+
+if (driverId === "mock" || driverId === "demo") {
+    driverData = mockDriver;
+} else {
+    try {
+        const response = await fetch(
+            `${INTERNAL_API_URL}/api/admin/drivers/${driverId}`,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${user?.token}`,
+                },
+            },
+        );
+
+        if (!response.ok) {
+            console.warn(
+                `Fetch failed with status ${response.status}. Falling back to mock data.`,
+            );
+            driverData = mockDriver;
+        } else {
+            driverData = await response.json();
+        }
+    } catch (e) {
+        console.error("Backend fetch error. Falling back to mock data:", e);
+        driverData = mockDriver;
+    }
+}
+---
+
+<DriverHeader driverData={driverData!} />
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <PersonalInfoCard driverData={driverData!} />
+    <VehicleInfoCard driverData={driverData!} />
+    <PerformanceCard driverData={driverData!} />
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="md:col-span-2">
+        <ComplianceDocuments driverData={driverData!} />
+    </div>
+    <div class="md:col-span-1">
+        <ActivityFeed driverData={driverData!} />
+    </div>
+</div>
