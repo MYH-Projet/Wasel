@@ -105,7 +105,7 @@ services:
   # Keycloak
   # ──────────────────────────────────────────────
   wasel-keycloak-staging:
-    image: quay.io/keycloak/keycloak:latest
+    image: ${KEYCLOAK_IMAGE:-dockerhub-username/wasel-keycloak:latest}
     container_name: wasel-keycloak-staging
     command: start-dev --import-realm
     environment:

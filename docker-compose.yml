@@ -112,7 +112,9 @@ services:
   # Keycloak (IAM / Auth)
   # ──────────────────────────────────────────────
   wasel-keycloak:
-    image: quay.io/keycloak/keycloak:latest
+    build:
+      context: ./infra/keycloak
+      dockerfile: Dockerfile
     container_name: wasel-keycloak
     command: start-dev --import-realm
     ports:

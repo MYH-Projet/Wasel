@@ -125,3 +125,39 @@ Si la nouvelle version plante, connectez-vous au VPS et modifiez `docker-compose
 ```bash
 docker compose -f docker-compose.staging.yml up -d
 ```
+
+---
+
+## 7. Gestion du Thème Custom Keycloak
+
+Le projet inclut un thème personnalisé pour Keycloak (`my-theme`), qui surcharge notamment la page de connexion (`login`).
+
+### Fonctionnement Local
+En développement, le thème est monté dynamiquement via un volume dans `docker-compose.yml`. Cela permet de voir les modifications en temps réel sur les fichiers `.ftl` ou CSS sans avoir à reconstruire d'image.
+Cependant, l'image locale est configurée pour utiliser un contexte de build personnalisé si nécessaire via :
+```bash
+docker compose up -d --build wasel-keycloak
+```
+
+### Staging et Production
+En staging ou production, le thème DOIT être packagé au sein d'une image Docker personnalisée. Le fichier `infra/keycloak/Dockerfile` a été créé à cet effet.
+
+Le workflow `.github/workflows/keycloak-docker.yml` se charge de builder et pousser cette image sur Docker Hub automatiquement lors d'une modification du thème sur la branche `main`.
+
+Le déploiement staging utilisera les variables suivantes (définies dans `.env.staging`) :
+- `KEYCLOAK_IMAGE=${DOCKERHUB_USERNAME}/wasel-keycloak:latest`
+
+Le realm Wassel configure par défaut `"loginTheme": "my-theme"`. Les thèmes `account` et `email` utiliseront le thème de base tant qu'ils ne sont pas explicitement créés.
+
+### Commandes utiles pour test manuel de l'image Keycloak
+```bash
+# Build local de l'image custom
+docker build -t wasel-keycloak-test ./infra/keycloak
+
+# Démarrer le conteneur en local via docker-compose
+docker compose up -d --build wasel-keycloak
+
+# Tag et Push (Normalement géré par GitHub Actions)
+docker tag wasel-keycloak-test dockerhub-username/wasel-keycloak:latest
+docker push dockerhub-username/wasel-keycloak:latest
+```
