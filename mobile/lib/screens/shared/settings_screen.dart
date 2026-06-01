@@ -22,15 +22,17 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: backgroundColor,
+      appBar: AppBar(
+        backgroundColor: surfaceColor,
+        elevation: 0,
+        title: const Text('Settings'),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 32),
-              Text('Settings', style: headingText),
-              const SizedBox(height: 32),
               ListTile(
                 leading: const Icon(Icons.person_rounded, color: secondaryColor),
                 title: Text('My Profile', style: labelText),

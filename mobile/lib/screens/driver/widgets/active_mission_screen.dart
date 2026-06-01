@@ -4,6 +4,9 @@ import 'package:wasel/themes/colors.dart';
 import 'package:wasel/themes/text_styles.dart';
 import 'package:wasel/screens/driver/widgets/address_row.dart';
 import 'package:wasel/screens/driver/widgets/mission_step_model.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:wasel/screens/driver/widgets/driver_map.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // ÉCRAN MISSION EN COURS
@@ -88,6 +91,47 @@ class _ActiveMissionScreenState extends State<ActiveMissionScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Map montrant pickup / dropoff + position driver (placeholder)
+                    DriverMap(
+                      center: LatLng(35.7595, -5.83395),
+                      height: 160,
+                      markers: [
+                        // driver (placeholder)
+                        Marker(
+                          point: LatLng(35.7595, -5.83395),
+                          width: 36,
+                          height: 36,
+                          child: const Icon(
+                            Icons.person_pin_circle,
+                            color: Colors.blue,
+                            size: 28,
+                          ),
+                        ),
+                        // pickup placeholder
+                        Marker(
+                          point: LatLng(35.7610, -5.8350),
+                          width: 28,
+                          height: 28,
+                          child: const Icon(
+                            Icons.circle,
+                            color: Colors.orange,
+                            size: 18,
+                          ),
+                        ),
+                        // dropoff placeholder
+                        Marker(
+                          point: LatLng(35.7570, -5.8320),
+                          width: 28,
+                          height: 28,
+                          child: const Icon(
+                            Icons.location_on_rounded,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+
                     AddressRow(
                       icon: Icons.circle,
                       iconColor: primaryColor,
