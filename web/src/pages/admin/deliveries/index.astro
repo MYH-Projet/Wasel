@@ -1,0 +1,23 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { AllDeliveriesTable } from "@/components/sections/admin/deliveries/AllDeliveriesTable";
+
+// Optional: You can do an initial SSR fetch here if you want,
+// but relying on the client:load hook is perfectly fine for dashboards.
+---
+
+<AdminLayout title="Active Deliveries Overview">
+    <header>
+        <h1 class="text-3xl font-black tracking-tight text-foreground">
+            Delivery <span class="text-primary">Overview</span>
+        </h1>
+        <p class="text-muted-foreground mt-2 text-sm md:text-base max-w-2xl">
+            Monitor all active platform deliveries, track current statuses, and
+            manage emergency cancellations.
+        </p>
+    </header>
+
+    <section>
+        <AllDeliveriesTable client:load />
+    </section>
+</AdminLayout>

@@ -171,6 +171,7 @@ services:
       - PUBLIC_KEYCLOAK_CLIENT_ID=wasel-front
       - PUBLIC_APP_URL=http://localhost:8000
       - KEYCLOAK_INTERNAL_URL=http://wasel-keycloak:8080/auth
+      - MINIO_URL=http://wasel-minio:9000
     volumes:
       - ./web:/app:z
       - /app/node_modules

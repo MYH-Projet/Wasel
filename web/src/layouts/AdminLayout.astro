@@ -2,7 +2,10 @@
 import "../styles/global.css";
 import Slidebar from "@/components/sections/admin/Sidebar";
 import { Toaster } from "@/components/ui/sonner";
+import { ErrorHandler } from "@/components/sections/admin/ErrorHandler";
 const admin = Astro.locals.user;
+const pathname = Astro.url.pathname;
+const { title } = Astro.props;
 ---
 
 <!doctype html>
@@ -13,12 +16,15 @@ const admin = Astro.locals.user;
         <link rel="icon" type="image/svg+xml" href="/wasel.svg" />
         <link rel="icon" href="/wasel.svg" />
         <meta name="generator" content={Astro.generator} />
-        <title>Admin Panel | Wasel</title>
+        <title>{title}</title>
     </head>
     <body>
         <Toaster client:load position="bottom-right" />
-        <Slidebar admin={admin} client:load>
-            <slot />
+        <ErrorHandler client:only="react" />
+        <Slidebar admin={admin} client:load url={pathname}>
+            <div class="p-6 md:p-10 max-w-7xl mx-auto space-y-10">
+                <slot />
+            </div>
         </Slidebar>
     </body>
 </html>
