@@ -41,10 +41,10 @@ export function AllDriversTable() {
         }
     });
     const columns = [
-        { header: "Nom complet", render: (row: Driver) => <span className="font-medium text-slate-900">{row.fullName}</span> },
+        { header: "Nom complet", render: (row: Driver) => <span className="font-medium text-foreground">{row.fullName}</span> },
         {
             header: "Contact", render: (row: Driver) => (
-                <div className="flex flex-col text-xs text-slate-500">
+                <div className="flex flex-col text-xs text-muted-foreground">
                     <span>{row.email}</span>
                     <span>{row.phone}</span>
                 </div>
@@ -52,15 +52,15 @@ export function AllDriversTable() {
         },
         {
             header: "Statut", render: (row: Driver) => (
-                <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-semibold">
-                    {row.driverStatus}
+                <span className={`px-2 py-1 ${row.driverStatus === "APPROVED" ? "bg-green-100 text-green-700" : row.driverStatus === "REJECTED" ? "bg-red-100 text-red-700" : row.driverStatus === "PENDING_VERIFICATION" ? "bg-yellow-100 text-yellow-700" : "bg-muted text-foreground"} rounded-full text-xs font-semibold`}>
+                    {row.driverStatus === "APPROVED" ? "Approved" : row.driverStatus === "REJECTED" ? "Rejected" : row.driverStatus === "PENDING_VERIFICATION" ? "Pending verification" : "Suspended"}
                 </span>
             )
         },
         {
             header: "Actions", alignRight: true, render: (row: Driver) => (
                 <div className="flex gap-2 justify-end">
-                    <a href={`/admin/drivers/${row.id}`} className="px-3 py-1 bg-slate-900 text-white text-xs rounded">
+                    <a href={`/admin/drivers/${row.id}`} className="inline-flex items-center justify-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-semibold hover:bg-primary/90 transition-colors">
                         Details
                     </a>
                 </div>
@@ -70,12 +70,12 @@ export function AllDriversTable() {
 
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border p-4 space-y-4">
+        <div className="bg-card rounded-xl shadow-sm border p-4 space-y-4">
 
             {/* Your Custom Filters Toolbar */}
             <div className="flex flex-col md:flex-row justify-between gap-4">
                 <div className="relative w-full md:w-72">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <input
                         type="text"
                         placeholder="Rechercher nom ou email..."
@@ -86,7 +86,7 @@ export function AllDriversTable() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-slate-500" />
+                    <Filter className="w-4 h-4 text-muted-foreground" />
                     <select
                         className="border rounded-md px-3 py-2 text-sm"
                         value={statusFilter}

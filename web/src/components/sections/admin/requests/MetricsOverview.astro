@@ -50,7 +50,7 @@ const metrics = [
         metrics.map((item) => (
             <Card className="shadow-md rounded-xl overflow-hidden group hover:translate-y-0.5 hover:shadow-xl transition-all duration-300">
                 <CardHeader className="flex flex-row items-start justify-between pb-0 pt-7 px-7">
-                    <CardTitle className="text-md font-semibold text-slate-500/90">
+                    <CardTitle className="text-md font-semibold text-muted-foreground/90">
                         {item.title}
                     </CardTitle>
                     <div
@@ -64,11 +64,11 @@ const metrics = [
                 </CardHeader>
                 <CardContent className="px-7 pb-7 pt-1">
                     <div class="flex items-baseline gap-2">
-                        <span class="text-3xl font-bold tracking-tight text-slate-900 leading-tight">
+                        <span class="text-3xl font-bold tracking-tight text-foreground leading-tight">
                             {item.value}
                         </span>
                         {item.unit && (
-                            <span class="text-lg font-medium text-slate-400/80 mb-1">
+                            <span class="text-lg font-medium text-muted-foreground/80 mb-1">
                                 {item.unit}
                             </span>
                         )}

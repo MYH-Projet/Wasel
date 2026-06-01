@@ -3,8 +3,6 @@
   "enabled": true,
   "registrationAllowed": true,
   "loginTheme": "my-theme",
-  "accountTheme": "my-theme",
-  "emailTheme": "my-theme",
 
   "clients": [
     {

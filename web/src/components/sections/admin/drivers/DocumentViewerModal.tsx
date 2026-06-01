@@ -24,25 +24,25 @@ export function DocumentViewerModal({ docUrl, documentType }: Props) {
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
                     {/* The Modal Box */}
                     <div
-                        className="bg-white rounded-xl shadow-2xl max-w-4xl w-full overflow-hidden animate-in fade-in zoom-in duration-200"
+                        className="bg-card rounded-xl shadow-2xl max-w-4xl w-full overflow-hidden animate-in fade-in zoom-in duration-200"
                     >
                         {/* Modal Header */}
                         <div className="flex justify-between items-center p-4 border-b">
-                            <h3 className="font-bold text-lg text-slate-800">{documentType}</h3>
+                            <h3 className="font-bold text-lg text-foreground">{documentType}</h3>
                             <button
                                 onClick={() => setIsOpen(false)}
-                                className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-md transition-colors"
+                                className="p-1.5 text-muted-foreground hover:bg-muted rounded-md transition-colors"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
                         {/* Modal Image Area */}
-                        <div className="p-6 bg-slate-100 flex justify-center items-center min-h-[300px]">
+                        <div className="p-6 bg-muted flex justify-center items-center min-h-[300px]">
                             <img
                                 src={docUrl}
                                 alt={documentType}
-                                className="max-h-[60vh] object-contain rounded-md shadow-sm border bg-white"
+                                className="max-h-[60vh] object-contain rounded-md shadow-sm border bg-card"
                             />
                         </div>
                     </div>

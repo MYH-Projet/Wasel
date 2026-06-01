@@ -1,0 +1,56 @@
+---
+import type { DeliveryDetails } from "@/types/delivery";
+
+interface Props {
+    deliveryData: DeliveryDetails;
+}
+
+const { deliveryData } = Astro.props;
+
+const pickup = deliveryData?.pickupAddress;
+const dropoff = deliveryData?.deliveryAddress;
+---
+
+<div class="bg-card rounded-xl shadow-sm p-6 border border-border">
+    <h3 class="text-xs font-bold text-foreground uppercase tracking-wider mb-6">
+        Route Information
+    </h3>
+
+    <div
+        class="relative border-l-[2px] border-dashed border-border ml-2.5 space-y-6"
+    >
+        {pickup && (
+            <div class="relative pl-6">
+                <span
+                    class="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-foreground ring-4 ring-card"
+                ></span>
+                <p
+                    class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5"
+                >
+                    Pickup
+                </p>
+                <p class="font-bold text-foreground">{pickup.label}</p>
+                <p class="text-sm text-muted-foreground mt-0.5">
+                    {pickup.street}, {pickup.city}
+                </p>
+            </div>
+        )}
+
+        {dropoff && (
+            <div class="relative pl-6">
+                <span
+                    class="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-primary ring-4 ring-card"
+                ></span>
+                <p
+                    class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5"
+                >
+                    Drop-off
+                </p>
+                <p class="font-bold text-foreground">{dropoff.label}</p>
+                <p class="text-sm text-muted-foreground mt-0.5">
+                    {dropoff.street}, {dropoff.city}
+                </p>
+            </div>
+        )}
+    </div>
+</div>

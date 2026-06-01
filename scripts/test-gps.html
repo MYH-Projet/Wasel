@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test SignalR - GPS Tracking Wasel</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #f0f2f5; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; }
+        input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #0066cc; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; }
+        button:disabled { background: #cccccc; cursor: not-allowed; }
+        button.danger { background: #dc3545; }
+        #log { background: #1e1e1e; color: #00ff00; padding: 15px; font-family: monospace; border-radius: 4px; height: 300px; overflow-y: auto; white-space: pre-wrap; }
+        .row { display: flex; gap: 10px; }
+        .col { flex: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>1. Connexion au Hub</h2>
+        <div class="form-group">
+            <label>Jeton JWT (Access Token) :</label>
+            <input type="text" id="tokenInput" placeholder="eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA... (sans le mot 'Bearer ')">
+        </div>
+        <button id="connectBtn" onclick="connect()">Connecter</button>
+        <button id="disconnectBtn" onclick="disconnect()" class="danger" disabled>Déconnecter</button>
+        <span id="status" style="margin-left: 10px; font-weight: bold; color: gray;">Déconnecté</span>
+    </div>
+
+    <div class="card">
+        <h2>2. Actions (Réservé aux DRIVERS / CLIENTS)</h2>
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label>Simuler l'envoi d'une position (Rôle DRIVER) :</label>
+                    <input type="text" id="deliveryIdInput" placeholder="Delivery ID (UUID) - Optionnel">
+                </div>
+                <button id="sendBtn" onclick="sendPosition()" disabled>Envoyer une position factice</button>
+                <button id="autoSendBtn" onclick="toggleAutoSend()" disabled>Démarrer Envoi Auto (1/sec)</button>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label>Rejoindre un groupe de livraison (CLIENT / DRIVER) :</label>
+                    <input type="text" id="groupDeliveryId" placeholder="Delivery ID (UUID)">
+                </div>
+                <button id="joinBtn" onclick="joinGroup()" disabled>JoinDeliveryGroup</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Logs Temps Réel</h2>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        let connection = null;
+        let autoSendInterval = null;
+        let lat = 33.589886; // Casablanca base
+        let lng = -7.603869;
+
+        function log(message, type = "info") {
+            const logDiv = document.getElementById("log");
+            const time = new Date().toLocaleTimeString();
+            const color = type === "error" ? "#ff4444" : (type === "success" ? "#00ff00" : "#cccccc");
+            logDiv.innerHTML += `<span style="color: ${color}">[${time}] ${message}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        async function connect() {
+            const token = document.getElementById("tokenInput").value.trim();
+            if (!token) { alert("Veuillez entrer un token JWT !"); return; }
+
+            // URL du Hub en passant par le port 8000 (Nginx) pour éviter les problèmes CORS
+            const hubUrl = "http://localhost:8000/api/hubs/gps?access_token=" + token;
+
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl(hubUrl, {
+                    skipNegotiation: true,
+                    transport: signalR.HttpTransportType.WebSockets
+                })
+                .withAutomaticReconnect()
+                .configureLogging(signalR.LogLevel.Information)
+                .build();
+
+            // S'abonner aux réceptions
+            connection.on("ReceivePosition", (position) => {
+                log(`📡 Reçu via Hub: Lat=${position.latitude}, Lng=${position.longitude} (Persisté en DB: ${position.persisted})`, "success");
+            });
+
+            try {
+                log("Tentative de connexion au WebSocket...");
+                await connection.start();
+                document.getElementById("status").innerText = "Connecté !";
+                document.getElementById("status").style.color = "green";
+                document.getElementById("connectBtn").disabled = true;
+                document.getElementById("disconnectBtn").disabled = false;
+                document.getElementById("sendBtn").disabled = false;
+                document.getElementById("autoSendBtn").disabled = false;
+                document.getElementById("joinBtn").disabled = false;
+                log("✅ Connecté au GpsHub avec succès.");
+            } catch (err) {
+                log("❌ Erreur de connexion : " + err.toString(), "error");
+                console.error(err);
+            }
+        }
+
+        async function disconnect() {
+            if (connection) {
+                await connection.stop();
+                if (autoSendInterval) toggleAutoSend(); // Stop if running
+                document.getElementById("status").innerText = "Déconnecté";
+                document.getElementById("status").style.color = "gray";
+                document.getElementById("connectBtn").disabled = false;
+                document.getElementById("disconnectBtn").disabled = true;
+                document.getElementById("sendBtn").disabled = true;
+                document.getElementById("autoSendBtn").disabled = true;
+                document.getElementById("joinBtn").disabled = true;
+                log("Déconnecté.");
+            }
+        }
+
+        async function sendPosition() {
+            if (!connection) return;
+            const deliveryId = document.getElementById("deliveryIdInput").value.trim();
+            
+            // Simulation de déplacement
+            lat += (Math.random() - 0.5) * 0.001;
+            lng += (Math.random() - 0.5) * 0.001;
+
+            const dto = {
+                Latitude: lat,
+                Longitude: lng,
+                DeliveryId: deliveryId ? deliveryId : null,
+                SpeedKmh: Math.floor(Math.random() * 40),
+                AccuracyMeters: 5.0,
+                RecordedAt: new Date().toISOString()
+            };
+
+            try {
+                log("➡️ Envoi de la position (Invoke 'SendPosition')...");
+                await connection.invoke("SendPosition", dto);
+            } catch (err) {
+                log("❌ Erreur lors de l'envoi : " + err.toString(), "error");
+            }
+        }
+
+        function toggleAutoSend() {
+            const btn = document.getElementById("autoSendBtn");
+            if (autoSendInterval) {
+                clearInterval(autoSendInterval);
+                autoSendInterval = null;
+                btn.innerText = "Démarrer Envoi Auto (1/sec)";
+                btn.style.background = "#0066cc";
+                log("Envoi automatique stoppé.");
+            } else {
+                autoSendInterval = setInterval(sendPosition, 1000);
+                btn.innerText = "Stopper Envoi Auto";
+                btn.style.background = "#dc3545";
+                log("Envoi automatique démarré. (1 fois par seconde)");
+            }
+        }
+
+        async function joinGroup() {
+            if (!connection) return;
+            const deliveryId = document.getElementById("groupDeliveryId").value.trim();
+            if (!deliveryId) { alert("Saisissez un UUID de Delivery"); return; }
+
+            try {
+                log(`Tentative de rejoindre le groupe delivery-${deliveryId}...`);
+                await connection.invoke("JoinDeliveryGroup", deliveryId);
+                log(`✅ Succès: Vous êtes abonné à la livraison ${deliveryId}.`, "success");
+            } catch (err) {
+                log("❌ Erreur JoinGroup (Accès refusé ?) : " + err.toString(), "error");
+            }
+        }
+    </script>
+</body>
+</html>

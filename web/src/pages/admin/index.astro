@@ -1,0 +1,8 @@
+---
+import AdminLayout from "@/layouts/AdminLayout.astro";
+import { DashboardOverview } from "@/components/sections/admin/Dashboard/DashboardOverview.tsx";
+---
+
+<AdminLayout>
+    <DashboardOverview client:only="react" />
+</AdminLayout>

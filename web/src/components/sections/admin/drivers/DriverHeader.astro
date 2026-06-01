@@ -1,50 +1,65 @@
 ---
 import { Mail, Ban } from "lucide-react";
 import { DriverHeaderActions } from "./DriverHeaderActions";
+import type { DriverDetails } from "@/types/driver";
 
 interface Props {
-    driverId: string | undefined;
+    driverData: DriverDetails;
 }
-const { driverId } = Astro.props;
 
-// Simulate API Fetch for just the header info
-await new Promise((r) => setTimeout(r, 500));
-const driver = {
-    name: "Julian Rossi",
-    status: "APPROVED",
-    joinDate: "Oct 2023",
+const { driverData } = Astro.props;
+const fullName = `${driverData.firstName} ${driverData.lastName}`;
+const joinDate = new Date(driverData.createdAt).toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+});
+
+const statusColors: Record<string, string> = {
+    Approved: "bg-green-100 text-green-700",
+    PendingVerification: "bg-yellow-100 text-yellow-700",
+    Suspended: "bg-red-100 text-red-700",
+    Rejected: "bg-red-100 text-red-700",
 };
+const statusClass =
+    statusColors[driverData.driverStatus] || "bg-muted text-muted-foreground";
 ---
 
 <div
-    class="bg-white rounded-xl shadow-sm p-6 flex flex-col md:flex-row items-center justify-between gap-4"
+    class="bg-card rounded-xl shadow-sm p-6 flex flex-col md:flex-row items-center justify-between gap-4"
 >
     <div class="flex items-center gap-6">
         <div class="relative">
             <img
-                src="https://i.pravatar.cc/150?u=julian"
+                src={`https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random&size=150`}
                 alt="Profile"
                 class="w-24 h-24 rounded-lg object-cover"
             />
-            <span
-                class="absolute -bottom-2 -right-2 bg-yellow-500 text-white p-1 rounded-full border-2 border-white"
-            >
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"
-                    ><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"
-                    ></path></svg
-                >
-            </span>
+            {
+                driverData.driverStatus === "Approved" && (
+                    <span class="absolute -bottom-2 -right-2 bg-yellow-500 text-secondary-foreground p-1 rounded-full border-2 border-white">
+                        <svg
+                            class="w-4 h-4"
+                            fill="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                        </svg>
+                    </span>
+                )
+            }
         </div>
         <div>
-            <h1 class="text-3xl font-bold text-slate-900">{driver.name}</h1>
+            <h1 class="text-3xl font-bold text-foreground">{fullName}</h1>
             <div class="flex items-center gap-3 mt-2">
                 <span
-                    class="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full uppercase tracking-wider"
+                    class={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${statusClass}`}
                 >
-                    {driver.status}
+                    {driverData.driverStatus}
                 </span>
-                <span class="text-slate-500 text-sm flex items-center gap-1">
-                    🗓 Joined {driver.joinDate}
+                <span
+                    class="text-muted-foreground text-sm flex items-center gap-1"
+                >
+                    🗓 Joined {joinDate}
                 </span>
             </div>
         </div>
@@ -52,7 +67,7 @@ const driver = {
 
     <DriverHeaderActions
         client:only="react"
-        driverId={driverId!}
-        driverName={driver.name}
+        driverId={driverData.driverId}
+        driverName={fullName}
     />
 </div>
