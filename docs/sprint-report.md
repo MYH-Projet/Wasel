@@ -27,7 +27,7 @@
 - `CurrentUserService` — extraction des claims du JWT courant
 - Endpoints `/api/auth/me`, `/api/auth/sync`, `/api/auth/claims`
 - Endpoints admin `/api/admin/users`, `/api/admin/users/{id}/status`
-- Automatisation Keycloak via `realm-export.json`
+- Automatisation Keycloak via `realm-import.json`
 - Script de test `scripts/test-auth.sh`
 
 ---
@@ -108,7 +108,7 @@ Nginx :80
 - ❌ Pas de `/api/auth/login` ni `/api/auth/register` — Keycloak gère l'identité
 - ❌ Pas de secrets dans le code (`.env` exclu du Git)
 - ❌ Pas de `catch (Exception)` générique masquant les erreurs DB
-- ✅ `realm-export.json` non modifié pour l'auth directe
+- ✅ `realm-import.json` non modifié pour l'auth directe
 - ✅ Accès directs `:5000` et `:8080` préservés
 
 ---
