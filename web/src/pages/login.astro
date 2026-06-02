@@ -3,7 +3,7 @@ const KEYCLOAK_URL =
     import.meta.env.PUBLIC_KEYCLOAK_URL || "http://localhost:8000/auth";
 const REALM = import.meta.env.PUBLIC_KEYCLOAK_REALM || "wasel";
 const CLIENT_ID = import.meta.env.PUBLIC_KEYCLOAK_CLIENT_ID || "wasel-front";
-const APP_URL = import.meta.env.PUBLIC_APP_URL || "http://localhost:8000";
+const APP_URL = (typeof process !== 'undefined' ? process.env.PUBLIC_APP_URL : undefined) || import.meta.env.PUBLIC_APP_URL || Astro.url.origin;
 
 const REDIRECT_URI = `${APP_URL}/endpoint/callback`;
 const authUrl = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/auth?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=openid`;
