@@ -59,6 +59,9 @@ jobs:
             # Start services
             "${COMPOSE[@]}" up -d --remove-orphans
 
+            # Reload nginx to flush cached DNS and pick up new container IPs
+            docker exec wasel-nginx-staging nginx -s reload || true
+
             "${COMPOSE[@]}" ps
 
             # Clean up old images
