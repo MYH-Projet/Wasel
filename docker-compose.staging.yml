@@ -115,7 +115,7 @@ services:
       - KC_HTTP_ENABLED=true
       - KC_HTTP_RELATIVE_PATH=/auth
       - KC_PROXY_HEADERS=xforwarded
-      - KC_HOSTNAME=https://${STAGING_DOMAIN}
+      - KC_HOSTNAME=${STAGING_DOMAIN}
       - KC_HOSTNAME_STRICT=false
     volumes:
       - wasel-keycloak-data-staging:/opt/keycloak/data
