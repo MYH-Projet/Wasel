@@ -54,7 +54,7 @@ export function LoginForm() {
             params.append("grant_type", "password");
             params.append("username", data.email);
             params.append("password", data.password);
-            const keycloakUrl = import.meta.env.PUBLIC_KEYCLOAK_URL || "http://localhost:8000/auth";
+            const keycloakUrl = import.meta.env.PUBLIC_KEYCLOAK_URL || (typeof window !== 'undefined' ? window.location.origin + '/auth' : '');
             const realm = import.meta.env.PUBLIC_KEYCLOAK_REALM || "wasel";
             const response = await fetch(`${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`, {
                 method: "POST",
