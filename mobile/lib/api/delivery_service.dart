@@ -185,4 +185,49 @@ class DeliveryService {
       return DeliveryResult.failure(DeliveryServiceError.network);
     }
   }
+
+  // ── estimate delivery ──────────────────────────────────────────
+
+static Future<DeliveryResult> estimateDelivery({
+  required AuthService authService,
+  required double pickupLat,
+  required double pickupLng,
+  required double dropoffLat,
+  required double dropoffLng,
+  required double weight,
+  required bool isFragile,
+}) async {
+  final token = await authService.getAccessToken();
+  if (token == null) return DeliveryResult.failure(DeliveryServiceError.unauthorized);
+
+  try {
+    final uri = Uri.parse('$API/api/deliveries/estimate').replace(
+      queryParameters: {
+        'pickupLat': pickupLat.toString(),
+        'pickupLng': pickupLng.toString(),
+        'dropoffLat': dropoffLat.toString(),
+        'dropoffLng': dropoffLng.toString(),
+        'weight': weight.toString(),
+        'isFragile': isFragile.toString(),
+      },
+    );
+
+    final response = await http.get(
+      uri,
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    switch (response.statusCode) {
+      case 200:
+        return DeliveryResult.success(jsonDecode(response.body));
+      case 401:
+      case 403:
+        return DeliveryResult.failure(DeliveryServiceError.unauthorized);
+      default:
+        return DeliveryResult.failure(DeliveryServiceError.server);
+    }
+  } catch (_) {
+    return DeliveryResult.failure(DeliveryServiceError.network);
+  }
+}
 }
