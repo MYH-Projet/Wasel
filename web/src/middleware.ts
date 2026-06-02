@@ -36,7 +36,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
             if (token) {
                 console.log("im here in token")
                 const baseUrl = import.meta.env.PUBLIC_KEYCLOAK_URL || "/auth";
-                const absoluteKeycloakUrl = baseUrl.startsWith('http') ? baseUrl : `${context.url.origin}${baseUrl}`;
+                const appUrl = (typeof process !== 'undefined' ? process.env.PUBLIC_APP_URL : undefined) || import.meta.env.PUBLIC_APP_URL || context.url.origin;
+                const absoluteKeycloakUrl = baseUrl.startsWith('http') ? baseUrl : `${appUrl}${baseUrl}`;
                 const { payload } = await jwtVerify<KeycloakPayload>(token, JWKS, {
                     issuer: `${absoluteKeycloakUrl}/realms/${KEYCLOAK_REALM}`
                 });
@@ -90,7 +91,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
                     maxAge: data.refresh_expires_in
                 });
                 const baseUrl = import.meta.env.PUBLIC_KEYCLOAK_URL || "/auth";
-                const absoluteKeycloakUrl = baseUrl.startsWith('http') ? baseUrl : `${context.url.origin}${baseUrl}`;
+                const appUrl = (typeof process !== 'undefined' ? process.env.PUBLIC_APP_URL : undefined) || import.meta.env.PUBLIC_APP_URL || context.url.origin;
+                const absoluteKeycloakUrl = baseUrl.startsWith('http') ? baseUrl : `${appUrl}${baseUrl}`;
                 const { payload } = await jwtVerify<KeycloakPayload>(data.access_token, JWKS, {
                     issuer: `${absoluteKeycloakUrl}/realms/${KEYCLOAK_REALM}`
                 });
