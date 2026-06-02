@@ -17,7 +17,7 @@ export interface KeycloakPayload extends JWTPayload {
 
 // 1. Point to your Keycloak 'certs' endpoint (JWKS URL)
 // Use the internal container name if running inside Podman
-const KEYCLOAK_INTERNAL_URL = import.meta.env.KEYCLOAK_INTERNAL_URL || "http://wasel-keycloak:8080/auth";
+const KEYCLOAK_INTERNAL_URL = (typeof process !== 'undefined' ? process.env.KEYCLOAK_INTERNAL_URL : undefined) || import.meta.env.KEYCLOAK_INTERNAL_URL || "http://wasel-keycloak-staging:8080/auth";
 const KEYCLOAK_REALM = import.meta.env.PUBLIC_KEYCLOAK_REALM || "wasel";
 const JWKS_URL = new URL(`${KEYCLOAK_INTERNAL_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs`);
 
