@@ -35,8 +35,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
         try {
             if (token) {
                 console.log("im here in token")
+                const baseUrl = import.meta.env.PUBLIC_KEYCLOAK_URL || "/auth";
+                const absoluteKeycloakUrl = baseUrl.startsWith('http') ? baseUrl : `${context.url.origin}${baseUrl}`;
                 const { payload } = await jwtVerify<KeycloakPayload>(token, JWKS, {
-                    issuer: `${import.meta.env.PUBLIC_KEYCLOAK_URL || "http://localhost:8000/auth"}/realms/${KEYCLOAK_REALM}`
+                    issuer: `${absoluteKeycloakUrl}/realms/${KEYCLOAK_REALM}`
                 });
                 payload.token = token;
                 if (payload.realm_access?.roles.includes("ADMIN")) {
@@ -87,8 +89,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
                     sameSite: "lax",
                     maxAge: data.refresh_expires_in
                 });
+                const baseUrl = import.meta.env.PUBLIC_KEYCLOAK_URL || "/auth";
+                const absoluteKeycloakUrl = baseUrl.startsWith('http') ? baseUrl : `${context.url.origin}${baseUrl}`;
                 const { payload } = await jwtVerify<KeycloakPayload>(data.access_token, JWKS, {
-                    issuer: `${import.meta.env.PUBLIC_KEYCLOAK_URL || "http://localhost:8000/auth"}/realms/${KEYCLOAK_REALM}`
+                    issuer: `${absoluteKeycloakUrl}/realms/${KEYCLOAK_REALM}`
                 });
                 payload.token = data.access_token;
                 context.locals.user = payload;

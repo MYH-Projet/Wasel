@@ -15,7 +15,7 @@ export const GET: APIRoute = async ({ request, cookies, redirect }) => {
     const REALM = import.meta.env.PUBLIC_KEYCLOAK_REALM || "wasel";
     const TOKEN_ENDPOINT = `${KEYCLOAK_INTERNAL_URL}/realms/${REALM}/protocol/openid-connect/token`;
     const CLIENT_ID = import.meta.env.PUBLIC_KEYCLOAK_CLIENT_ID || "wasel-front";
-    const APP_URL = import.meta.env.PUBLIC_APP_URL || "http://localhost:8000";
+    const APP_URL = import.meta.env.PUBLIC_APP_URL || Astro.url.origin;
     const INTERNAL_API_URL = import.meta.env.INTERNAL_API_URL || "http://wasel-api:8080";
     const REDIRECT_URI = `${APP_URL}/endpoint/callback`; // Must match exactly
 

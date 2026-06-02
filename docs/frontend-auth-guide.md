@@ -99,7 +99,7 @@ Voici le flux exact que le frontend doit implémenter :
 ### 5.2 Inscription
 - L'inscription identité se fait via Keycloak.
 - Le frontend doit utiliser un flux OIDC (OpenID Connect).
-- *Pour la V1/Dev :* Des utilisateurs de test existent déjà (grâce à `realm-export.json`).
+- *Pour la V1/Dev :* Des utilisateurs de test existent déjà (grâce à `realm-import.json`).
 - *Pour la Production :* Pour la production, l'option recommandée est d'utiliser le flow d'inscription Keycloak via OIDC, avec self-registration activé si nécessaire. L'utilisation directe de l'API Admin Keycloak pour créer des utilisateurs depuis le frontend n'est pas recommandée.
 
 ### 5.3 Connexion

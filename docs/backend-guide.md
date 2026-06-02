@@ -652,7 +652,7 @@ Le backend gère maintenant l'authentification et les rôles avec JWT via Keyclo
 **Comment tester une route sécurisée ?**
 
 > [!TIP]
-> **Nouveau :** Keycloak est maintenant **entièrement auto-configuré** au démarrage grâce au fichier `infra/keycloak/realm-export.json`.
+> **Nouveau :** Keycloak est maintenant **entièrement auto-configuré** au démarrage grâce au fichier `infra/keycloak/realm-import.json`.
 > Utilisateurs de test pré-configurés (DEV UNIQUEMENT) :
 > - `admin@wasel.ma` / `admin123` (Rôle: ADMIN)
 > - `client@wasel.ma` / `client123` (Rôle: CLIENT)
