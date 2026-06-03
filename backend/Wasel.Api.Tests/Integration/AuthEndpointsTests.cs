@@ -32,7 +32,7 @@ public class AuthEndpointsTests : IClassFixture<IntegrationTestWebAppFactory>
         profile.Should().NotBeNull();
         profile!.Email.Should().Be("test@wasel.ma");
         profile.KeycloakId.Should().Be("kc-test-user");
-        profile.Status.Should().Be("Pending");
+        profile.Status.Should().Be("Active");
 
         // Vérification de la base de données réelle dans le Testcontainer
         using var scope = _factory.Services.CreateScope();
