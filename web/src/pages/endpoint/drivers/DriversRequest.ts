@@ -82,7 +82,7 @@ export const PATCH: APIRoute = async (context) => {
                     "Authorization": `Bearer ${user?.token}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ status: body.action, reason: body.payload?.reason })
+                body: JSON.stringify({ status: body.action, rejectionReason: body.reason })
             }
         )
         if (!operation.ok) {

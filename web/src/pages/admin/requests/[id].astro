@@ -1,11 +1,12 @@
 ---
 import Layout from "@/layouts/AdminLayout.astro";
 import { DriverReviewActions } from "@/components/sections/admin/requests/DriverReviewActions";
+import { DocumentViewerInline } from "@/components/sections/admin/drivers/DocumentViewerInline";
 
 interface Documant {
     docId: string;
     documentType: string;
-    minioUrl: string;
+    objectKey: string;
 }
 
 interface DriverData {
@@ -44,28 +45,27 @@ const driverData = await response.json();
 console.log(driverData);
 
 const mapedDriverData: DriverData = {
-    id: driverData.id || "NA",
+    id: driverData.driverId || "NA",
     personalInfo: {
-        fullName: `${driverData.firstName} ${driverData.lastName}` || "NA",
-        cin: driverData.permitNumber || "NA",
+        fullName:
+            `${driverData.firstName} ${driverData.lastName}`.trim() || "NA",
+        cin: driverData.cin || "NA",
         phone: driverData.phone || "NA",
         email: driverData.email || "NA",
     },
     vehicle: {
         type: driverData.vehicle?.type || "NA",
-        licensePlate: driverData.vehicle?.licensePlate || "NA",
-        brand: driverData.vehicle?.brand || "NA",
+        licensePlate: driverData.vehicle?.matricule || "NA",
+        brand: driverData.vehicle?.marque || "NA",
         model: driverData.vehicle?.model || "NA",
     },
-    dossierId: driverData.dossier?.id || "NA",
-    dossierStatus: driverData.dossier?.status || "NA",
-    documents: driverData.documents.map((doc: any) => {
-        return {
-            docId: doc.id || "NA",
-            documentType: doc.documentType || "NA",
-            minioUrl: MINIO_URL + (doc.docUrl || "NA"),
-        };
-    }),
+    dossierId: driverData.dossierId || "NA",
+    dossierStatus: driverData.dossierStatus || "NA",
+    documents: driverData.documents?.map((doc: any) => ({
+        docId: doc.documentId || "NA",
+        documentType: doc.documentType || "NA",
+        objectKey: doc.objectKey || "NA",
+    })) || [],
 };
 ---
 
@@ -79,12 +79,12 @@ const mapedDriverData: DriverData = {
             </a>
             <span class="mx-3 text-muted-foreground">/</span>
             <span class="font-medium text-foreground"
-                >{driverData.personalInfo.fullName}</span
+                >{mapedDriverData.personalInfo.fullName}</span
             >
             <span
                 class="ml-3 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800"
             >
-                {driverData.status}
+                {mapedDriverData.dossierStatus}
             </span>
         </div>
     </div>
@@ -97,17 +97,12 @@ const mapedDriverData: DriverData = {
 
             <div class="space-y-8">
                 {
-                    driverData.documents.map((doc: Documant) => (
+                    mapedDriverData.documents.map((doc: Documant) => (
                         <div class="bg-card p-4 rounded-xl shadow-sm border">
                             <h3 class="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4 border-b pb-2">
                                 {doc.documentType}{" "}
-                                {/* ex: "Permis de conduire", "CIN Recto" */}
                             </h3>
-                            <img
-                                src={doc.minioUrl}
-                                alt={doc.documentType}
-                                class="w-full h-auto rounded-md object-contain max-h-[500px]"
-                            />
+                            <DocumentViewerInline client:load objectKey={doc.objectKey} documentType={doc.documentType} />
                         </div>
                     ))
                 }
@@ -126,25 +121,25 @@ const mapedDriverData: DriverData = {
                         <div>
                             <p class="text-muted-foreground">Full Name</p>
                             <p class="font-medium">
-                                {driverData.personalInfo.fullName}
+                                {mapedDriverData.personalInfo.fullName}
                             </p>
                         </div>
                         <div>
                             <p class="text-muted-foreground">CIN</p>
                             <p class="font-medium">
-                                {driverData.personalInfo.cin}
+                                {mapedDriverData.personalInfo.cin}
                             </p>
                         </div>
                         <div>
                             <p class="text-muted-foreground">Phone</p>
                             <p class="font-medium">
-                                {driverData.personalInfo.phone}
+                                {mapedDriverData.personalInfo.phone}
                             </p>
                         </div>
                         <div>
                             <p class="text-muted-foreground">Email</p>
                             <p class="font-medium">
-                                {driverData.personalInfo.email}
+                                {mapedDriverData.personalInfo.email}
                             </p>
                         </div>
                     </div>
@@ -159,24 +154,26 @@ const mapedDriverData: DriverData = {
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
                             <p class="text-muted-foreground">Type</p>
-                            <p class="font-medium">{driverData.vehicle.type}</p>
+                            <p class="font-medium">
+                                {mapedDriverData.vehicle.type}
+                            </p>
                         </div>
                         <div>
                             <p class="text-muted-foreground">License Plate</p>
                             <p class="font-medium uppercase">
-                                {driverData.vehicle.licensePlate}
+                                {mapedDriverData.vehicle.licensePlate}
                             </p>
                         </div>
                         <div>
                             <p class="text-muted-foreground">Marque</p>
                             <p class="font-medium">
-                                {driverData.vehicle.brand}
+                                {mapedDriverData.vehicle.brand}
                             </p>
                         </div>
                         <div>
                             <p class="text-muted-foreground">Modèle</p>
                             <p class="font-medium">
-                                {driverData.vehicle.model}
+                                {mapedDriverData.vehicle.model}
                             </p>
                         </div>
                     </div>

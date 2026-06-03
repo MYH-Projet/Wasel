@@ -31,6 +31,10 @@ public class DriverDossierService : IDriverDossierService
             dossier.Status = DriverDossierStatus.Approved;
             dossier.VerificationDate = DateTime.UtcNow;
             dossier.RejectionReason = null;
+            if (dossier.Driver != null)
+            {
+                dossier.Driver.Status = DriverStatus.Approved;
+            }
         }
         else if (normalizedStatus == "rejected")
         {
@@ -42,12 +46,17 @@ public class DriverDossierService : IDriverDossierService
             dossier.Status = DriverDossierStatus.Rejected;
             dossier.VerificationDate = DateTime.UtcNow;
             dossier.RejectionReason = request.RejectionReason;
+            if (dossier.Driver != null)
+            {
+                dossier.Driver.Status = DriverStatus.Rejected;
+            }
         }
         else if (normalizedStatus == "underreview")
         {
             dossier.Status = DriverDossierStatus.UnderReview;
             dossier.VerificationDate = null;
             dossier.RejectionReason = null;
+            // The driver status remains PendingVerification
         }
         else if (normalizedStatus == "submitted")
         {

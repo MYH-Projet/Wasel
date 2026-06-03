@@ -6,9 +6,25 @@ export const GET: APIRoute = async (context) => {
 
     const user = context.locals.user;
     try {
-        const queryParams = new URL(context.request.url).search;
+        // 1. Parse and map the query parameters sent by the React frontend
+        const url = new URL(context.request.url);
+        const searchParams = url.searchParams;
+
+        const backendParams = new URLSearchParams();
+        if (searchParams.has("page")) backendParams.set("page", searchParams.get("page")!);
+        if (searchParams.has("pageSize")) backendParams.set("pageSize", searchParams.get("pageSize")!);
+        if (searchParams.has("search")) backendParams.set("search", searchParams.get("search")!);
+
+        const statusFilter = searchParams.get("statusFilter");
+        if (statusFilter) {
+            // Replace underscores (e.g. PENDING_VERIFICATION -> PENDINGVERIFICATION)
+            const cleanStatus = statusFilter.replace(/_/g, "");
+            backendParams.set("statusFilter", cleanStatus);
+        }
+
+        // 2. Call the .NET backend API with the mapped query parameters
         const response = await fetch(
-            `${INTERNAL_API_URL}/api/deliveries/available${queryParams}`,
+            `${INTERNAL_API_URL}/api/deliveries/available?${backendParams.toString()}`,
             {
                 method: "GET",
                 headers: {
