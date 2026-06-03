@@ -3,7 +3,6 @@
   "enabled": true,
   "registrationAllowed": true,
   "loginTheme": "my-theme",
-
   "clients": [
     {
       "clientId": "wasel-api",
@@ -11,8 +10,12 @@
       "publicClient": true,
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
-      "redirectUris": ["*"],
-      "webOrigins": ["*"]
+      "redirectUris": [
+        "*"
+      ],
+      "webOrigins": [
+        "*"
+      ]
     },
     {
       "clientId": "wasel-mobile",
@@ -23,7 +26,9 @@
         "com.example.wasel://oauthredirect",
         "*"
       ],
-      "webOrigins": ["*"]
+      "webOrigins": [
+        "*"
+      ]
     },
     {
       "clientId": "wasel-front",
@@ -31,11 +36,14 @@
       "publicClient": true,
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
-      "redirectUris": ["*"],
-      "webOrigins": ["*"]
+      "redirectUris": [
+        "*"
+      ],
+      "webOrigins": [
+        "*"
+      ]
     }
   ],
-
   "roles": {
     "realm": [
       {
@@ -52,7 +60,6 @@
       }
     ]
   },
-
   "users": [
     {
       "username": "admin@wasel.ma",
@@ -68,7 +75,9 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["ADMIN"]
+      "realmRoles": [
+        "ADMIN"
+      ]
     },
     {
       "username": "client@wasel.ma",
@@ -84,7 +93,27 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["CLIENT"]
+      "realmRoles": [
+        "CLIENT"
+      ]
+    },
+    {
+      "username": "driver@wasel.ma",
+      "email": "driver@wasel.ma",
+      "firstName": "Driver",
+      "lastName": "Test",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "driver123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "DRIVER"
+      ]
     }
   ]
 }
