@@ -24,4 +24,9 @@ public class DriverDossierDto
     public string? RejectionReason { get; set; }
 
     public List<DocumentResponseDto> Documents { get; set; } = new();
+    public VehicleResponseDto? Vehicle { get; set; }
+
+    public int TotalDeliveries { get; set; }
+    public double Rating { get; set; }
+    public double CompletionRate { get; set; }
 }

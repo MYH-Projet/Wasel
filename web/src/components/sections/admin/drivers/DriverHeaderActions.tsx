@@ -17,12 +17,12 @@ export function DriverHeaderActions({ driverId, driverName }: Props) {
         setIsSubmitting(true);
         try {
             // Call your BFF (Backend-For-Frontend) endpoint
-            const response = await fetch(`/endpiont/drivers/`, {
+            const response = await fetch(`/endpoint/drivers/`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     driverId: driverId,
-                    action: "Blocked",
+                    action: "Suspended",
                     payload: { reason: suspendReason }
                 }),
             });
@@ -53,57 +53,7 @@ export function DriverHeaderActions({ driverId, driverName }: Props) {
                 >
                     <Mail className="w-4 h-4" /> Message
                 </button>
-
-                {/* 2. The trigger button is clean and simple */}
-                <button
-                    onClick={() => setShowModal(true)}
-                    disabled={isSubmitting}
-                    className="flex items-center gap-2 px-4 py-2 border border-red-200 text-red-600 font-medium rounded-lg hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <Ban className="w-4 h-4" />
-                    {isSubmitting ? "Suspending..." : "Suspend"}
-                </button>
             </div>
-
-            {/* 3. The Modal lives OUTSIDE the button! */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-card p-6 rounded-lg shadow-xl w-full max-w-md animate-in fade-in zoom-in duration-200">
-                        <h4 className="text-lg font-bold flex items-center gap-2">
-                            <AlertTriangle className="text-red-600" />
-                            Confirm the suspend
-                        </h4>
-                        <p className="text-muted-foreground mt-2 mb-4">
-                            Please enter the reason for suspension. This message will be sent to {driverName}.
-                        </p>
-
-                        <textarea
-                            className="w-full border rounded-md p-2 text-sm focus:ring-2 focus:ring-red-500 outline-none"
-                            rows={4}
-                            placeholder="Ex: The insurance copy is illegible..."
-                            value={suspendReason}
-                            onChange={(e) => setSuspendReason(e.target.value)}
-                        />
-
-                        <div className="mt-6 flex justify-end gap-3">
-                            <button
-                                onClick={() => setShowModal(false)}
-                                disabled={isSubmitting}
-                                className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-md"
-                            >
-                                Annuler
-                            </button>
-                            <button
-                                onClick={handleSuspend}
-                                disabled={suspendReason.trim().length < 10 || isSubmitting}
-                                className="px-4 py-2 bg-red-600 text-secondary-foreground rounded-md hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
-                            >
-                                {isSubmitting ? "Processing..." : "Suspend definitely"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </>
     );
 }

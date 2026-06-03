@@ -41,28 +41,29 @@ const response = await fetch(
 
 if (!response.ok) return Astro.redirect("/admin/requests?error=not_found");
 const driverData = await response.json();
+console.log(driverData);
 
 const mapedDriverData: DriverData = {
-    id: driverData.id,
+    id: driverData.id || "NA",
     personalInfo: {
-        fullName: `${driverData.firstName} ${driverData.lastName}`,
-        cin: driverData.permitNumber,
-        phone: driverData.phone,
-        email: driverData.email,
+        fullName: `${driverData.firstName} ${driverData.lastName}` || "NA",
+        cin: driverData.permitNumber || "NA",
+        phone: driverData.phone || "NA",
+        email: driverData.email || "NA",
     },
     vehicle: {
-        type: driverData.vehicle.type || "NA",
-        licensePlate: driverData.vehicle.licensePlate || "NA",
-        brand: driverData.vehicle.brand || "NA",
-        model: driverData.vehicle.model || "NA",
+        type: driverData.vehicle?.type || "NA",
+        licensePlate: driverData.vehicle?.licensePlate || "NA",
+        brand: driverData.vehicle?.brand || "NA",
+        model: driverData.vehicle?.model || "NA",
     },
-    dossierId: driverData.dossier.id,
-    dossierStatus: driverData.dossier.status,
+    dossierId: driverData.dossier?.id || "NA",
+    dossierStatus: driverData.dossier?.status || "NA",
     documents: driverData.documents.map((doc: any) => {
         return {
-            docId: doc.id,
-            documentType: doc.documentType,
-            minioUrl: MINIO_URL + doc.docUrl,
+            docId: doc.id || "NA",
+            documentType: doc.documentType || "NA",
+            minioUrl: MINIO_URL + (doc.docUrl || "NA"),
         };
     }),
 };
