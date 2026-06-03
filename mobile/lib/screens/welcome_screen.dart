@@ -1,26 +1,52 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:wasel/main.dart';
 import 'package:wasel/screens/main_screen.dart';
 import 'package:wasel/themes/colors.dart';
 import 'package:wasel/themes/text_styles.dart';
 import 'package:wasel/widgets/wasel_logo_horizontal.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  bool _isAuthenticating = false;
+
+  void _navigateHome() {
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const MainScreen()),
+    );
+  }
+
+  Future<void> _handleAuth(bool isLogin) async {
+    // Prevent double-taps
+    if (_isAuthenticating) return;
+
+    setState(() => _isAuthenticating = true);
     final authService = InheritedAuth.of(context).authService;
 
-    void navigateHome() {
-      if (!context.mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
-      );
-    }
+    // AuthService returns true on success, false on cancel/error
+    final success = isLogin
+        ? await authService.login()
+        : await authService.register();
 
+    if (!mounted) return;
+    setState(() => _isAuthenticating = false);
+
+    if (success) {
+      _navigateHome();
+    }
+    // Note: We don't show a snackbar on false because 'false' usually just
+    // means the user pressed the back button to close the Keycloak webview.
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
       body: SafeArea(
@@ -56,20 +82,10 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 40),
+
+              // ── Register Button ──────────────────────────────────────────
               ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await authService.register();
-                    navigateHome();
-                  } on FlutterAppAuthPlatformException catch (e) {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(e.message ?? 'Registration failed'),
-                      ),
-                    );
-                  }
-                },
+                onPressed: _isAuthenticating ? null : () => _handleAuth(false),
                 style: ButtonStyle(
                   shape: WidgetStatePropertyAll(
                     RoundedRectangleBorder(
@@ -79,37 +95,50 @@ class WelcomeScreen extends StatelessWidget {
                   padding: const WidgetStatePropertyAll(
                     EdgeInsets.symmetric(vertical: 14),
                   ),
-                  backgroundColor: WidgetStatePropertyAll(primaryColor),
-                  foregroundColor: WidgetStatePropertyAll(onPrimary),
+                  backgroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.disabled))
+                      return primaryColor.withValues(alpha: 0.5);
+                    return primaryColor;
+                  }),
+                  foregroundColor: const WidgetStatePropertyAll(onPrimary),
                   textStyle: WidgetStatePropertyAll(bolderLabelText),
                 ),
-                child: const Text('Join now'),
+                child: _isAuthenticating
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Join now'),
               ),
               const SizedBox(height: 12),
+
+              // ── Login Button ─────────────────────────────────────────────
               ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await authService.login();
-                    navigateHome();
-                  } on FlutterAppAuthPlatformException catch (e) {
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(e.message ?? 'Login failed')),
-                    );
-                  }
-                },
+                onPressed: _isAuthenticating ? null : () => _handleAuth(true),
                 style: ButtonStyle(
                   shape: WidgetStatePropertyAll(
                     RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(color: primaryColorw600),
+                      side: BorderSide(
+                        color: _isAuthenticating
+                            ? Colors.transparent
+                            : primaryColorw600,
+                      ),
                     ),
                   ),
                   padding: const WidgetStatePropertyAll(
                     EdgeInsets.symmetric(vertical: 14),
                   ),
-                  backgroundColor: WidgetStatePropertyAll(surfaceColor),
-                  foregroundColor: WidgetStatePropertyAll(onSurface),
+                  backgroundColor: const WidgetStatePropertyAll(surfaceColor),
+                  foregroundColor: WidgetStateProperty.resolveWith((states) {
+                    if (states.contains(WidgetState.disabled))
+                      return Colors.black38;
+                    return onSurface;
+                  }),
                   textStyle: WidgetStatePropertyAll(bolderLabelText),
                 ),
                 child: const Text('Sign in'),

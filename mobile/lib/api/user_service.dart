@@ -16,27 +16,40 @@ class UserResult {
 }
 
 class UserService {
+  static const _timeout = Duration(seconds: 10);
+
+  // ── helper for safe json decode ────────────────────────────────
+  static Map<String, dynamic> _safeDecode(String body) {
+    if (body.trim().isEmpty) return <String, dynamic>{};
+    return jsonDecode(body) as Map<String, dynamic>;
+  }
+
   static Future<UserResult> getUserInfo(AuthService authService) async {
     final token = await authService.getAccessToken();
-    if (token == null) return UserResult.failure(UserServiceError.unauthorized);
+    if (token == null) {
+      return const UserResult.failure(UserServiceError.unauthorized);
+    }
 
     try {
-      final response = await http.get(
-        Uri.parse('$API/api/auth/me'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
+      final response = await http
+          .get(
+            Uri.parse('$API/api/auth/me'),
+            headers: {'Authorization': 'Bearer $token'},
+          )
+          .timeout(_timeout); // 1. Added timeout protection
 
       switch (response.statusCode) {
         case 200:
-          return UserResult.success(jsonDecode(response.body));
+          // 2. Safely decode to prevent silent parsing crashes
+          return UserResult.success(_safeDecode(response.body));
         case 401:
         case 403:
-          return UserResult.failure(UserServiceError.unauthorized);
+          return const UserResult.failure(UserServiceError.unauthorized);
         default:
-          return UserResult.failure(UserServiceError.server);
+          return const UserResult.failure(UserServiceError.server);
       }
     } catch (_) {
-      return UserResult.failure(UserServiceError.network);
+      return const UserResult.failure(UserServiceError.network);
     }
   }
 }
