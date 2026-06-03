@@ -62,7 +62,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (result.isSuccess) {
       setState(() {
         _items.addAll(result.data!['items'] as List<dynamic>);
-        _totalPages = result.data!['totalPages'] as int;
+        _totalPages = (result.data!['totalPages'] as num).toInt();
         _loading = false;
       });
     } else {
@@ -100,6 +100,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
       });
     } else {
       setState(() => _loadingMore = false);
+      // ADDED: Error handling so it doesn't fail silently
+      final message = switch (result.error) {
+        DeliveryServiceError.unauthorized =>
+          'Session expired, please sign in again',
+        DeliveryServiceError.network => 'Could not reach the server',
+        _ => 'Could not load more deliveries',
+      };
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -192,7 +202,10 @@ class _HistoryCard extends StatelessWidget {
     final statusColor = _terminalColors[status] ?? Colors.black38;
     final pickup = item['pickupAddress'] as String? ?? '--';
     final dropoff = item['dropoffAddress'] as String? ?? '--';
-    final price = item['pricePaid'] as double? ?? 0.0;
+
+    // APPLIED FIX: Using num parsing to prevent TypeError on whole numbers
+    final price = (item['pricePaid'] as num? ?? 0).toDouble();
+
     final date = _formatDate(item['date'] as String? ?? '');
 
     return GestureDetector(
@@ -254,7 +267,10 @@ class _HistoryCard extends StatelessWidget {
   String _formatDate(String iso) {
     try {
       final dt = DateTime.parse(iso).toLocal();
-      return '${dt.day}/${dt.month}/${dt.year}';
+      // Padded digits for a cleaner look (e.g., 05/02/2024)
+      final day = dt.day.toString().padLeft(2, '0');
+      final month = dt.month.toString().padLeft(2, '0');
+      return '$day/$month/${dt.year}';
     } catch (_) {
       return '';
     }

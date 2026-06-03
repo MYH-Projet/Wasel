@@ -5,6 +5,8 @@ import 'dart:convert';
 // Note: reverse geocoding uses Nominatim (no API key needed), not a Wasel endpoint
 
 class LocationService {
+  static const _timeout = Duration(seconds: 10);
+
   // ── current position ───────────────────────────────────────────
 
   Future<Position?> getCurrentPosition() async {
@@ -23,18 +25,23 @@ class LocationService {
   }
 
   Future<bool> _ensurePermission() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return false;
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) return false;
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        return false;
+      }
+      return true;
+    } catch (_) {
+      // Catch PlatformExceptions from custom/locked-down Android OS variants
       return false;
     }
-    return true;
   }
 
   // ── reverse geocoding ──────────────────────────────────────────
@@ -44,23 +51,52 @@ class LocationService {
       final uri = Uri.parse(
         'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lng&format=json',
       );
-      final response = await http.get(
-        uri,
-        headers: {'Accept-Language': 'en', 'User-Agent': 'wasel-app'},
-      );
+      final response = await http
+          .get(
+            uri,
+            headers: {
+              'Accept-Language': 'en',
+              // FIX 1: Comply with Nominatim policy to avoid 403 Forbidden blocks
+              'User-Agent': 'com.example.wasel (dynn0s123@gmail.com)',
+            },
+          )
+          .timeout(_timeout); // Added 10-second timeout
+
       if (response.statusCode != 200) return null;
 
       final data = jsonDecode(response.body);
-      final address = data['address'] as Map<String, dynamic>;
 
+      // APPLIED FIX: Safe fallback if clicked in unmapped areas/ocean
+      if (data['error'] != null) return null;
+
+      final address = data['address'] as Map<String, dynamic>?;
+      final displayName =
+          (data['display_name']?.toString() ?? 'Unknown location');
+
+      if (address == null) {
+        // Fallback for unmapped coordinates that still return a display name
+        return AddressResult(
+          label: displayName,
+          street: '',
+          city: '',
+          postalCode: '',
+          country: 'Morocco',
+          latitude: lat,
+          longitude: lng,
+        );
+      }
+
+      // FIX 2: Safely convert everything to String, as OSM sometimes returns numbers
       return AddressResult(
-        label: data['display_name'] as String,
+        label: displayName,
         street: _buildStreet(address),
         city:
-            (address['city'] ?? address['town'] ?? address['village'] ?? '')
-                as String,
-        postalCode: (address['postcode'] ?? '') as String,
-        country: (address['country'] ?? 'Morocco') as String,
+            (address['city']?.toString() ??
+            address['town']?.toString() ??
+            address['village']?.toString() ??
+            ''),
+        postalCode: address['postcode']?.toString() ?? '',
+        country: address['country']?.toString() ?? 'Morocco',
         latitude: lat,
         longitude: lng,
       );
@@ -70,10 +106,10 @@ class LocationService {
   }
 
   String _buildStreet(Map<String, dynamic> address) {
-    final road = address['road'] ?? '';
-    final houseNumber = address['house_number'] ?? '';
+    final road = address['road']?.toString() ?? '';
+    final houseNumber = address['house_number']?.toString() ?? '';
     if (houseNumber.isNotEmpty) return '$houseNumber $road';
-    return road as String;
+    return road;
   }
 }
 
@@ -96,14 +132,30 @@ class AddressResult {
     required this.longitude,
   });
 
-  // convenience: converts to the shape POST /api/deliveries expects
-  Map<String, dynamic> toJson() => {
-    'label': label,
-    'street': street,
-    'city': city,
-    'postalCode': postalCode,
-    'country': country,
-    'latitude': latitude,
-    'longitude': longitude,
-  };
+  String _truncate(String text, int maxLength) {
+    if (text.isEmpty) return '';
+    return text.length > maxLength ? text.substring(0, maxLength) : text;
+  }
+
+  // Inside LocationService.dart -> AddressResult class at the bottom
+  Map<String, dynamic> toJson() {
+    final safeLabel = label.trim().isEmpty ? 'Selected Location' : label.trim();
+    final safeStreet = street.trim().isEmpty
+        ? 'Street Not Specified'
+        : street.trim();
+    final safeCity = city.trim().isEmpty ? 'City Not Specified' : city.trim();
+    final safeCountry = country.trim().isEmpty ? 'Morocco' : country.trim();
+    final safePostal = postalCode.trim().isEmpty ? '00000' : postalCode.trim();
+
+    return {
+      // ✅ Truncated to 90 chars to safely fit inside PostgreSQL VARCHAR(100)
+      'label': _truncate(safeLabel, 90),
+      'street': _truncate(safeStreet, 90),
+      'city': _truncate(safeCity, 90),
+      'country': _truncate(safeCountry, 90),
+      'postalCode': _truncate(safePostal, 20),
+      'latitude': latitude,
+      'longitude': longitude,
+    };
+  }
 }

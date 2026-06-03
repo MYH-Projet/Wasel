@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:wasel/api/delivery_service.dart';
+import 'package:wasel/api/tracking_service.dart';
 import 'package:wasel/main.dart';
 import 'package:wasel/themes/colors.dart';
 import 'package:wasel/themes/text_styles.dart';
@@ -77,7 +78,13 @@ class SpecificRequestScreen extends StatefulWidget {
 }
 
 class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
+  final MapController _mapController = MapController();
+
   Map<String, dynamic>? _delivery;
+  LatLng? _pickupLatLng;
+  LatLng? _dropoffLatLng;
+  LatLng? _driverLatLng;
+
   bool _loading = true;
   bool _cancelling = false;
   Timer? _timer;
@@ -87,6 +94,7 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _fetchDelivery();
+      await _fetchDriverLocation();
       _startPolling();
     });
   }
@@ -94,6 +102,7 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -105,6 +114,10 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
         return;
       }
       await _fetchDelivery();
+
+      if (_delivery?['assignedDriver'] != null) {
+        await _fetchDriverLocation();
+      }
     });
   }
 
@@ -114,15 +127,51 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
       authService: authService,
       id: widget.deliveryId,
     );
+
     if (!mounted) return;
-    if (result.isSuccess) {
+
+    if (result.isSuccess && result.data != null) {
       setState(() {
         _delivery = result.data;
         _loading = false;
+
+        final pickup = _delivery!['pickupAddress'] as Map<String, dynamic>?;
+        if (pickup != null && pickup['latitude'] != null) {
+          _pickupLatLng = LatLng(
+            (pickup['latitude'] as num).toDouble(),
+            (pickup['longitude'] as num).toDouble(),
+          );
+        }
+
+        final dropoff = _delivery!['deliveryAddress'] as Map<String, dynamic>?;
+        if (dropoff != null && dropoff['latitude'] != null) {
+          _dropoffLatLng = LatLng(
+            (dropoff['latitude'] as num).toDouble(),
+            (dropoff['longitude'] as num).toDouble(),
+          );
+        }
       });
     } else {
       setState(() => _loading = false);
     }
+  }
+
+  Future<void> _fetchDriverLocation() async {
+    final authService = InheritedAuth.of(context).authService;
+    final result = await TrackingService.getDeliveryLastPosition(
+      authService: authService,
+      deliveryId: widget.deliveryId,
+    );
+
+    if (mounted && result.isSuccess && result.position != null) {
+      setState(() => _driverLatLng = result.position);
+    }
+  }
+
+  void _recenterMap() {
+    final target =
+        _driverLatLng ?? _pickupLatLng ?? const LatLng(33.5731, -7.5898);
+    _mapController.move(target, 15);
   }
 
   Future<void> _cancel() async {
@@ -131,14 +180,21 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Cancel delivery'),
         content: const Text('Are you sure you want to cancel this delivery?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('No'),
+            child: Text(
+              'No',
+              style: bolderLabelText.copyWith(color: Colors.black54),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('Yes', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Yes, cancel',
+              style: bolderLabelText.copyWith(color: Colors.red),
+            ),
           ),
         ],
       ),
@@ -152,6 +208,7 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
       authService: authService,
       id: widget.deliveryId,
     );
+
     if (!mounted) return;
     setState(() => _cancelling = false);
 
@@ -159,22 +216,26 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
       await _fetchDelivery();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not cancel delivery')),
+        const SnackBar(
+          content: Text('Could not cancel delivery. Please try again.'),
+        ),
       );
     }
   }
 
-  // ── build ──────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        backgroundColor: backgroundColor,
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     if (_delivery == null) {
       return Scaffold(
-        appBar: AppBar(),
+        backgroundColor: backgroundColor,
+        appBar: AppBar(backgroundColor: backgroundColor, elevation: 0),
         body: Center(child: Text('Could not load delivery', style: bodyText)),
       );
     }
@@ -183,24 +244,10 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
     final isTerminal = _terminalStatuses.contains(status);
     final canCancel = _cancellableStatuses.contains(status);
     final hasDriver = _delivery!['assignedDriver'] != null;
-
-    final pickup = _delivery!['pickupAddress'] as Map<String, dynamic>?;
-    final dropoff = _delivery!['deliveryAddress'] as Map<String, dynamic>?;
     final payment = _delivery!['payment'] as Map<String, dynamic>?;
 
-    final pickupLatLng = pickup != null
-        ? LatLng(pickup['latitude'] as double, pickup['longitude'] as double)
-        : null;
-    final dropoffLatLng = dropoff != null
-        ? LatLng(dropoff['latitude'] as double, dropoff['longitude'] as double)
-        : null;
-
-    // placeholder driver location until endpoint exists
-    final driverLatLng = hasDriver && pickupLatLng != null
-        ? LatLng(pickupLatLng.latitude + 0.002, pickupLatLng.longitude + 0.002)
-        : null;
-
-    final mapCenter = pickupLatLng ?? const LatLng(33.5731, -7.5898);
+    final mapCenter =
+        _driverLatLng ?? _pickupLatLng ?? const LatLng(33.5731, -7.5898);
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -208,9 +255,10 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
         children: [
           // ── map ────────────────────────────────────────────────
           SizedBox(
-            height: MediaQuery.of(context).size.height * 0.45,
+            height: MediaQuery.of(context).size.height * 0.48,
             child: FlutterMap(
-              options: MapOptions(initialCenter: mapCenter, initialZoom: 13),
+              mapController: _mapController,
+              options: MapOptions(initialCenter: mapCenter, initialZoom: 14),
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -218,31 +266,44 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
                 ),
                 MarkerLayer(
                   markers: [
-                    if (pickupLatLng != null)
+                    if (_pickupLatLng != null)
                       Marker(
-                        point: pickupLatLng,
+                        point: _pickupLatLng!,
                         child: const Icon(
                           Icons.circle,
                           color: primaryColor,
                           size: 16,
                         ),
                       ),
-                    if (dropoffLatLng != null)
+                    if (_dropoffLatLng != null)
                       Marker(
-                        point: dropoffLatLng,
+                        point: _dropoffLatLng!,
                         child: const Icon(
                           Icons.location_on_rounded,
                           color: Colors.red,
                           size: 32,
                         ),
                       ),
-                    if (driverLatLng != null)
+                    if (_driverLatLng != null)
                       Marker(
-                        point: driverLatLng,
-                        child: const Icon(
-                          Icons.directions_car_rounded,
-                          color: secondaryColor,
-                          size: 28,
+                        point: _driverLatLng!,
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.directions_car_rounded,
+                            color: secondaryColor,
+                            size: 24,
+                          ),
                         ),
                       ),
                   ],
@@ -264,23 +325,39 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
             ),
           ),
 
+          // ── recenter button ────────────────────────────────────
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            right: 16,
+            child: CircleAvatar(
+              backgroundColor: Colors.white,
+              child: IconButton(
+                icon: const Icon(
+                  Icons.my_location_rounded,
+                  color: secondaryColor,
+                ),
+                onPressed: _recenterMap,
+              ),
+            ),
+          ),
+
           // ── bottom sheet ───────────────────────────────────────
           DraggableScrollableSheet(
-            initialChildSize: 0.6,
-            minChildSize: 0.55,
+            initialChildSize: 0.58,
+            minChildSize: 0.58,
             maxChildSize: 0.92,
             snap: true,
-            snapSizes: const [0.55, 0.92],
+            snapSizes: const [0.58, 0.92],
             builder: (context, scrollController) {
               return Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black12,
-                      blurRadius: 10,
-                      offset: Offset(0, -2),
+                      blurRadius: 15,
+                      offset: Offset(0, -4),
                     ),
                   ],
                 ),
@@ -291,12 +368,12 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
                     // drag handle
                     Center(
                       child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 12),
-                        width: 40,
-                        height: 4,
+                        margin: const EdgeInsets.symmetric(vertical: 14),
+                        width: 48,
+                        height: 5,
                         decoration: BoxDecoration(
-                          color: surfaceVariant,
-                          borderRadius: BorderRadius.circular(2),
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2.5),
                         ),
                       ),
                     ),
@@ -305,75 +382,104 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          _labelFor(status),
-                          style: headingText.copyWith(color: _colorFor(status)),
+                        Expanded(
+                          child: Text(
+                            _labelFor(status),
+                            style: headingText.copyWith(
+                              color: _colorFor(status),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
+                        const SizedBox(width: 12),
                         if (!isTerminal)
-                          Text(
-                            'Waiting',
-                            style: captionText.copyWith(color: Colors.black38),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: primaryColor.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              'In Progress',
+                              style: captionText.copyWith(
+                                color: primaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
 
                     // ── driver card ─────────────────────────────
                     if (hasDriver) ...[
                       _DriverCard(driver: _delivery!['assignedDriver']),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                     ] else if (!isTerminal) ...[
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: surfaceColor,
+                          color: Colors.grey.shade50,
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade200),
                         ),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.access_time_rounded,
-                              color: Colors.black38,
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: primaryColor,
+                              ),
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Looking for a nearby driver...',
-                              style: bodyText.copyWith(color: Colors.black54),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Text(
+                                'Looking for a nearby driver...',
+                                style: bodyText.copyWith(color: Colors.black54),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                     ],
 
                     // ── addresses ───────────────────────────────
                     _AddressRow(
                       icon: Icons.circle,
                       iconColor: primaryColor,
-                      label: pickup?['street'] ?? '--',
-                      sublabel: pickup?['city'] ?? '',
+                      label: _delivery?['pickupAddress']?['street'] ?? '--',
+                      sublabel: _delivery?['pickupAddress']?['city'] ?? '',
                     ),
                     const Padding(
                       padding: EdgeInsets.only(left: 10),
                       child: SizedBox(
-                        height: 20,
-                        child: VerticalDivider(width: 1, color: Colors.black26),
+                        height: 24,
+                        child: VerticalDivider(width: 2, color: Colors.black12),
                       ),
                     ),
                     _AddressRow(
                       icon: Icons.location_on_rounded,
                       iconColor: Colors.red,
-                      label: dropoff?['street'] ?? '--',
-                      sublabel: dropoff?['city'] ?? '',
+                      label: _delivery?['deliveryAddress']?['street'] ?? '--',
+                      sublabel: _delivery?['deliveryAddress']?['city'] ?? '',
                     ),
+                    const SizedBox(height: 24),
+
+                    Divider(color: Colors.grey.shade200),
                     const SizedBox(height: 20),
 
-                    Divider(color: surfaceVariant),
-                    const SizedBox(height: 16),
-
                     // ── timeline ────────────────────────────────
-                    Text('Status', style: subHeadingText),
-                    const SizedBox(height: 16),
+                    Text('Tracking Status', style: subHeadingText),
+                    const SizedBox(height: 20),
                     _StatusTimeline(
                       currentStatus: status,
                       statusHistory:
@@ -381,32 +487,32 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
                     ),
 
                     const SizedBox(height: 20),
-                    Divider(color: surfaceVariant),
+                    Divider(color: Colors.grey.shade200),
                     const SizedBox(height: 16),
 
                     // ── price ────────────────────────────────────
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Price', style: labelText),
+                        Text('Total Price', style: labelText),
                         Text(
-                          '${(payment?['amount'] ?? 0.0).toStringAsFixed(2)} DH',
-                          style: headingText,
+                          '${((payment?['amount'] as num?) ?? 0).toStringAsFixed(2)} DH',
+                          style: headingText.copyWith(fontSize: 22),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
 
                     // ── cancel button ────────────────────────────
                     if (canCancel)
                       OutlinedButton(
                         onPressed: _cancelling ? null : _cancel,
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           side: const BorderSide(color: Colors.red),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         child: _cancelling
@@ -419,13 +525,13 @@ class _SpecificRequestScreenState extends State<SpecificRequestScreen> {
                                 ),
                               )
                             : Text(
-                                'Cancel delivery',
+                                'Cancel Delivery',
                                 style: bolderLabelText.copyWith(
                                   color: Colors.red,
                                 ),
                               ),
                       ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 40),
                   ],
                 ),
               );
@@ -445,30 +551,36 @@ class _DriverCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: update fields once assignedDriver shape is confirmed
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 2)),
+        ],
       ),
       child: Row(
         children: [
           CircleAvatar(
-            radius: 24,
+            radius: 26,
             backgroundColor: surfaceVariant,
-            child: const Icon(Icons.person_rounded, color: secondaryColor),
+            child: const Icon(
+              Icons.person_rounded,
+              color: secondaryColor,
+              size: 28,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Driver assigned', style: labelText),
+                Text('Driver Assigned', style: subHeadingText),
                 const SizedBox(height: 4),
                 Text(
-                  'Details coming soon',
-                  style: captionText.copyWith(color: Colors.black38),
+                  'On the way to your location',
+                  style: captionText.copyWith(color: Colors.black54),
                 ),
               ],
             ),
@@ -498,23 +610,25 @@ class _AddressRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: iconColor, size: 18),
-        const SizedBox(width: 12),
+        Icon(icon, color: iconColor, size: 20),
+        const SizedBox(width: 16),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: bodyText,
+                style: bodyText.copyWith(fontWeight: FontWeight.w600),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              if (sublabel.isNotEmpty)
+              if (sublabel.isNotEmpty) ...[
+                const SizedBox(height: 2),
                 Text(
                   sublabel,
-                  style: captionText.copyWith(color: Colors.black38),
+                  style: captionText.copyWith(color: Colors.black45),
                 ),
+              ],
             ],
           ),
         ),
@@ -544,61 +658,74 @@ class _StatusTimeline extends StatelessWidget {
         final isDone = index <= currentIndex;
         final isCurrent = index == currentIndex;
 
-        // find timestamp from history if available
         final historyEntry = statusHistory
             .cast<Map<String, dynamic>>()
-            .where((h) => h['status'] == status)
+            .where((h) => h['deliveryStatus'] == status)
             .firstOrNull;
         final timestamp = historyEntry?['changedAt'] as String?;
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // dot + line
             Column(
               children: [
                 Container(
-                  width: 20,
-                  height: 20,
+                  width: 24,
+                  height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: isDone ? primaryColor : surfaceVariant,
+                    color: isDone ? primaryColor : Colors.grey.shade200,
                     border: isCurrent
-                        ? Border.all(color: primaryColor, width: 3)
+                        ? Border.all(
+                            color: primaryColor.withValues(alpha: 0.3),
+                            width: 4,
+                          )
                         : null,
                   ),
                   child: isDone && !isCurrent
-                      ? const Icon(Icons.check, size: 12, color: Colors.white)
-                      : null,
+                      ? const Icon(Icons.check, size: 14, color: Colors.white)
+                      : (isCurrent
+                            ? const Icon(
+                                Icons.circle,
+                                size: 8,
+                                color: Colors.white,
+                              )
+                            : null),
                 ),
                 if (index < _timelineStatuses.length - 1)
                   Container(
                     width: 2,
-                    height: 32,
-                    color: isDone ? primaryColor : surfaceVariant,
+                    height: 36,
+                    color: isDone ? primaryColor : Colors.grey.shade200,
                   ),
               ],
             ),
-            const SizedBox(width: 12),
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _labelFor(status),
-                    style: labelText.copyWith(
-                      color: isDone ? onSurface : Colors.black38,
-                      fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
-                    ),
-                  ),
-                  if (timestamp != null)
+            const SizedBox(width: 16),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      _formatTime(timestamp),
-                      style: captionText.copyWith(color: Colors.black38),
+                      _labelFor(status),
+                      style: labelText.copyWith(
+                        color: isDone ? onSurface : Colors.black38,
+                        fontWeight: isCurrent
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
                     ),
-                  const SizedBox(height: 12),
-                ],
+                    if (timestamp != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatTime(timestamp),
+                        style: captionText.copyWith(color: Colors.black45),
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
           ],

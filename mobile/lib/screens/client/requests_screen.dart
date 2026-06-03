@@ -145,7 +145,9 @@ class _ClientRequestsScreenState extends State<ClientRequestsScreen> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => SpecificRequestScreen(
-                              deliveryId: item['deliveryId'] as String,
+                              deliveryId:
+                                  item['id']
+                                      as String, // FIX: Backend sends 'id', not 'deliveryId'
                             ),
                           ),
                         ),
@@ -171,12 +173,20 @@ class _DeliveryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = item['finalStatus'] as String? ?? 'CREATED';
+    // FIX: Backend sends 'status', not 'finalStatus'
+    final status = item['status'] as String? ?? 'CREATED';
     final isPending = _pendingStatuses.contains(status);
     final progress = _progressFor(status);
     final statusLabel = _labelFor(status);
-    final dropoff = item['dropoffAddress'] as String? ?? '--';
-    final price = item['pricePaid'] as double? ?? 0.0;
+
+    // FIX: Backend sends an address object, not a string
+    final dropoffObj = item['dropoffAddress'] as Map<String, dynamic>?;
+    final dropoff = dropoffObj != null
+        ? '${dropoffObj['street']}, ${dropoffObj['city']}'
+        : '--';
+
+    // FIX: Safe parsing for JSON numbers using 'price', not 'pricePaid'
+    final price = (item['price'] as num? ?? 0).toDouble();
 
     return GestureDetector(
       onTap: onTap,
