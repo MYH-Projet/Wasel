@@ -1,1 +1,1 @@
-const API = 'http://localhost:8000';
+const API = 'https://staging.lwasel.tech';
