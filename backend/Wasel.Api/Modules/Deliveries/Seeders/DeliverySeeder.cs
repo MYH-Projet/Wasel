@@ -181,17 +181,84 @@ public static class DeliverySeeder
             CreatedAt = DateTime.UtcNow.AddDays(-2)
         };
 
+        // Generate additional 60 random deliveries for charting purposes
+        var random = new Random(12345); // Fixed seed for reproducible data
+        var statuses = new[] { DeliveryStatus.CREATED, DeliveryStatus.ACCEPTED, DeliveryStatus.IN_TRANSIT, DeliveryStatus.DELIVERED, DeliveryStatus.CANCELLED_BY_CLIENT };
+        var paymentMethods = new[] { PaymentMethod.CASH, PaymentMethod.CARD, PaymentMethod.WALLET };
+
+        var generatedAddresses = new List<Address>();
+        var generatedParcels = new List<Parcel>();
+        var generatedDeliveries = new List<Delivery>();
+        var generatedHistories = new List<DeliveryStatusHistory>();
+        var generatedPayments = new List<Payment>();
+
+        for (int i = 1; i <= 60; i++)
+        {
+            var pAddress = new Address { Id = Guid.NewGuid(), ClientId = clientUser.Id, Label = "Pickup " + i, Street = "Street " + i, City = "Casablanca", Country = "Morocco", Latitude = 33.5 + random.NextDouble() * 0.1, Longitude = -7.6 - random.NextDouble() * 0.1 };
+            var dAddress = new Address { Id = Guid.NewGuid(), ClientId = clientUser.Id, Label = "Dropoff " + i, Street = "Avenue " + i, City = "Casablanca", Country = "Morocco", Latitude = 33.5 + random.NextDouble() * 0.1, Longitude = -7.6 - random.NextDouble() * 0.1 };
+            var parcel = new Parcel { Id = Guid.NewGuid(), Description = "Package " + i, Weight = (decimal)(random.NextDouble() * 10), Volume = (decimal)(random.NextDouble() * 0.1), IsFragile = random.Next(2) == 0 };
+            
+            // Random date within the last 12 months, with higher weight on recent days
+            var daysAgo = random.Next(10) < 4 ? random.Next(0, 7) : random.Next(0, 365);
+            var hoursAgo = random.Next(0, 24);
+            var createdAt = DateTime.UtcNow.AddDays(-daysAgo).AddHours(-hoursAgo);
+            
+            var status = statuses[random.Next(statuses.Length)];
+            var driverId = status == DeliveryStatus.CREATED ? (Guid?)null : driver?.Id;
+            var price = (decimal)(random.Next(20, 150));
+
+            var genDelivery = new Delivery
+            {
+                Id = Guid.NewGuid(),
+                ClientId = clientUser.Id,
+                DriverId = driverId,
+                PickupAddressId = pAddress.Id,
+                DropoffAddressId = dAddress.Id,
+                PickupAddress = pAddress,
+                DropoffAddress = dAddress,
+                ParcelId = parcel.Id,
+                Parcel = parcel,
+                Status = status,
+                PaymentMethod = paymentMethods[random.Next(paymentMethods.Length)],
+                DistanceKm = (decimal)(random.NextDouble() * 15),
+                Price = price,
+                Currency = "MAD",
+                CreatedAt = createdAt
+            };
+
+            generatedAddresses.Add(pAddress);
+            generatedAddresses.Add(dAddress);
+            generatedParcels.Add(parcel);
+            generatedDeliveries.Add(genDelivery);
+
+            generatedHistories.Add(new DeliveryStatusHistory { Id = Guid.NewGuid(), DeliveryId = genDelivery.Id, Status = DeliveryStatus.CREATED, Note = "Auto-generated", ChangedAt = createdAt });
+            if (status == DeliveryStatus.DELIVERED)
+            {
+                generatedHistories.Add(new DeliveryStatusHistory { Id = Guid.NewGuid(), DeliveryId = genDelivery.Id, Status = DeliveryStatus.DELIVERED, Note = "Auto-generated delivered", ChangedAt = createdAt.AddMinutes(random.Next(20, 60)) });
+            }
+
+            var pStatus = status == DeliveryStatus.DELIVERED ? PaymentStatus.PAID : (status == DeliveryStatus.CANCELLED_BY_CLIENT ? PaymentStatus.REFUNDED : PaymentStatus.PENDING);
+            generatedPayments.Add(new Payment { Id = Guid.NewGuid(), DeliveryId = genDelivery.Id, Amount = price, Currency = "MAD", Method = genDelivery.PaymentMethod, Status = pStatus, TransactionReference = "TXN-GEN-" + i });
+        }
+
         // Save Addresses, Parcels, Deliveries
-        await dbContext.Addresses.AddRangeAsync(new[] { 
+        var allAddresses = new List<Address> { 
             pickupAddress1, dropoffAddress1, 
             pickupAddress2, dropoffAddress2, 
             pickupAddress3, dropoffAddress3, 
             pickupAddress4, dropoffAddress4, 
             pickupAddress5, dropoffAddress5 
-        }, cancellationToken);
+        };
+        allAddresses.AddRange(generatedAddresses);
+        await dbContext.Addresses.AddRangeAsync(allAddresses, cancellationToken);
         
-        await dbContext.Parcels.AddRangeAsync(new[] { parcel1, parcel2, parcel3, parcel4, parcel5 }, cancellationToken);
-        await dbContext.Deliveries.AddRangeAsync(new[] { delivery1, delivery2, delivery3, delivery4, delivery5 }, cancellationToken);
+        var allParcels = new List<Parcel> { parcel1, parcel2, parcel3, parcel4, parcel5 };
+        allParcels.AddRange(generatedParcels);
+        await dbContext.Parcels.AddRangeAsync(allParcels, cancellationToken);
+
+        var allDeliveries = new List<Delivery> { delivery1, delivery2, delivery3, delivery4, delivery5 };
+        allDeliveries.AddRange(generatedDeliveries);
+        await dbContext.Deliveries.AddRangeAsync(allDeliveries, cancellationToken);
 
         // Add Status Histories
         delivery1.StatusHistories.Add(new DeliveryStatusHistory { Id = Guid.NewGuid(), DeliveryId = delivery1.Id, Status = DeliveryStatus.CREATED, Note = "Delivery request submitted by client.", ChangedAt = DateTime.UtcNow.AddMinutes(-45) });
@@ -213,6 +280,8 @@ public static class DeliverySeeder
         delivery5.StatusHistories.Add(new DeliveryStatusHistory { Id = Guid.NewGuid(), DeliveryId = delivery5.Id, Status = DeliveryStatus.CREATED, Note = "Order placed.", ChangedAt = DateTime.UtcNow.AddDays(-2) });
         delivery5.StatusHistories.Add(new DeliveryStatusHistory { Id = Guid.NewGuid(), DeliveryId = delivery5.Id, Status = DeliveryStatus.CANCELLED_BY_CLIENT, Note = "Client cancelled the order.", ChangedAt = DateTime.UtcNow.AddDays(-2).AddMinutes(10) });
 
+        await dbContext.DeliveryStatusHistories.AddRangeAsync(generatedHistories, cancellationToken);
+
         // Add Payments
         var payment1 = new Payment { Id = Guid.NewGuid(), DeliveryId = delivery1.Id, Amount = delivery1.Price, Currency = delivery1.Currency, Method = delivery1.PaymentMethod, Status = PaymentStatus.PENDING, TransactionReference = "TXN-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper() };
         var payment2 = new Payment { Id = Guid.NewGuid(), DeliveryId = delivery2.Id, Amount = delivery2.Price, Currency = delivery2.Currency, Method = delivery2.PaymentMethod, Status = PaymentStatus.PAID, TransactionReference = "TXN-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper() };
@@ -220,7 +289,9 @@ public static class DeliverySeeder
         var payment4 = new Payment { Id = Guid.NewGuid(), DeliveryId = delivery4.Id, Amount = delivery4.Price, Currency = delivery4.Currency, Method = delivery4.PaymentMethod, Status = PaymentStatus.PAID, TransactionReference = "TXN-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper() };
         var payment5 = new Payment { Id = Guid.NewGuid(), DeliveryId = delivery5.Id, Amount = delivery5.Price, Currency = delivery5.Currency, Method = delivery5.PaymentMethod, Status = PaymentStatus.REFUNDED, TransactionReference = "TXN-" + Guid.NewGuid().ToString().Substring(0, 8).ToUpper() };
 
-        await dbContext.Payments.AddRangeAsync(new[] { payment1, payment2, payment3, payment4, payment5 }, cancellationToken);
+        var allPayments = new List<Payment> { payment1, payment2, payment3, payment4, payment5 };
+        allPayments.AddRange(generatedPayments);
+        await dbContext.Payments.AddRangeAsync(allPayments, cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }

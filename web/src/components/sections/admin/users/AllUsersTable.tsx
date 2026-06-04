@@ -24,8 +24,9 @@ export function AllUsersTable() {
     const [actionModalData, setActionModalData] = useState<{
         isOpen: boolean;
         userId: string | null;
+        userName: string | null;
         currentStatus: string
-    }>({ isOpen: false, userId: null, currentStatus: "" });
+    }>({ isOpen: false, userId: null, userName: null, currentStatus: "" });
     const [isProcessing, setIsProcessing] = useState(false);
 
     // Fetch Hook
@@ -68,7 +69,7 @@ export function AllUsersTable() {
 
 
 
-            setActionModalData({ isOpen: false, userId: null, currentStatus: "" });
+            setActionModalData({ isOpen: false, userId: null, userName: null, currentStatus: "" });
         } catch (error) {
             toast.error(`Failed to ${isBlocking ? 'block' : 'unblock'} user.`);
         } finally {
@@ -116,7 +117,7 @@ export function AllUsersTable() {
                 return (
                     <div className="flex gap-2 justify-end items-center">
                         <button
-                            onClick={() => setActionModalData({ isOpen: true, userId: row.id, currentStatus: row.status })}
+                            onClick={() => setActionModalData({ isOpen: true, userId: row.id, userName: row.fullName, currentStatus: row.status })}
                             className={`p-1.5 rounded-md transition-colors ${isBlocked
                                 ? "text-green-600 hover:bg-green-50"
                                 : "text-red-500 hover:bg-red-50"
@@ -193,13 +194,13 @@ export function AllUsersTable() {
                             {isBlockingModal ? 'Block User Account' : 'Unblock User Account'}
                         </h4>
                         <p className="text-sm text-slate-600 mt-2">
-                            Are you sure you want to {isBlockingModal ? 'block' : 'unblock'} user <span className="font-bold text-slate-900">{actionModalData.userId}</span>?
+                            Are you sure you want to {isBlockingModal ? 'block' : 'unblock'} user <span className="font-bold text-slate-900">{actionModalData.userName}</span>?
                             {isBlockingModal ? " They will immediately lose access to the platform." : " They will regain full access to the platform."}
                         </p>
 
                         <div className="mt-6 flex justify-end gap-3">
                             <button
-                                onClick={() => setActionModalData({ isOpen: false, userId: null, currentStatus: "" })}
+                                onClick={() => setActionModalData({ isOpen: false, userId: null, userName: null, currentStatus: "" })}
                                 disabled={isProcessing}
                                 className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
                             >

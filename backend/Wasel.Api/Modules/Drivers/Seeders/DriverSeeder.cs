@@ -141,7 +141,6 @@ public static class DriverSeeder
                 new Document { Id = Guid.NewGuid(), DriverDossierId = dossierId, DocumentType = DocumentType.Cin, ObjectKey = $"documents/{driverId}/cin.pdf", Status = GetDocStatus(dossierStatus) },
                 new Document { Id = Guid.NewGuid(), DriverDossierId = dossierId, DocumentType = DocumentType.Permit, ObjectKey = $"documents/{driverId}/permit.pdf", Status = GetDocStatus(dossierStatus) },
                 new Document { Id = Guid.NewGuid(), DriverDossierId = dossierId, DocumentType = DocumentType.VehicleCard, ObjectKey = $"documents/{driverId}/carte_grise.pdf", Status = GetDocStatus(dossierStatus) },
-                new Document { Id = Guid.NewGuid(), DriverDossierId = dossierId, DocumentType = DocumentType.ProfilePhoto, ObjectKey = $"profile-photos/{driverId}/photo.jpg", Status = GetDocStatus(dossierStatus) }
             };
 
             var dossier = new DriverDossier
