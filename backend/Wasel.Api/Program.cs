@@ -38,6 +38,7 @@ using Wasel.Api.Modules.Reviews.Services;
 using Wasel.Api.Modules.Notifications.Repositories;
 using Wasel.Api.Modules.Notifications.Services;
 using Wasel.Api.Infrastructure.Firebase;
+using Wasel.Api.Shared.EventBus;
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -47,7 +48,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+builder.Services.Configure<RabbitMqOptions>(
+    builder.Configuration.GetSection("RabbitMQ"));
 
+builder.Services.AddSingleton<IEventBus, RabbitMqEventBus>();
 // PostgreSQL with EF Core
 builder.Services.AddDbContext<WaselDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
