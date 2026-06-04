@@ -36,6 +36,13 @@ export interface StatusHistory {
     comment?: string;
 }
 
+export interface Customer {
+    id: string;
+    fullName: string;
+    email?: string;
+    phoneNumber?: string;
+}
+
 export interface DeliveryDetails {
     id: string;
     deliveryStatus: string;
@@ -45,5 +52,6 @@ export interface DeliveryDetails {
     parcel: Parcel;
     payment: Payment;
     assignedDriver: AssignedDriver | null;
+    client: Customer | null;
     statusHistory: StatusHistory[];
 }

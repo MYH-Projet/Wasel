@@ -529,11 +529,14 @@ public class DeliveryService : IDeliveryService
     var payment = await _context.Payments
         .FirstOrDefaultAsync(p => p.DeliveryId == deliveryId);
 
-    return MapToDetailDto(delivery, assignedDriver, payment);
+    var clientUser = await _context.Users
+        .FirstOrDefaultAsync(u => u.Id == delivery.ClientId);
+
+    return MapToDetailDto(delivery, assignedDriver, payment, clientUser);
 }
 
 
-    private static DeliveryDetailResponseDto MapToDetailDto(Delivery d, Driver? assignedDriver, Payment? payment)
+    private static DeliveryDetailResponseDto MapToDetailDto(Delivery d, Driver? assignedDriver, Payment? payment, User? client)
     {
         return new DeliveryDetailResponseDto
         {
@@ -557,6 +560,14 @@ public class DeliveryService : IDeliveryService
             },
 
             AssignedDriver = assignedDriver is null ? null : MapDriver(assignedDriver),
+
+            Client = client is null ? new ClientDetailDto() : new ClientDetailDto
+            {
+                Id = client.Id,
+                FullName = $"{client.FirstName} {client.LastName}".Trim(),
+                Email = client.Email,
+                PhoneNumber = client.Phone ?? string.Empty
+            },
 
             StatusHistory = d.StatusHistories?
                 .OrderBy(h => h.ChangedAt)
