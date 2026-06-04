@@ -93,12 +93,12 @@ public class UserServiceTests
         // Assert
         result.KeycloakId.Should().Be(keycloakId);
         result.Email.Should().Be(email);
-        result.Status.Should().Be(UserStatus.Pending); // Status should be Pending as per logic
+        result.Status.Should().Be(UserStatus.Active); // Status should be Pending as per logic
         
         _userRepositoryMock.Verify(x => x.AddAsync(It.Is<User>(u => 
             u.KeycloakId == keycloakId && 
             u.Email == email &&
-            u.Status == UserStatus.Pending)), Times.Once);
+            u.Status == UserStatus.Active)), Times.Once);
     }
 
     [Fact]

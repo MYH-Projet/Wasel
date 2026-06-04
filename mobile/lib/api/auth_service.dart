@@ -1,7 +1,7 @@
+import 'package:flutter/services.dart'; // Added for PlatformException
 import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:wasel/config.dart';
 
 enum UserMode { client, driver }
@@ -9,9 +9,10 @@ enum UserMode { client, driver }
 class AuthService {
   String? _accessToken;
   String? _refreshToken;
+  UserMode? _cachedMode; // Added memory cache for faster UI painting
 
   final _appAuth = FlutterAppAuth();
-  final _storage = FlutterSecureStorage();
+  final _storage = const FlutterSecureStorage();
 
   // ── token persistence ──────────────────────────────────────────
 
@@ -46,11 +47,15 @@ class AuthService {
   // ── mode ───────────────────────────────────────────────────────
 
   Future<UserMode> getMode() async {
+    if (_cachedMode != null) return _cachedMode!;
+
     final stored = await _storage.read(key: 'user-mode');
-    return stored == 'driver' ? UserMode.driver : UserMode.client;
+    _cachedMode = stored == 'driver' ? UserMode.driver : UserMode.client;
+    return _cachedMode!;
   }
 
   Future<void> setMode(UserMode mode) async {
+    _cachedMode = mode;
     await _storage.write(
       key: 'user-mode',
       value: mode == UserMode.driver ? 'driver' : 'client',
@@ -80,10 +85,13 @@ class AuthService {
 
   Future<bool> _pingAuthMe(String token) async {
     try {
-      final response = await http.get(
-        Uri.parse('$API/api/auth/me'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
+      final response = await http
+          .get(
+            Uri.parse('$API/api/auth/me'),
+            headers: {'Authorization': 'Bearer $token'},
+          )
+          .timeout(const Duration(seconds: 10));
+
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -95,23 +103,22 @@ class AuthService {
     if (refreshToken == null) return false;
 
     try {
-      final response = await http.post(
-        Uri.parse('$API/auth/realms/wasel/protocol/openid-connect/token'),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: {
-          'grant_type': 'refresh_token',
-          'client_id': 'wasel-mobile',
-          'refresh_token': refreshToken,
-        },
+      final result = await _appAuth.token(
+        TokenRequest(
+          'wasel-mobile',
+          'com.example.wasel://oauthredirect',
+          discoveryUrl:
+              '$API/auth/realms/wasel/.well-known/openid-configuration',
+          refreshToken: refreshToken,
+          allowInsecureConnections: true,
+        ),
       );
 
-      if (response.statusCode != 200) return false;
+      if (result?.accessToken == null || result?.refreshToken == null) {
+        return false;
+      }
 
-      final data = jsonDecode(response.body);
-      await _persistTokens(
-        data['access_token'] as String,
-        data['refresh_token'] as String,
-      );
+      await _persistTokens(result!.accessToken!, result.refreshToken!);
       return true;
     } catch (_) {
       return false;
@@ -120,25 +127,62 @@ class AuthService {
 
   // ── login / register ───────────────────────────────────────────
 
-  Future<void> login() async => _authActions(['login']);
-  Future<void> register() async => _authActions(['create']);
+  Future<bool> login() async => _authActions(['login']);
+  Future<bool> register() async => _authActions(['create']);
 
-  Future<void> _authActions(List<String> actions) async {
-    final result = await _appAuth.authorizeAndExchangeCode(
-      AuthorizationTokenRequest(
-        'wasel-mobile',
-        'com.example.wasel://oauthredirect',
-        discoveryUrl: '$API/auth/realms/wasel/.well-known/openid-configuration',
-        promptValues: actions,
-        scopes: ['openid', 'profile', 'email'],
-        allowInsecureConnections: true,
-      ),
-    );
+  Future<bool> _authActions(List<String> actions) async {
+    try {
+      final result = await _appAuth.authorizeAndExchangeCode(
+        AuthorizationTokenRequest(
+          'wasel-mobile',
+          'com.example.wasel://oauthredirect',
+          discoveryUrl:
+              '$API/auth/realms/wasel/.well-known/openid-configuration',
+          promptValues: actions,
+          scopes: ['openid', 'profile', 'email'],
+          allowInsecureConnections: true,
+        ),
+      );
 
-    if (result.accessToken == null || result.refreshToken == null) {
-      throw Exception('Incomplete token response from Keycloak');
+      if (result?.accessToken == null || result?.refreshToken == null) {
+        return false;
+      }
+
+      // FIX: Call the backend to ensure the user exists in PostgreSQL
+      // before we consider the login successful.
+      final isSynced = await _syncUserWithBackend(result!.accessToken!);
+      if (!isSynced) {
+        return false; // Fails the login if backend database sync fails
+      }
+
+      await _persistTokens(result.accessToken!, result.refreshToken!);
+      return true;
+    } on PlatformException catch (_) {
+      return false;
+    } catch (e) {
+      return false;
     }
+  }
 
-    await _persistTokens(result.accessToken!, result.refreshToken!);
+  // ── backend sync ───────────────────────────────────────────────
+
+  Future<bool> _syncUserWithBackend(String token) async {
+    try {
+      // NOTE: Ensure this matches your actual C# endpoint route!
+      final response = await http
+          .post(
+            Uri.parse('$API/api/auth/sync'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+          )
+          .timeout(const Duration(seconds: 10));
+
+      // Consider it a success if we get a 200 OK, 201 Created, or 204 No Content
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (_) {
+      return false;
+    }
   }
 }
