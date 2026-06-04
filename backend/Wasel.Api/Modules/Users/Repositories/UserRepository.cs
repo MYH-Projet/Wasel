@@ -23,6 +23,7 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByIdAsync(Guid id)
     {
         return await _context.Users
+            .IgnoreQueryFilters()
             .Include(u => u.Preference)
             .FirstOrDefaultAsync(u => u.Id == id);
     }
@@ -30,6 +31,7 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByKeycloakIdAsync(string keycloakId)
     {
         return await _context.Users
+            .IgnoreQueryFilters()
             .Include(u => u.Preference)
             .FirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
     }
@@ -37,6 +39,7 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetUserWithPreferenceAndDriverAsync(string keycloakId)
     {
         return await _context.Users
+            .IgnoreQueryFilters()
             .Include(u => u.Preference)
             .Include(u => u.Driver)
             .FirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
@@ -45,6 +48,7 @@ public class UserRepository : IUserRepository
     public async Task<User?> GetByEmailAsync(string email)
     {
         return await _context.Users
+            .IgnoreQueryFilters()
             .Include(u => u.Preference)
             .FirstOrDefaultAsync(u => u.Email == email);
     }

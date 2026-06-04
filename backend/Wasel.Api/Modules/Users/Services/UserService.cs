@@ -83,7 +83,7 @@ public class UserService : IUserService
                     Email = email,
                     FirstName = firstName,
                     LastName = lastName,
-                    Status = UserStatus.Pending,
+                    Status = email == "admin@wasel.ma" ? UserStatus.Active : UserStatus.Pending,
                     Preference = new UserPreference
                     {
                         ActiveAppMode = ActiveAppMode.CLIENT
