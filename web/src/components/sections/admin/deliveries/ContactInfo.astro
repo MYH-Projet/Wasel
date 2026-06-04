@@ -8,7 +8,12 @@ interface Props {
 
 const { deliveryData } = Astro.props;
 
-const driver = deliveryData?.assignedDriver;
+const driverRaw = deliveryData?.assignedDriver;
+const driver = driverRaw ? {
+    name: (driverRaw as any).name || (driverRaw as any).fullName || "Unknown Driver",
+    phone: (driverRaw as any).phone || (driverRaw as any).phoneNumber || "",
+    vehicle: (driverRaw as any).vehicle
+} : null;
 // Note: Customer data is not returned by the backend yet, using placeholders for now.
 ---
 

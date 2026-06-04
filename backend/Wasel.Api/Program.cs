@@ -24,6 +24,7 @@ using Wasel.Api.Modules.Tracking.Repositories;
 using Wasel.Api.Modules.Tracking.Services;
 using Wasel.Api.Modules.Deliveries.Repositories;
 using Wasel.Api.Modules.Deliveries.Services;
+using Wasel.Api.Modules.Deliveries.Seeders;
 using System.Text.Json.Serialization;
 using Wasel.Api.Modules.Complaints.Repositories;
 using Wasel.Api.Modules.Complaints.Services;
@@ -215,6 +216,7 @@ if (app.Environment.IsDevelopment())
     await using (var dbContext = serviceScope.ServiceProvider.GetRequiredService<WaselDbContext>())
     {
         await DriverSeeder.SeedAsync(dbContext);
+        await DeliverySeeder.SeedAsync(dbContext);
     }
 }
 
