@@ -8,7 +8,7 @@ namespace Wasel.Api.Modules.Users.Controllers;
 
 [ApiController]
 [Route("api/admin/users")]
-[Authorize]
+[Authorize(Policy = "AdminOnly")]
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
