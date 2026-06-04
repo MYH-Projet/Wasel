@@ -66,6 +66,7 @@ public class WaselDbContext : DbContext
 
     // Module: Notifications
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<UserDeviceToken> UserDeviceTokens => Set<UserDeviceToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -399,6 +400,28 @@ public class WaselDbContext : DbContext
             entity.HasOne(n => n.User)
                 .WithMany()
                 .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserDeviceToken>(entity =>
+        {
+            entity.ToTable("user_device_tokens");
+            entity.HasKey(t => t.Id);
+
+            entity.Property(t => t.Token)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            entity.Property(t => t.Platform)
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.HasIndex(t => t.Token).IsUnique();
+            entity.HasIndex(t => new { t.UserId, t.IsActive });
+
+            entity.HasOne(t => t.User)
+                .WithMany()
+                .HasForeignKey(t => t.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

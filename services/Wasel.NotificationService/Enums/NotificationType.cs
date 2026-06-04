@@ -1,4 +1,4 @@
-namespace Wasel.Api.Modules.Notifications.Enums;
+namespace Wasel.NotificationService.Enums;
 
 public enum NotificationType
 {

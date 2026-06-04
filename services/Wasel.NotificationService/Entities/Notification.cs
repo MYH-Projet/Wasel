@@ -1,11 +1,11 @@
-using Wasel.Api.Modules.Notifications.Enums;
-using Wasel.Api.Modules.Users.Entities;
-using Wasel.Api.Shared.Common;
+using Wasel.NotificationService.Enums;
 
-namespace Wasel.Api.Modules.Notifications.Entities;
+namespace Wasel.NotificationService.Entities;
 
-public class Notification : BaseEntity
+public class Notification
 {
+    public Guid Id { get; set; } = Guid.NewGuid();
+
     public Guid UserId { get; set; }
 
     public NotificationType Type { get; set; }
@@ -14,7 +14,7 @@ public class Notification : BaseEntity
 
     public string Body { get; set; } = string.Empty;
 
-    public NotificationStatus Status { get; set; } = NotificationStatus.UNREAD;
+    public NotificationStatus Status { get; set; } = NotificationStatus.CREATED;
 
     public string Channel { get; set; } = string.Empty;
 
@@ -26,10 +26,9 @@ public class Notification : BaseEntity
 
     public string? ErrorMessage { get; set; }
 
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
     public DateTime? SentAt { get; set; }
 
     public DateTime? ReadAt { get; set; }
-
-    // Navigation
-    public User User { get; set; } = default!;
 }
