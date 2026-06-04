@@ -520,17 +520,22 @@ public class DeliveryService : IDeliveryService
     Driver? assignedDriver = null;
     if (delivery.DriverId.HasValue)
     {
-        assignedDriver = await _context.Drivers
-            .Include(d => d.User)
-            .Include(d => d.Vehicle)
-            .FirstOrDefaultAsync(d => d.Id == delivery.DriverId.Value);
+        assignedDriver = await _driverRepository.GetDriverDossierAsync(delivery.DriverId.Value);
     }
 
-    var payment = await _context.Payments
-        .FirstOrDefaultAsync(p => p.DeliveryId == deliveryId);
+    Payment? payment = null;
+    if (_context != null)
+    {
+        payment = await _context.Payments
+            .FirstOrDefaultAsync(p => p.DeliveryId == deliveryId);
+    }
 
-    var clientUser = await _context.Users
-        .FirstOrDefaultAsync(u => u.Id == delivery.ClientId);
+    User? clientUser = null;
+    if (_context != null)
+    {
+        clientUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == delivery.ClientId);
+    }
 
     return MapToDetailDto(delivery, assignedDriver, payment, clientUser);
 }
