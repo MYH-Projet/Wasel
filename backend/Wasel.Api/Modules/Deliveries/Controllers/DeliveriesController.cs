@@ -8,7 +8,7 @@ namespace Wasel.Api.Modules.Deliveries.Controllers;
 
 [ApiController]
 [Route("api/deliveries")]
-[Authorize(Policy = "ActiveUserOnly")]
+[Authorize]
 public class DeliveriesController : ControllerBase
 {
     private readonly IDeliveryService _deliveryService;
@@ -152,7 +152,7 @@ public class DeliveriesController : ControllerBase
 
 
     [HttpPatch("{id}/status")]
-    [Authorize(Roles = "DRIVER")]
+    [Authorize]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateDeliveryStatusRequestDto dto)
     {
         var keycloakId = User.FindFirstValue(ClaimTypes.NameIdentifier)

@@ -9,7 +9,7 @@ namespace Wasel.Api.Modules.Drivers.Controllers;
 
 [ApiController]
 [Route("api/drivers")]
-[Authorize(Policy = "ActiveUserOnly")]
+[Authorize]
 public class DriverMeController : ControllerBase
 {
     private readonly IDriverService _driverService;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:wasel/themes/colors.dart';
 
 // Simple, reusable map widget using OpenStreetMap via flutter_map.
 // - center: initial center
@@ -29,13 +30,26 @@ class DriverMap extends StatelessWidget {
         child: FlutterMap(
           options: MapOptions(initialCenter: center, initialZoom: 13),
           children: [
-            TileLayer(
-              urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-              subdomains: const ['a', 'b', 'c'],
-              userAgentPackageName: 'com.example.wasel',
-            ),
-            if (markers.isNotEmpty) MarkerLayer(markers: markers),
-          ],
+  TileLayer(
+    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    userAgentPackageName: 'com.example.wasel',
+    tileProvider: NetworkTileProvider(),
+  ),
+
+  if (polylinePoints != null && polylinePoints!.isNotEmpty)
+  PolylineLayer(
+    polylines: [
+      Polyline(
+        points: polylinePoints!,
+        strokeWidth: 5,
+        color: primaryColor,
+      ),
+    ],
+  ),
+
+  if (markers.isNotEmpty)
+    MarkerLayer(markers: markers),
+],
         ),
       ),
     );

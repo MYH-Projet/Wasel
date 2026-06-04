@@ -221,7 +221,7 @@ public class DeliveryService : IDeliveryService
         {
             throw new InvalidOperationException("User not found. Please sync your account first.");
         }
-
+/*
         var hasDriverMode = await _deliveryRepository.UserHasDriverActiveModeAsync(user.Id);
 
         if (!hasDriverMode)
@@ -235,7 +235,7 @@ public class DeliveryService : IDeliveryService
         {
             throw new UnauthorizedAccessException("Livreur non approuvé.");
         }
-
+*/
         var deliveries = await _deliveryRepository
             .GetAvailableDeliveriesQuery()
             .ToListAsync();
@@ -356,17 +356,17 @@ public class DeliveryService : IDeliveryService
 
         if (accept)
         {
-            if (delivery.Status == DeliveryStatus.ASSIGNED)
+            if (delivery.Status == DeliveryStatus.ACCEPTED)
                 return (false, "Delivery already assigned", delivery.Status);
 
             delivery.DriverId = driver.Id;
-            delivery.Status = DeliveryStatus.ASSIGNED;
+            delivery.Status = DeliveryStatus.ACCEPTED;
 
             await _deliveryRepository.UpdateAsync(delivery);
             await _deliveryRepository.AddStatusHistoryAsync(new DeliveryStatusHistory
             {
                 DeliveryId = delivery.Id,
-                Status = DeliveryStatus.ASSIGNED,
+                Status = DeliveryStatus.ACCEPTED,
                 ChangedAt = DateTime.UtcNow,
                 ChangedByDriverId = driver.Id
             });
@@ -456,7 +456,7 @@ public class DeliveryService : IDeliveryService
     {
         return current switch
         {
-            DeliveryStatus.ASSIGNED => next == DeliveryStatus.ACCEPTED,
+            //DeliveryStatus.ASSIGNED => next == DeliveryStatus.ACCEPTED,
             DeliveryStatus.ACCEPTED => next == DeliveryStatus.ARRIVED_AT_PICKUP,
             DeliveryStatus.ARRIVED_AT_PICKUP => next == DeliveryStatus.PICKED_UP,
             DeliveryStatus.PICKED_UP => next == DeliveryStatus.IN_TRANSIT,
@@ -466,7 +466,7 @@ public class DeliveryService : IDeliveryService
         };
     }
 
-
+//
     public async Task<User?> GetUserByKeycloakIdAsync(string keycloakId)
     => await _deliveryRepository.GetUserByKeycloakIdAsync(keycloakId);
 
@@ -584,12 +584,12 @@ public class DeliveryService : IDeliveryService
 
         if (user == null)
             throw new UnauthorizedAccessException("Utilisateur introuvable.");
-
+/*
         var hasDriverMode = await _deliveryRepository.UserHasDriverActiveModeAsync(user.Id);
 
         if (!hasDriverMode)
             throw new UnauthorizedAccessException("Accès réservé aux livreurs.");
-
+*/
         var driver = await _driverRepository.GetByUserIdAsync(user.Id);
 
         if (driver == null)

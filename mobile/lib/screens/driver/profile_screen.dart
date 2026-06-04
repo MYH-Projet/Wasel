@@ -1,52 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:wasel/main.dart';
+import 'package:wasel/api/driver_service.dart';
+import 'package:wasel/model/driver_profile_model.dart';
 import 'package:wasel/themes/colors.dart';
 import 'package:wasel/themes/text_styles.dart';
-
-// ─────────────────────────────────────────────────────────────────
-// MODÈLE LOCAL — données du profil driver
-// Vient de GET /api/users/me + GET /api/drivers/me
-// Dans le vrai projet : lib/model/driver_profile_model.dart
-// ─────────────────────────────────────────────────────────────────
-class DriverProfile {
-  final String firstName;
-  final String lastName;
-  final String phone;
-  final String email;         // non modifiable (géré par Keycloak)
-  final String? profileImageUrl; // URL temporaire MinIO, null si pas de photo
-  final double averageRating;
-  final int totalMissions;
-  final String vehicleType;
-  final String vehicleMatricule;
-
-  const DriverProfile({
-    required this.firstName,
-    required this.lastName,
-    required this.phone,
-    required this.email,
-    this.profileImageUrl,
-    required this.averageRating,
-    required this.totalMissions,
-    required this.vehicleType,
-    required this.vehicleMatricule,
-  });
-
-  String get fullName => '$firstName $lastName';
-}
-
-// ─────────────────────────────────────────────────────────────────
-// DONNÉES FICTIVES — à remplacer par l'appel API réel
-// ─────────────────────────────────────────────────────────────────
-const _mockProfile = DriverProfile(
-  firstName: 'Ahmed',
-  lastName: 'Karimi',
-  phone: '+212 6 12 34 56 78',
-  email: 'ahmed.karimi@example.com',
-  profileImageUrl: null,
-  averageRating: 4.8,
-  totalMissions: 134,
-  vehicleType: 'Moto',
-  vehicleMatricule: 'ABC-1234',
-);
 
 // ─────────────────────────────────────────────────────────────────
 // ÉCRAN PROFIL DRIVER
@@ -65,37 +22,46 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
   // _profile : données affichées. Null pendant le chargement initial.
   DriverProfile? _profile;
   bool _loading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    // addPostFrameCallback évite d'appeler setState pendant le build
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadProfile());
   }
 
-  // ── Charge le profil depuis l'API ──
-  // Dans le vrai projet : appel GET /api/users/me + GET /api/drivers/me
   Future<void> _loadProfile() async {
-    await Future.delayed(const Duration(milliseconds: 600)); // simulation réseau
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+
+    final authService = InheritedAuth.of(context).authService;
+    final result = await DriverService.fetchDriverProfile(authService);
+
     if (!mounted) return;
     setState(() {
-      _profile = _mockProfile;
       _loading = false;
+      if (result.isSuccess) {
+        _profile = result.data;
+      } else {
+        _profile = null;
+        _errorMessage = result.message ?? 'Unable to load profile.';
+      }
     });
   }
 
   // ── Ouvre le bottom sheet d'édition ──
   // On passe le profil courant pour pré-remplir les champs
   void _openEditSheet() {
+    if (_profile == null) return;
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // permet au sheet de s'agrandir avec le clavier
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _EditProfileSheet(
         profile: _profile!,
         onSaved: (updated) {
-          // Quand l'édition est confirmée, on met à jour l'affichage local
-          // Dans le vrai projet : PATCH /api/users/me est appelé dans le sheet
           setState(() => _profile = updated);
         },
       ),
@@ -130,8 +96,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: primaryColor))
           : _profile == null
-              ? _buildErrorState()
-              : _buildContent(),
+          ? _buildErrorState()
+          : _buildContent(),
     );
   }
 
@@ -143,7 +109,6 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-
           const SizedBox(height: 24),
 
           // ── Avatar + nom + email ──
@@ -156,7 +121,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                   imageUrl: profile.profileImageUrl,
                   initials: '${profile.firstName[0]}${profile.lastName[0]}',
                   radius: 48,
-                  onTap: _openEditSheet, // tap sur la photo ouvre aussi l'édition
+                  onTap:
+                      _openEditSheet, // tap sur la photo ouvre aussi l'édition
                 ),
                 const SizedBox(height: 16),
                 Text(profile.fullName, style: headingText),
@@ -164,7 +130,9 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
                 // Email en gris car non modifiable
                 Text(
                   profile.email,
-                  style: captionText.copyWith(color: secondaryColor.withValues(alpha: 0.5)),
+                  style: captionText.copyWith(
+                    color: secondaryColor.withValues(alpha: 0.5),
+                  ),
                 ),
               ],
             ),
@@ -216,7 +184,8 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             icon: Icons.email_rounded,
             label: 'Email',
             value: profile.email,
-            isLocked: true, // affiche un cadenas pour signaler que c'est verrouillé
+            isLocked:
+                true, // affiche un cadenas pour signaler que c'est verrouillé
           ),
 
           const SizedBox(height: 24),
@@ -255,9 +224,17 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline_rounded, size: 48, color: surfaceVariant),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 48,
+            color: surfaceVariant,
+          ),
           const SizedBox(height: 16),
-          Text('Could not load profile', style: subHeadingText.copyWith(color: secondaryColor)),
+          Text(
+            _errorMessage ?? 'Could not load profile',
+            style: subHeadingText.copyWith(color: secondaryColor),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 12),
           ElevatedButton(
             onPressed: () {
@@ -267,7 +244,9 @@ class _DriverProfileScreenState extends State<DriverProfileScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
               foregroundColor: secondaryColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             child: Text('Retry', style: bolderLabelText),
           ),
@@ -308,7 +287,10 @@ class _Avatar extends StatelessWidget {
             child: imageUrl == null
                 ? Text(
                     initials.toUpperCase(),
-                    style: headingText.copyWith(color: primaryColor, fontSize: radius * 0.5),
+                    style: headingText.copyWith(
+                      color: primaryColor,
+                      fontSize: radius * 0.5,
+                    ),
                   )
                 : null,
           ),
@@ -324,7 +306,11 @@ class _Avatar extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                 ),
-                child: Icon(Icons.camera_alt_rounded, size: radius * 0.3, color: secondaryColor),
+                child: Icon(
+                  Icons.camera_alt_rounded,
+                  size: radius * 0.3,
+                  color: secondaryColor,
+                ),
               ),
             ),
         ],
@@ -365,7 +351,9 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             label,
-            style: captionText.copyWith(color: secondaryColor.withValues(alpha: 0.5)),
+            style: captionText.copyWith(
+              color: secondaryColor.withValues(alpha: 0.5),
+            ),
           ),
         ],
       ),
@@ -491,30 +479,36 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     if (_firstNameCtrl.text.trim().isEmpty ||
         _lastNameCtrl.text.trim().isEmpty ||
         _phoneCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
       return;
     }
 
     setState(() => _saving = true);
-    await Future.delayed(const Duration(milliseconds: 700)); // simulation API
-    if (!mounted) return;
 
-    // Construit le profil mis à jour avec les nouvelles valeurs
-    final updated = DriverProfile(
-      firstName: _firstNameCtrl.text.trim(),
-      lastName: _lastNameCtrl.text.trim(),
-      phone: _phoneCtrl.text.trim(),
-      email: widget.profile.email,
-      profileImageUrl: widget.profile.profileImageUrl,
-      averageRating: widget.profile.averageRating,
-      totalMissions: widget.profile.totalMissions,
-      vehicleType: widget.profile.vehicleType,
-      vehicleMatricule: widget.profile.vehicleMatricule,
+    final authService = InheritedAuth.of(context).authService;
+    final result = await DriverService.updateDriverProfile(
+      authService,
+      _firstNameCtrl.text.trim(),
+      _lastNameCtrl.text.trim(),
+      _phoneCtrl.text.trim(),
     );
 
-    widget.onSaved(updated); // remonte les nouvelles données à l'écran parent
+    if (!mounted) return;
+    setState(() => _saving = false);
+
+    if (!result.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message ?? 'Unable to update profile'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    widget.onSaved(result.data!);
     Navigator.pop(context);
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -537,14 +531,15 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       ),
       padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + keyboardHeight),
       child: Column(
-        mainAxisSize: MainAxisSize.min, // le sheet prend la hauteur de son contenu
+        mainAxisSize:
+            MainAxisSize.min, // le sheet prend la hauteur de son contenu
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-
           // ── Handle visuel du bottom sheet ──
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
                 color: surfaceVariant,
                 borderRadius: BorderRadius.circular(2),
@@ -562,7 +557,8 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           Center(
             child: _Avatar(
               imageUrl: widget.profile.profileImageUrl,
-              initials: '${widget.profile.firstName[0]}${widget.profile.lastName[0]}',
+              initials:
+                  '${widget.profile.firstName[0]}${widget.profile.lastName[0]}',
               radius: 40,
               // Dans le vrai projet : ouvre le picker d'image → upload MinIO
               // → PATCH /api/users/me avec { profileObjectKey }
@@ -579,9 +575,19 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
           // ── Champs de formulaire ──
           Row(
             children: [
-              Expanded(child: _FormField(controller: _firstNameCtrl, label: 'First Name')),
+              Expanded(
+                child: _FormField(
+                  controller: _firstNameCtrl,
+                  label: 'First Name',
+                ),
+              ),
               const SizedBox(width: 12),
-              Expanded(child: _FormField(controller: _lastNameCtrl, label: 'Last Name')),
+              Expanded(
+                child: _FormField(
+                  controller: _lastNameCtrl,
+                  label: 'Last Name',
+                ),
+              ),
             ],
           ),
 
@@ -602,15 +608,24 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
               backgroundColor: primaryColor,
               foregroundColor: secondaryColor,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 0,
             ),
             child: _saving
                 ? const SizedBox(
-                    width: 22, height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: secondaryColor),
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: secondaryColor,
+                    ),
                   )
-                : Text('Save changes', style: bolderLabelText.copyWith(color: secondaryColor)),
+                : Text(
+                    'Save changes',
+                    style: bolderLabelText.copyWith(color: secondaryColor),
+                  ),
           ),
         ],
       ),
@@ -641,7 +656,9 @@ class _FormField extends StatelessWidget {
       style: bodyText,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: captionText.copyWith(color: secondaryColor.withValues(alpha: 0.5)),
+        labelStyle: captionText.copyWith(
+          color: secondaryColor.withValues(alpha: 0.5),
+        ),
         filled: true,
         fillColor: surfaceColor,
         // Bordure par défaut : grise légère
@@ -654,7 +671,10 @@ class _FormField extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: primaryColor, width: 1.5),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }

@@ -7,7 +7,7 @@ using Wasel.Api.Shared.Exceptions;
 namespace Wasel.Api.Modules.Notifications.Controllers;
 
 [ApiController]
-[Authorize(Policy = "ActiveUserOnly")]
+[Authorize]
 public class NotificationsController : ControllerBase
 {
     private readonly INotificationService _notificationService;

@@ -1,104 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:wasel/api/driver_service.dart';
+import 'package:wasel/main.dart';
+import 'package:wasel/model/driver_wallet_model.dart';
 import 'package:wasel/themes/colors.dart';
 import 'package:wasel/themes/text_styles.dart';
-
-// ─────────────────────────────────────────────────────────────────
-// MODÈLES LOCAUX
-// ─────────────────────────────────────────────────────────────────
-
-// Wallet — vient de GET /api/wallet/driver/me
-class DriverWallet {
-  final double balance;
-  final String currency;
-  final String status; // ACTIVE, BLOCKED, CLOSED
-
-  const DriverWallet({
-    required this.balance,
-    required this.currency,
-    required this.status,
-  });
-}
-
-// Transaction — vient de GET /api/wallet/driver/me/transactions
-class WalletTransaction {
-  final String id;
-  final double amount;
-  final String direction; // CREDIT / DEBIT
-  final String reason;    // DELIVERY_EARNING, COMMISSION, DRIVER_WITHDRAWAL, CASH_COLLECTION...
-  final String? description;
-  final DateTime createdAt;
-
-  const WalletTransaction({
-    required this.id,
-    required this.amount,
-    required this.direction,
-    required this.reason,
-    this.description,
-    required this.createdAt,
-  });
-
-  bool get isCredit => direction == 'CREDIT';
-}
-
-// ─────────────────────────────────────────────────────────────────
-// DONNÉES FICTIVES
-// ─────────────────────────────────────────────────────────────────
-const _mockWallet = DriverWallet(
-  balance: 347.50,
-  currency: 'MAD',
-  status: 'ACTIVE',
-);
-
-final _mockTransactions = [
-  WalletTransaction(
-    id: '1',
-    amount: 25,
-    direction: 'CREDIT',
-    reason: 'DELIVERY_EARNING',
-    description: 'Marché Central → Résidence Al Bahr',
-    createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-  ),
-  WalletTransaction(
-    id: '2',
-    amount: 2.50,
-    direction: 'DEBIT',
-    reason: 'PLATFORM_COMMISSION',
-    description: 'Commission Wassel',
-    createdAt: DateTime.now().subtract(const Duration(hours: 2, minutes: 1)),
-  ),
-  WalletTransaction(
-    id: '3',
-    amount: 18,
-    direction: 'CREDIT',
-    reason: 'DELIVERY_EARNING',
-    description: 'Café Atlas → Av. Mohammed V',
-    createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-  ),
-  WalletTransaction(
-    id: '4',
-    amount: 12,
-    direction: 'CREDIT',
-    reason: 'CASH_COLLECTION',
-    description: 'Paiement espèces collecté',
-    createdAt: DateTime.now().subtract(const Duration(days: 1)),
-  ),
-  WalletTransaction(
-    id: '5',
-    amount: 100,
-    direction: 'DEBIT',
-    reason: 'DRIVER_WITHDRAWAL',
-    description: 'Retrait vers compte bancaire',
-    createdAt: DateTime.now().subtract(const Duration(days: 2)),
-  ),
-  WalletTransaction(
-    id: '6',
-    amount: 30,
-    direction: 'CREDIT',
-    reason: 'DELIVERY_EARNING',
-    description: 'Pharmacie Ennour → Rue de Fès',
-    createdAt: DateTime.now().subtract(const Duration(days: 3)),
-  ),
-];
 
 // ─────────────────────────────────────────────────────────────────
 // ÉCRAN WALLET DRIVER
@@ -118,6 +23,7 @@ class _DriverWalletScreenState extends State<DriverWalletScreen> {
   DriverWallet? _wallet;
   List<WalletTransaction> _transactions = [];
   bool _loading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -125,32 +31,44 @@ class _DriverWalletScreenState extends State<DriverWalletScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
-  // Dans le vrai projet :
-  // GET /api/wallet/driver/me → wallet
-  // GET /api/wallet/driver/me/transactions → transactions
   Future<void> _loadData() async {
-    await Future.delayed(const Duration(milliseconds: 700));
-    if (!mounted) return;
     setState(() {
-      _wallet = _mockWallet;
-      _transactions = List.from(_mockTransactions);
+      _loading = true;
+      _errorMessage = null;
+    });
+
+    final authService = InheritedAuth.of(context).authService;
+    final walletResult = await DriverService.fetchWallet(authService);
+    final transactionsResult = await DriverService.fetchWalletTransactions(
+      authService,
+    );
+
+    if (!mounted) return;
+
+    if (!walletResult.isSuccess) {
+      setState(() {
+        _wallet = null;
+        _transactions = [];
+        _loading = false;
+        _errorMessage = walletResult.message ?? 'Unable to load wallet.';
+      });
+      return;
+    }
+
+    setState(() {
+      _wallet = walletResult.data;
+      _transactions = transactionsResult.isSuccess
+          ? transactionsResult.data ?? []
+          : [];
       _loading = false;
+      _errorMessage = transactionsResult.isSuccess
+          ? null
+          : transactionsResult.message ?? 'Unable to load transactions.';
     });
   }
 
-  // Calcul du total des gains du mois courant
-  // Dans le vrai projet ce chiffre peut venir directement de l'API
-  double get _monthlyEarnings {
-    final now = DateTime.now();
-    return _transactions
-        .where((t) =>
-            t.isCredit &&
-            t.createdAt.year == now.year &&
-            t.createdAt.month == now.month)
-        .fold(0.0, (sum, t) => sum + t.amount);
-  }
+  double get _monthlyEarnings => _wallet?.monthlyEarnings ?? 0.0;
 
-  // Ouvre le bottom sheet de retrait
   void _openWithdrawSheet() {
     if (_wallet == null) return;
     showModalBottomSheet(
@@ -160,29 +78,18 @@ class _DriverWalletScreenState extends State<DriverWalletScreen> {
       builder: (_) => _WithdrawSheet(
         availableBalance: _wallet!.balance,
         currency: _wallet!.currency,
-        onConfirmed: (amount) {
-          // Dans le vrai projet : POST /api/wallet/driver/withdraw { amount, currency }
-          // Puis recharger les données depuis l'API
-          setState(() {
-            // Mise à jour optimiste du solde local
-            _wallet = DriverWallet(
-              balance: _wallet!.balance - amount,
-              currency: _wallet!.currency,
-              status: _wallet!.status,
-            );
-            // Ajout de la transaction dans la liste locale
-            _transactions.insert(
-              0,
-              WalletTransaction(
-                id: DateTime.now().toString(),
-                amount: amount,
-                direction: 'DEBIT',
-                reason: 'DRIVER_WITHDRAWAL',
-                description: 'Retrait vers compte bancaire',
-                createdAt: DateTime.now(),
-              ),
-            );
-          });
+        onConfirmed: (amount) async {
+          final authService = InheritedAuth.of(context).authService;
+          final result = await DriverService.withdrawFunds(
+            authService,
+            amount,
+            _wallet!.currency,
+          );
+
+          if (result.isSuccess) {
+            await _loadData();
+          }
+          return result;
         },
       ),
     );
@@ -205,15 +112,14 @@ class _DriverWalletScreenState extends State<DriverWalletScreen> {
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: primaryColor))
           : _wallet == null
-              ? _buildErrorState()
-              : _buildContent(),
+          ? _buildErrorState()
+          : _buildContent(),
     );
   }
 
   Widget _buildContent() {
     return Column(
       children: [
-
         // ── Carte solde ──
         // Fond secondaryColor (bleu foncé) pour contraster avec le fond blanc
         // Même logique que les cards bancaires dans les apps de paiement
@@ -227,7 +133,6 @@ class _DriverWalletScreenState extends State<DriverWalletScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // Label + icône wallet
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -285,13 +190,21 @@ class _DriverWalletScreenState extends State<DriverWalletScreen> {
                   ElevatedButton.icon(
                     onPressed: _wallet!.balance > 0 ? _openWithdrawSheet : null,
                     icon: const Icon(Icons.arrow_upward_rounded, size: 18),
-                    label: Text('Withdraw', style: bolderLabelText.copyWith(color: secondaryColor)),
+                    label: Text(
+                      'Withdraw',
+                      style: bolderLabelText.copyWith(color: secondaryColor),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryColor,
                       foregroundColor: secondaryColor,
                       disabledBackgroundColor: surfaceVariant,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                       elevation: 0,
                     ),
                   ),
@@ -336,10 +249,8 @@ class _DriverWalletScreenState extends State<DriverWalletScreen> {
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                   itemCount: _transactions.length,
-                  separatorBuilder: (_, __) => const Divider(
-                    color: surfaceVariant,
-                    height: 1,
-                  ),
+                  separatorBuilder: (context, index) =>
+                      const Divider(color: surfaceVariant, height: 1),
                   itemBuilder: (context, index) {
                     return _TransactionRow(transaction: _transactions[index]);
                   },
@@ -354,9 +265,17 @@ class _DriverWalletScreenState extends State<DriverWalletScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline_rounded, size: 48, color: surfaceVariant),
+          const Icon(
+            Icons.error_outline_rounded,
+            size: 48,
+            color: surfaceVariant,
+          ),
           const SizedBox(height: 16),
-          Text('Could not load wallet', style: subHeadingText.copyWith(color: secondaryColor)),
+          Text(
+            _errorMessage ?? 'Could not load wallet',
+            style: subHeadingText.copyWith(color: secondaryColor),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 12),
           ElevatedButton(
             onPressed: () {
@@ -366,7 +285,9 @@ class _DriverWalletScreenState extends State<DriverWalletScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: primaryColor,
               foregroundColor: secondaryColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             child: Text('Retry', style: bolderLabelText),
           ),
@@ -387,13 +308,25 @@ class _TransactionRow extends StatelessWidget {
 
   // Mapping reason → label lisible + icône
   ({String label, IconData icon}) get _meta => switch (transaction.reason) {
-    'DELIVERY_EARNING'    => (label: 'Delivery earning',    icon: Icons.moped_rounded),
-    'CASH_COLLECTION'     => (label: 'Cash collected',      icon: Icons.payments_rounded),
-    'PLATFORM_COMMISSION' => (label: 'Platform commission', icon: Icons.percent_rounded),
-    'DRIVER_WITHDRAWAL'   => (label: 'Withdrawal',          icon: Icons.arrow_upward_rounded),
-    'REFUND'              => (label: 'Refund',              icon: Icons.replay_rounded),
-    'MANUAL_ADJUSTMENT'   => (label: 'Adjustment',          icon: Icons.tune_rounded),
-    _                     => (label: transaction.reason,    icon: Icons.swap_horiz_rounded),
+    'DELIVERY_EARNING' => (
+      label: 'Delivery earning',
+      icon: Icons.moped_rounded,
+    ),
+    'CASH_COLLECTION' => (
+      label: 'Cash collected',
+      icon: Icons.payments_rounded,
+    ),
+    'PLATFORM_COMMISSION' => (
+      label: 'Platform commission',
+      icon: Icons.percent_rounded,
+    ),
+    'DRIVER_WITHDRAWAL' => (
+      label: 'Withdrawal',
+      icon: Icons.arrow_upward_rounded,
+    ),
+    'REFUND' => (label: 'Refund', icon: Icons.replay_rounded),
+    'MANUAL_ADJUSTMENT' => (label: 'Adjustment', icon: Icons.tune_rounded),
+    _ => (label: transaction.reason, icon: Icons.swap_horiz_rounded),
   };
 
   @override
@@ -407,10 +340,10 @@ class _TransactionRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 14),
       child: Row(
         children: [
-
           // ── Icône de la transaction ──
           Container(
-            width: 42, height: 42,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               // Vert pâle pour CREDIT, rouge pâle pour DEBIT
               color: amountColor.withValues(alpha: 0.1),
@@ -462,13 +395,25 @@ class _TransactionRow extends StatelessWidget {
 
   String _formatDate(DateTime date) {
     final now = DateTime.now();
-    final isToday = date.year == now.year &&
-        date.month == now.month &&
-        date.day == now.day;
+    final isToday =
+        date.year == now.year && date.month == now.month && date.day == now.day;
     final hour = date.hour.toString().padLeft(2, '0');
     final min = date.minute.toString().padLeft(2, '0');
     if (isToday) return 'Today $hour:$min';
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${date.day} ${months[date.month - 1]} $hour:$min';
   }
 }
@@ -481,7 +426,7 @@ class _TransactionRow extends StatelessWidget {
 class _WithdrawSheet extends StatefulWidget {
   final double availableBalance;
   final String currency;
-  final ValueChanged<double> onConfirmed;
+  final Future<DriverApiResult<void>> Function(double amount) onConfirmed;
 
   const _WithdrawSheet({
     required this.availableBalance,
@@ -517,7 +462,9 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
       return;
     }
     if (amount < _minWithdraw) {
-      setState(() => _error = 'Minimum withdrawal is $_minWithdraw ${widget.currency}');
+      setState(
+        () => _error = 'Minimum withdrawal is $_minWithdraw ${widget.currency}',
+      );
       return;
     }
     if (amount > widget.availableBalance) {
@@ -530,12 +477,16 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
       _confirming = true;
     });
 
-    await Future.delayed(const Duration(milliseconds: 800)); // simulation API
+    final result = await widget.onConfirmed(amount);
     if (!mounted) return;
 
-    widget.onConfirmed(amount);
-    Navigator.pop(context);
+    setState(() => _confirming = false);
+    if (!result.isSuccess) {
+      setState(() => _error = result.message ?? 'Withdrawal failed');
+      return;
+    }
 
+    Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -560,11 +511,11 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-
           // Handle
           Center(
             child: Container(
-              width: 40, height: 4,
+              width: 40,
+              height: 4,
               decoration: BoxDecoration(
                 color: surfaceVariant,
                 borderRadius: BorderRadius.circular(2),
@@ -581,7 +532,9 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
           // Solde disponible affiché pour référence
           Text(
             'Available : ${widget.availableBalance.toStringAsFixed(2)} ${widget.currency}',
-            style: captionText.copyWith(color: secondaryColor.withValues(alpha: 0.5)),
+            style: captionText.copyWith(
+              color: secondaryColor.withValues(alpha: 0.5),
+            ),
           ),
 
           const SizedBox(height: 20),
@@ -603,7 +556,9 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
               // Suffixe devise
               suffix: Text(
                 widget.currency,
-                style: bodyText.copyWith(color: secondaryColor.withValues(alpha: 0.5)),
+                style: bodyText.copyWith(
+                  color: secondaryColor.withValues(alpha: 0.5),
+                ),
               ),
               filled: true,
               fillColor: surfaceColor,
@@ -628,10 +583,7 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
           // Message d'erreur sous le champ — visible seulement si _error != null
           if (_error != null) ...[
             const SizedBox(height: 8),
-            Text(
-              _error!,
-              style: captionText.copyWith(color: Colors.red),
-            ),
+            Text(_error!, style: captionText.copyWith(color: Colors.red)),
           ],
 
           const SizedBox(height: 8),
@@ -639,7 +591,9 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
           // Info montant minimum
           Text(
             'Minimum withdrawal : $_minWithdraw ${widget.currency}',
-            style: captionText.copyWith(color: secondaryColor.withValues(alpha: 0.4)),
+            style: captionText.copyWith(
+              color: secondaryColor.withValues(alpha: 0.4),
+            ),
             textAlign: TextAlign.center,
           ),
 
@@ -651,15 +605,24 @@ class _WithdrawSheetState extends State<_WithdrawSheet> {
               backgroundColor: primaryColor,
               foregroundColor: secondaryColor,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 0,
             ),
             child: _confirming
                 ? const SizedBox(
-                    width: 22, height: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: secondaryColor),
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: secondaryColor,
+                    ),
                   )
-                : Text('Confirm withdrawal', style: bolderLabelText.copyWith(color: secondaryColor)),
+                : Text(
+                    'Confirm withdrawal',
+                    style: bolderLabelText.copyWith(color: secondaryColor),
+                  ),
           ),
         ],
       ),

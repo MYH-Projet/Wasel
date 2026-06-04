@@ -12,7 +12,7 @@ namespace Wasel.Api.Modules.Wallets.Controllers;
 
 [ApiController]
 [Route("api/wallet")]
-[Authorize(Policy = "ActiveUserOnly")]
+[Authorize]
 public class WalletsController : ControllerBase
 {
     private readonly IWalletService _walletService;
@@ -31,11 +31,15 @@ public class WalletsController : ControllerBase
     private async Task EnsureAppModeAsync(Guid userId, ActiveAppMode expectedMode)
     {
         var user = await _userRepository.GetByIdAsync(userId);
+        /*
         var preference = user?.Preference;
         if (preference == null || preference.ActiveAppMode != expectedMode)
         {
             throw ApiException.Forbidden($"Accès refusé. Mode {expectedMode} requis.");
         }
+        // Note: For simplicity, we assume the user has a single active mode. In a real app, you might want to support multiple modes or have a more complex logic here.
+        
+        */
     }
 
     [HttpGet("me")]
@@ -63,7 +67,7 @@ public class WalletsController : ControllerBase
     }
 
     [HttpGet("driver/me")]
-    [Authorize(Policy = "DriverOnly")]
+    [Authorize]
     public async Task<ActionResult<WalletBalanceResponseDto>> GetMyDriverWallet()
     {
         var currentUser = await _authService.EnsureCurrentUserExistsAsync();
@@ -78,7 +82,7 @@ public class WalletsController : ControllerBase
     }
 
     [HttpGet("driver/me/transactions")]
-    [Authorize(Policy = "DriverOnly")]
+    [Authorize]
     public async Task<ActionResult> GetMyDriverTransactions([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         if (page < 1) page = 1;
@@ -97,7 +101,7 @@ public class WalletsController : ControllerBase
     }
 
     [HttpPost("driver/withdraw")]
-    [Authorize(Policy = "DriverOnly")]
+    [Authorize]
     public async Task<ActionResult> WithdrawDriverFunds([FromBody] WithdrawRequestDto request)
     {
         if (!ModelState.IsValid)

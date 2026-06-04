@@ -1,55 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:wasel/themes/colors.dart';
-import 'package:wasel/themes/text_styles.dart';
-import 'package:wasel/screens/driver/widgets/mission_card.dart';
-import 'package:wasel/screens/driver/widgets/mission_list.dart';
-import 'package:wasel/screens/driver/widgets/driver_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:wasel/api/driver_service.dart';
+import 'package:wasel/main.dart';
+import 'package:wasel/model/available_delivery_model.dart';
+import 'package:wasel/model/driver_mission_model.dart';
+import 'package:wasel/widgets/driver/active_mission_screen.dart';
+import 'package:wasel/widgets/driver/mission_list.dart';
+import 'package:wasel/widgets/driver/driver_map.dart';
 import 'package:wasel/screens/driver/wallet_screen.dart';
-
-// ─────────────────────────────────────────────────────────────────
-// DONNÉES FICTIVES — à remplacer par l'appel API réel
-// ─────────────────────────────────────────────────────────────────
-final _mockMissions = [
-  DriverMission(
-    id: '101',
-    pickupLabel: 'Café Atlas, Rue Ibn Batouta',
-    dropoffLabel: '12 Av. Mohammed V, Tanger',
-    status: 'IN_TRANSIT',
-    earnedAmount: 18,
-    date: DateTime.now().subtract(const Duration(minutes: 20)),
-  ),
-  DriverMission(
-    id: '102',
-    pickupLabel: 'Marché Central, Tanger',
-    dropoffLabel: 'Résidence Al Bahr, Malabata',
-    status: 'DELIVERED',
-    earnedAmount: 25,
-    date: DateTime.now().subtract(const Duration(hours: 3)),
-  ),
-  DriverMission(
-    id: '103',
-    pickupLabel: 'Pharmacie Ennour',
-    dropoffLabel: '7 Rue de Fès',
-    status: 'DELIVERED',
-    earnedAmount: 12,
-    date: DateTime.now().subtract(const Duration(days: 1)),
-  ),
-  DriverMission(
-    id: '104',
-    pickupLabel: 'Supermarché Label Vie',
-    dropoffLabel: 'Cité Riad, Tanger',
-    status: 'CANCELLED_BY_CLIENT',
-    earnedAmount: 0,
-    date: DateTime.now().subtract(const Duration(days: 2)),
-  ),
-];
+import 'package:wasel/themes/colors.dart';
+import 'package:wasel/themes/text_styles.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // ÉCRAN REQUESTS DU DRIVER
 // Deux onglets : Active (missions en cours) et History (terminées)
-// Même pattern que les maquettes du client (onglets Active / Drafts)
 // ─────────────────────────────────────────────────────────────────
 class DriverRequestsScreen extends StatefulWidget {
   const DriverRequestsScreen({super.key});
@@ -60,35 +25,101 @@ class DriverRequestsScreen extends StatefulWidget {
 
 class _DriverRequestsScreenState extends State<DriverRequestsScreen>
     with SingleTickerProviderStateMixin {
-  // TabController pour gérer les onglets Active / History
-  // SingleTickerProviderStateMixin est requis par TabController
   late final TabController _tabController;
-
-  final List<DriverMission> _missions = List.from(_mockMissions);
+  final List<DriverMission> _missions = [];
+  bool _loading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    // 2 onglets : Active et History
     _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadMissions());
   }
 
   @override
   void dispose() {
-    // Toujours dispose le TabController pour éviter les memory leaks
     _tabController.dispose();
     super.dispose();
   }
 
-  // Calcul du total des gains du mois — affiché en haut de l'écran
-  // Dans le vrai projet, ce chiffre viendra directement de l'API
-  double get _monthlyEarnings => _missions
-      .where((m) => m.status == 'DELIVERED')
-      .fold(0.0, (sum, m) => sum + m.earnedAmount);
+  Future<void> _loadMissions() async {
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+
+    final authService = InheritedAuth.of(context).authService;
+    final result = await DriverService.fetchMyMissions(authService);
+    if (!mounted) return;
+
+    setState(() {
+      _loading = false;
+      if (result.isSuccess) {
+        _missions
+          ..clear()
+          ..addAll(result.data ?? []);
+      } else {
+        _missions.clear();
+        _errorMessage = result.message ?? 'Unable to load missions.';
+      }
+    });
+  }
+
+  /// Refresh individual mission details from backend including status history
+  Future<void> _refreshMissionDetails(String missionId) async {
+    final authService = InheritedAuth.of(context).authService;
+    final result = await DriverService.fetchMissionDetails(
+      authService,
+      missionId,
+    );
+
+    if (!mounted) return;
+
+    if (result.isSuccess && result.data != null) {
+      setState(() {
+        final index = _missions.indexWhere((m) => m.id == missionId);
+        if (index >= 0) {
+          _missions[index] = result.data!;
+        }
+      });
+    }
+  }
+
+  Future<void> _openMission(DriverMission mission) async {
+  if (!mission.isActive) return;
+
+  // Fetch les détails complets (avec coords) avant d'ouvrir l'écran
+  final authService = InheritedAuth.of(context).authService;
+  final result = await DriverService.fetchMissionDetails(authService, mission.id);
+
+  if (!mounted) return;
+
+  if (result.isSuccess && result.data != null) {
+    final detailed = result.data!;
+
+    final updatedStatus = await Navigator.push<String?>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActiveMissionScreen(
+          delivery: AvailableDelivery.fromDriverMission(detailed), // coords réelles
+        ),
+      ),
+    );
+
+    if (updatedStatus == null || updatedStatus == mission.status) return;
+    await _refreshMissionDetails(mission.id);
+
+  } else {
+    // Fallback silencieux ou snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Unable to load mission details.')),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
-    // Sépare les missions actives des terminées/annulées
     final activeMissions = _missions.where((m) => m.isActive).toList();
     final historyMissions = _missions.where((m) => !m.isActive).toList();
 
@@ -108,15 +139,38 @@ class _DriverRequestsScreenState extends State<DriverRequestsScreen>
               );
             },
           ),
+          IconButton(
+            icon: _loading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: secondaryColor,
+                    ),
+                  )
+                : const Icon(Icons.refresh_rounded, color: secondaryColor),
+            onPressed: _loading ? null : _loadMissions,
+          ),
         ],
       ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Tab Bar — Active / History ──
-            // Copiée exactement du design maquettes (Active / Drafts)
-            // mais avec History à la place de Drafts pour le driver
+            if (_errorMessage != null)
+              Container(
+                width: double.infinity,
+                color: Colors.red.withOpacity(0.08),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Text(
+                  _errorMessage!,
+                  style: captionText.copyWith(color: Colors.red),
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Container(
@@ -133,7 +187,7 @@ class _DriverRequestsScreenState extends State<DriverRequestsScreen>
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
                   labelColor: secondaryColor,
-                  unselectedLabelColor: secondaryColor.withValues(alpha: 0.5),
+                  unselectedLabelColor: secondaryColor.withOpacity(0.5),
                   labelStyle: bolderLabelText.copyWith(fontSize: 14),
                   unselectedLabelStyle: bodyText.copyWith(fontSize: 14),
                   tabs: [
@@ -142,7 +196,6 @@ class _DriverRequestsScreenState extends State<DriverRequestsScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text('Active'),
-                          // Badge avec le nombre de missions actives
                           if (activeMissions.isNotEmpty) ...[
                             const SizedBox(width: 6),
                             Container(
@@ -172,53 +225,31 @@ class _DriverRequestsScreenState extends State<DriverRequestsScreen>
               ),
             ),
             const SizedBox(height: 16),
-
-            // Small map preview showing active missions as markers
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-              child: DriverMap(
-                center: LatLng(35.7595, -5.83395),
-                height: 140,
-                markers: List.generate(activeMissions.length, (i) {
-                  final offset = 0.002 * (i + 1);
-                  return Marker(
-                    point: LatLng(35.7595 + offset, -5.83395 - offset),
-                    width: 28,
-                    height: 28,
-                    child: const Icon(
-                      Icons.location_on_rounded,
-                      color: Colors.red,
-                      size: 18,
-                    ),
-                  );
-                }),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // ── Contenu des onglets ──
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  // Onglet Active
-                  MissionList(
-                    missions: activeMissions,
-                    emptyMessage: 'No active missions',
-                    emptySubMessage: 'Accept a delivery from the Home tab',
-                    emptyIcon: Icons.moped_rounded,
-                  ),
-                  // Onglet History
-                  MissionList(
-                    missions: historyMissions,
-                    emptyMessage: 'No missions yet',
-                    emptySubMessage:
-                        'Your completed deliveries will appear here',
-                    emptyIcon: Icons.history_rounded,
-                  ),
-                ],
-              ),
+              child: _loading && _missions.isEmpty
+                  ? const Center(
+                      child: CircularProgressIndicator(color: primaryColor),
+                    )
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        MissionList(
+                          missions: activeMissions,
+                          emptyMessage: 'No active missions',
+                          emptySubMessage:
+                              'Accept a delivery from the Home tab',
+                          emptyIcon: Icons.moped_rounded,
+                          onMissionTap: _openMission,
+                        ),
+                        MissionList(
+                          missions: historyMissions,
+                          emptyMessage: 'No missions yet',
+                          emptySubMessage:
+                              'Your completed deliveries will appear here',
+                          emptyIcon: Icons.history_rounded,
+                        ),
+                      ],
+                    ),
             ),
           ],
         ),

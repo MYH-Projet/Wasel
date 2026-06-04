@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:wasel/api/driver_service.dart';
+import 'package:wasel/main.dart';
 import 'package:wasel/themes/colors.dart';
 import 'package:wasel/themes/text_styles.dart';
-import 'package:wasel/screens/driver/notifications_screen.dart';
 import 'package:wasel/model/available_delivery_model.dart';
-import 'package:wasel/screens/driver/widgets/mock_deliveries.dart';
-import 'package:wasel/screens/driver/widgets/delivery_card.dart';
-import 'package:wasel/screens/driver/widgets/active_mission_screen.dart';
+import 'package:wasel/widgets/driver/delivery_card.dart';
+import 'package:wasel/widgets/driver/active_mission_screen.dart';
+import 'package:wasel/screens/driver/notifications_screen.dart';
 
 // ─────────────────────────────────────────────────────────────────
 // ÉCRAN PRINCIPAL DRIVER — liste des courses disponibles
@@ -18,48 +19,89 @@ class DriverHomeScreen extends StatefulWidget {
 }
 
 class _DriverHomeScreenState extends State<DriverHomeScreen> {
-  // _deliveries : liste affichée. Dans le vrai projet, viendra de l'API.
-  List<AvailableDelivery> _deliveries = List.from(mockDeliveries);
+  static const _defaultLatitude = 35.7595;
+  static const _defaultLongitude = -5.83395;
 
-  // _loading : contrôle l'affichage du spinner pendant le chargement/refresh
+  List<AvailableDelivery> _deliveries = [];
   bool _loading = false;
-
-  // _acceptingId : garde l'id de la course en cours d'acceptation pour
-  // afficher un spinner uniquement sur ce bouton, pas sur toute la page.
   String? _acceptingId;
+  String? _errorMessage;
 
-  // ── appelé au pull-to-refresh ──
-  // Dans le vrai projet : await sur GET /api/deliveries/available
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refresh());
+  }
+
   Future<void> _refresh() async {
-    setState(() => _loading = true);
-    await Future.delayed(const Duration(seconds: 1)); // simulation réseau
+    await _loadAvailableDeliveries();
+  }
+
+  Future<void> _loadAvailableDeliveries() async {
     setState(() {
-      _deliveries = List.from(mockDeliveries);
+      _loading = true;
+      _errorMessage = null;
+    });
+
+    final authService = InheritedAuth.of(context).authService;
+    final result = await DriverService.fetchAvailableDeliveries(
+      authService,
+      latitude: _defaultLatitude,
+      longitude: _defaultLongitude,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
       _loading = false;
+
+      if (result.isSuccess) {
+        _deliveries = result.data ?? [];
+      } else {
+        _deliveries = [];
+        _errorMessage =
+            result.message ?? 'Unable to load available deliveries.';
+      }
     });
   }
 
-  // ── appelé quand le livreur appuie sur "Accept" ──
-  // Dans le vrai projet : POST /api/deliveries/{id}/accept
-  // Si 409 → quelqu'un d'autre a pris la course → on retire la carte et on informe
   Future<void> _acceptDelivery(AvailableDelivery delivery) async {
     setState(() => _acceptingId = delivery.id);
-    await Future.delayed(
-      const Duration(milliseconds: 800),
-    ); // simulation réseau
+    final authService = InheritedAuth.of(context).authService;
+    final result = await DriverService.respondToDelivery(
+      authService,
+      delivery.id,
+      true,
+    );
 
     if (!mounted) return;
     setState(() => _acceptingId = null);
 
-    // On retire la course de la liste locale car elle n'est plus disponible
-    setState(() => _deliveries.removeWhere((d) => d.id == delivery.id));
+    if (result.isSuccess) {
+      setState(() => _deliveries.removeWhere((d) => d.id == delivery.id));
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ActiveMissionScreen(delivery: delivery),
+        ),
+      );
+      return;
+    }
 
-    // On ouvre l'écran de mission en cours
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ActiveMissionScreen(delivery: delivery),
-      ),
+    if (result.error == DriverApiError.conflict) {
+      setState(() => _deliveries.removeWhere((d) => d.id == delivery.id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.message ?? 'This delivery has already been taken.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result.message ?? 'Unable to accept delivery.')),
     );
   }
 
@@ -71,15 +113,12 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         backgroundColor: surfaceColor,
         elevation: 0,
         title: const Text('Deliveries'),
-
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_rounded),
-
             onPressed: () {
               Navigator.push(
                 context,
-
                 MaterialPageRoute(
                   builder: (_) => const DriverNotificationsScreen(),
                 ),
@@ -105,18 +144,34 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Corps : liste ou état vide ──
+            if (_errorMessage != null)
+              Container(
+                width: double.infinity,
+                color: Colors.red.withValues(alpha: 0.08),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                child: Text(
+                  _errorMessage!,
+                  style: captionText.copyWith(color: Colors.red),
+                ),
+              ),
             Expanded(
-              child: _deliveries.isEmpty
+              child: _loading && _deliveries.isEmpty
+                  ? const Center(
+                      child: CircularProgressIndicator(color: primaryColor),
+                    )
+                  : _deliveries.isEmpty
                   ? _buildEmptyState()
                   : RefreshIndicator(
-                      // Pull-to-refresh pour recharger les courses dispo
                       onRefresh: _refresh,
                       color: primaryColor,
                       child: ListView.separated(
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                         itemCount: _deliveries.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final delivery = _deliveries[index];
                           return DeliveryCard(
@@ -134,7 +189,6 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     );
   }
 
-  // ── État vide : affiché quand aucune course n'est disponible ──
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -158,7 +212,3 @@ class _DriverHomeScreenState extends State<DriverHomeScreen> {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────
-// End of DriverHomeScreen
-// ─────────────────────────────────────────────────────────────────
