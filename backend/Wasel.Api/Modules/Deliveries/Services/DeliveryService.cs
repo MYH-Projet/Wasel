@@ -10,6 +10,7 @@ using Wasel.Api.Modules.Drivers.Entities;
 using Wasel.Api.Modules.Drivers.Repositories;
 using Wasel.Api.Modules.Notifications.Enums;
 using Wasel.Api.Modules.Notifications.Services;
+using Wasel.Api.Modules.Payments.Entities;
 
 namespace Wasel.Api.Modules.Deliveries.Services;
 
@@ -476,7 +477,12 @@ public class DeliveryService : IDeliveryService
     if (delivery == null)
         throw new KeyNotFoundException("Livraison introuvable.");
 
-    if (roles.Contains("CLIENT"))
+    if (roles.Contains("ADMIN"))
+    {
+        await _deliveryRepository.CancelDeliveryAsync(
+            delivery, DeliveryStatus.CANCELLED_BY_ADMIN, reason);
+    }
+    else if (roles.Contains("CLIENT"))
     {
         if (delivery.Status > DeliveryStatus.ASSIGNED)
             throw new UnauthorizedAccessException(
@@ -484,11 +490,6 @@ public class DeliveryService : IDeliveryService
 
         await _deliveryRepository.CancelDeliveryAsync(
             delivery, DeliveryStatus.CANCELLED_BY_CLIENT, reason);
-    }
-    else if (roles.Contains("ADMIN"))
-    {
-        await _deliveryRepository.CancelDeliveryAsync(
-            delivery, DeliveryStatus.CANCELLED_BY_ADMIN, reason);
     }
     else
     {
@@ -516,11 +517,31 @@ public class DeliveryService : IDeliveryService
     if (!isAdmin && !isOwner && !isDriver)
         throw new UnauthorizedAccessException("Accès refusé à cette livraison.");
 
-    return MapToDetailDto(delivery);
+    Driver? assignedDriver = null;
+    if (delivery.DriverId.HasValue)
+    {
+        assignedDriver = await _driverRepository.GetDriverDossierAsync(delivery.DriverId.Value);
+    }
+
+    Payment? payment = null;
+    if (_context != null)
+    {
+        payment = await _context.Payments
+            .FirstOrDefaultAsync(p => p.DeliveryId == deliveryId);
+    }
+
+    User? clientUser = null;
+    if (_context != null)
+    {
+        clientUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == delivery.ClientId);
+    }
+
+    return MapToDetailDto(delivery, assignedDriver, payment, clientUser);
 }
 
 
-    private static DeliveryDetailResponseDto MapToDetailDto(Delivery d)
+    private static DeliveryDetailResponseDto MapToDetailDto(Delivery d, Driver? assignedDriver, Payment? payment, User? client)
     {
         return new DeliveryDetailResponseDto
         {
@@ -533,9 +554,25 @@ public class DeliveryService : IDeliveryService
             DeliveryAddress = MapAddress(d.DropoffAddress),  // DropoffAddress → DeliveryAddress
 
             Parcel  = MapParcel(d.Parcel),
-            Payment = new PaymentDetailDto(),                // pas de Payment sur Delivery
+            Payment = payment is null ? new PaymentDetailDto() : new PaymentDetailDto
+            {
+                Id = payment.Id,
+                Amount = payment.Amount,
+                Currency = payment.Currency,
+                PaymentMethod = payment.Method.ToString(),
+                PaymentStatus = payment.Status.ToString(),
+                TransactionReference = payment.TransactionReference
+            },
 
-            AssignedDriver = null,                           // pas de Driver nav sur Delivery
+            AssignedDriver = assignedDriver is null ? null : MapDriver(assignedDriver),
+
+            Client = client is null ? new ClientDetailDto() : new ClientDetailDto
+            {
+                Id = client.Id,
+                FullName = $"{client.FirstName} {client.LastName}".Trim(),
+                Email = client.Email,
+                PhoneNumber = client.Phone ?? string.Empty
+            },
 
             StatusHistory = d.StatusHistories?
                 .OrderBy(h => h.ChangedAt)
@@ -692,24 +729,41 @@ public class DeliveryService : IDeliveryService
             startDate,
             endDate);
 
+        var driverIds = result.Items
+            .Where(d => d.DriverId.HasValue)
+            .Select(d => d.DriverId!.Value)
+            .Distinct()
+            .ToList();
+
+        var driverNames = new Dictionary<Guid, string>();
+        foreach (var id in driverIds)
+        {
+            var drv = await _driverRepository.GetDriverDossierAsync(id);
+            if (drv != null && drv.User != null)
+            {
+                driverNames[id] = $"{drv.User.FirstName} {drv.User.LastName}";
+            }
+        }
+
         return new PagedResultDto<AdminDeliveryListItemDto>
-{
-    Page = page,
-    PageSize = pageSize,
-    TotalItems = result.TotalCount,
-    Items = result.Items.Select(d => new AdminDeliveryListItemDto
-    {
-        Id = d.Id,
-        ClientId = d.ClientId,
-        ClientName = $"{d.Client.FirstName} {d.Client.LastName}",
-        DriverId = d.DriverId,
-        Status = d.Status.ToString(),
-        PaymentMethod = d.PaymentMethod.ToString(),
-        DistanceKm = d.DistanceKm,
-        Price = d.Price,
-        CreatedAt = d.CreatedAt
-    }).ToList()
-};
+        {
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = result.TotalCount,
+            Items = result.Items.Select(d => new AdminDeliveryListItemDto
+            {
+                Id = d.Id,
+                ClientId = d.ClientId,
+                ClientName = $"{d.Client.FirstName} {d.Client.LastName}",
+                DriverId = d.DriverId,
+                DriverName = d.DriverId.HasValue && driverNames.TryGetValue(d.DriverId.Value, out var name) ? name : "Non assigné",
+                Status = d.Status.ToString(),
+                PaymentMethod = d.PaymentMethod.ToString(),
+                DistanceKm = d.DistanceKm,
+                Price = d.Price,
+                CreatedAt = d.CreatedAt
+            }).ToList()
+        };
     }
 
     public DeliveryEstimateResponseDto EstimateDelivery(DeliveryEstimateRequestDto request)

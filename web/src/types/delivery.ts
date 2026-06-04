@@ -15,8 +15,10 @@ export interface Parcel {
 
 export interface Payment {
     amount: number;
-    method: string;
-    status: string;
+    method?: string;
+    paymentMethod?: string;
+    status?: string;
+    paymentStatus?: string;
 }
 
 export interface AssignedDriver {
@@ -26,9 +28,19 @@ export interface AssignedDriver {
 }
 
 export interface StatusHistory {
-    status: string;
-    timestamp: string;
-    note: string;
+    status?: string;
+    deliveryStatus?: string;
+    timestamp?: string;
+    changedAt?: string;
+    note?: string;
+    comment?: string;
+}
+
+export interface Customer {
+    id: string;
+    fullName: string;
+    email?: string;
+    phoneNumber?: string;
 }
 
 export interface DeliveryDetails {
@@ -40,5 +52,6 @@ export interface DeliveryDetails {
     parcel: Parcel;
     payment: Payment;
     assignedDriver: AssignedDriver | null;
+    client: Customer | null;
     statusHistory: StatusHistory[];
 }

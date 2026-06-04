@@ -28,16 +28,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const token = context.cookies.get("access_token")?.value;
     const refreshToken = context.cookies.get("refresh_token")?.value;
     const isAdmin = context.url.pathname.startsWith("/admin");
+    const isAdminEndpoint = context.url.pathname === "/endpoint/callback" ? false : context.url.pathname.startsWith("/endpoint");
 
-    if (isAdmin) {
+    if (isAdmin || isAdminEndpoint) {
         if (!token && !refreshToken) return context.redirect("/login");
+        const baseUrl = import.meta.env.PUBLIC_KEYCLOAK_URL || "/auth";
+        const appUrl = (typeof process !== 'undefined' ? process.env.PUBLIC_APP_URL : undefined) || import.meta.env.PUBLIC_APP_URL || context.url.origin;
+        const absoluteKeycloakUrl = baseUrl.startsWith('http') ? baseUrl : `${appUrl}${baseUrl}`;
+        const publicHost = new URL(absoluteKeycloakUrl).host;
+        const publicProtocol = new URL(absoluteKeycloakUrl).protocol.replace(':', '');
 
         try {
+
             if (token) {
                 console.log("im here in token")
-                const baseUrl = import.meta.env.PUBLIC_KEYCLOAK_URL || "/auth";
-                const appUrl = (typeof process !== 'undefined' ? process.env.PUBLIC_APP_URL : undefined) || import.meta.env.PUBLIC_APP_URL || context.url.origin;
-                const absoluteKeycloakUrl = baseUrl.startsWith('http') ? baseUrl : `${appUrl}${baseUrl}`;
+
                 const { payload } = await jwtVerify<KeycloakPayload>(token, JWKS, {
                     issuer: `${absoluteKeycloakUrl}/realms/${KEYCLOAK_REALM}`
                 });
@@ -60,10 +65,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
         if (refreshToken) {
             console.log("im here in refreshToken")
             try {
+
                 const tokenEndpoint = new URL(`${KEYCLOAK_INTERNAL_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`);
+
                 const response = await fetch(tokenEndpoint, {
                     method: "POST",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        // Overriding these headers tricks Keycloak's internal issuer validation
+                        "Host": publicHost,
+                        "X-Forwarded-Host": publicHost,
+                        "X-Forwarded-Proto": publicProtocol
+                    },
                     body: new URLSearchParams({
                         grant_type: "refresh_token",
                         client_id: import.meta.env.PUBLIC_KEYCLOAK_CLIENT_ID || "wasel-front",
@@ -97,8 +110,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
                     issuer: `${absoluteKeycloakUrl}/realms/${KEYCLOAK_REALM}`
                 });
                 payload.token = data.access_token;
-                context.locals.user = payload;
-                return next();
+                if (payload.realm_access?.roles.includes("ADMIN")) {
+                    context.locals.user = payload;
+
+                    return next();
+                } else {
+                    throw new Error("You are not authorized to access this page");
+                }
             } catch (error: any) {
                 console.error("Token refresh failed:", error);
                 return context.redirect("/login");
