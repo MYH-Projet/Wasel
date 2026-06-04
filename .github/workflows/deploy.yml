@@ -6,7 +6,12 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      STAGING_DIR: /opt/wasel-staging
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Configure SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -17,30 +22,72 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H "${{ secrets.STAGING_HOST }}" >> ~/.ssh/known_hosts
 
+      - name: Upload deployment configuration
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+        run: |
+          ssh "$STAGING_USER@$STAGING_HOST" "mkdir -p '$STAGING_DIR/infra/nginx' '$STAGING_DIR/infra/keycloak'"
+          scp docker-compose.staging.yml "$STAGING_USER@$STAGING_HOST:$STAGING_DIR/docker-compose.staging.yml"
+          scp .env.staging.example "$STAGING_USER@$STAGING_HOST:$STAGING_DIR/.env.staging.example"
+          scp infra/nginx/staging.conf "$STAGING_USER@$STAGING_HOST:$STAGING_DIR/infra/nginx/staging.conf"
+          scp infra/keycloak/realm-import.json "$STAGING_USER@$STAGING_HOST:$STAGING_DIR/infra/keycloak/realm-import.json"
+
       - name: Deploy via Docker Compose on VPS
         env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} << EOF
-            set -e
-            cd /opt/wasel-staging
+          printf '%s' "$DOCKERHUB_TOKEN" | ssh "$STAGING_USER@$STAGING_HOST" "docker login -u '$DOCKERHUB_USERNAME' --password-stdin"
 
-            # Login to Docker Hub
-            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+          ssh "$STAGING_USER@$STAGING_HOST" "STAGING_DIR='$STAGING_DIR' bash -s" <<'EOF'
+            set -e
+            cd "$STAGING_DIR"
+
+            if [ ! -f .env.staging ]; then
+              echo "Missing $STAGING_DIR/.env.staging. Copy .env.staging.example to .env.staging and fill the staging secrets."
+              exit 1
+            fi
+
+            COMPOSE=(docker compose -f docker-compose.staging.yml --env-file .env.staging)
 
             # Pull latest images
-            docker compose -f docker-compose.staging.yml --env-file .env.staging pull
+            "${COMPOSE[@]}" pull
 
             # Start services
-            docker compose -f docker-compose.staging.yml --env-file .env.staging up -d
+            "${COMPOSE[@]}" up -d --remove-orphans
+
+            # Reload nginx to flush cached DNS and pick up new container IPs
+            docker exec wasel-nginx-staging nginx -s reload || true
+
+            "${COMPOSE[@]}" ps
 
             # Clean up old images
             docker image prune -f
 
             # Healthcheck
-            echo "Waiting for services to be up..."
-            sleep 15
-            curl -f http://localhost/api/health || { echo "Healthcheck failed!"; exit 1; }
-            echo "Deployment successful."
+            echo "Waiting for API healthcheck..."
+            for i in {1..12}; do
+              if curl -kfsSL https://localhost/api/health; then
+                echo "Deployment successful over HTTPS."
+                exit 0
+              fi
+              
+              if curl -fsSL http://localhost/api/health; then
+                echo "Deployment successful over HTTP."
+                exit 0
+              fi
+
+              echo "Healthcheck attempt $i failed, retrying in 5s..."
+              sleep 5
+            done
+
+            echo "Healthcheck failed after retries."
+            "${COMPOSE[@]}" ps
+            "${COMPOSE[@]}" logs --tail=80 wasel-nginx-staging
+            "${COMPOSE[@]}" logs --tail=80 wasel-api-staging
+            "${COMPOSE[@]}" logs --tail=80 wasel-keycloak-staging
+            exit 1
           EOF

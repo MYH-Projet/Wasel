@@ -11,12 +11,12 @@ export const GET: APIRoute = async ({ request, cookies, redirect }) => {
 
     // 2. Setup our secrets to talk to Keycloak directly from the server
     // Note: We use the internal Docker name 'wasel-keycloak' here!
-    const KEYCLOAK_INTERNAL_URL = import.meta.env.KEYCLOAK_INTERNAL_URL || "http://wasel-keycloak:8080/auth";
+    const KEYCLOAK_INTERNAL_URL = (typeof process !== 'undefined' ? process.env.KEYCLOAK_INTERNAL_URL : undefined) || import.meta.env.KEYCLOAK_INTERNAL_URL || "http://wasel-keycloak-staging:8080/auth";
     const REALM = import.meta.env.PUBLIC_KEYCLOAK_REALM || "wasel";
     const TOKEN_ENDPOINT = `${KEYCLOAK_INTERNAL_URL}/realms/${REALM}/protocol/openid-connect/token`;
     const CLIENT_ID = import.meta.env.PUBLIC_KEYCLOAK_CLIENT_ID || "wasel-front";
-    const APP_URL = import.meta.env.PUBLIC_APP_URL || "http://localhost:8000";
-    const INTERNAL_API_URL = import.meta.env.INTERNAL_API_URL || "http://wasel-api:8080";
+    const APP_URL = (typeof process !== 'undefined' ? process.env.PUBLIC_APP_URL : undefined) || import.meta.env.PUBLIC_APP_URL || Astro.url.origin;
+    const INTERNAL_API_URL = (typeof process !== 'undefined' ? process.env.INTERNAL_API_URL : undefined) || import.meta.env.INTERNAL_API_URL || "http://wasel-api-staging:8080";
     const REDIRECT_URI = `${APP_URL}/endpoint/callback`; // Must match exactly
 
     try {

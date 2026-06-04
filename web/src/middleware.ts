@@ -17,7 +17,7 @@ export interface KeycloakPayload extends JWTPayload {
 
 // 1. Point to your Keycloak 'certs' endpoint (JWKS URL)
 // Use the internal container name if running inside Podman
-const KEYCLOAK_INTERNAL_URL = import.meta.env.KEYCLOAK_INTERNAL_URL || "http://wasel-keycloak:8080/auth";
+const KEYCLOAK_INTERNAL_URL = (typeof process !== 'undefined' ? process.env.KEYCLOAK_INTERNAL_URL : undefined) || import.meta.env.KEYCLOAK_INTERNAL_URL || "http://wasel-keycloak-staging:8080/auth";
 const KEYCLOAK_REALM = import.meta.env.PUBLIC_KEYCLOAK_REALM || "wasel";
 const JWKS_URL = new URL(`${KEYCLOAK_INTERNAL_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs`);
 
@@ -35,8 +35,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
         try {
             if (token) {
                 console.log("im here in token")
+                const baseUrl = import.meta.env.PUBLIC_KEYCLOAK_URL || "/auth";
+                const appUrl = (typeof process !== 'undefined' ? process.env.PUBLIC_APP_URL : undefined) || import.meta.env.PUBLIC_APP_URL || context.url.origin;
+                const absoluteKeycloakUrl = baseUrl.startsWith('http') ? baseUrl : `${appUrl}${baseUrl}`;
                 const { payload } = await jwtVerify<KeycloakPayload>(token, JWKS, {
-                    issuer: `${import.meta.env.PUBLIC_KEYCLOAK_URL || "http://localhost:8000/auth"}/realms/${KEYCLOAK_REALM}`
+                    issuer: `${absoluteKeycloakUrl}/realms/${KEYCLOAK_REALM}`
                 });
                 payload.token = token;
                 if (payload.realm_access?.roles.includes("ADMIN")) {
@@ -87,8 +90,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
                     sameSite: "lax",
                     maxAge: data.refresh_expires_in
                 });
+                const baseUrl = import.meta.env.PUBLIC_KEYCLOAK_URL || "/auth";
+                const appUrl = (typeof process !== 'undefined' ? process.env.PUBLIC_APP_URL : undefined) || import.meta.env.PUBLIC_APP_URL || context.url.origin;
+                const absoluteKeycloakUrl = baseUrl.startsWith('http') ? baseUrl : `${appUrl}${baseUrl}`;
                 const { payload } = await jwtVerify<KeycloakPayload>(data.access_token, JWKS, {
-                    issuer: `${import.meta.env.PUBLIC_KEYCLOAK_URL || "http://localhost:8000/auth"}/realms/${KEYCLOAK_REALM}`
+                    issuer: `${absoluteKeycloakUrl}/realms/${KEYCLOAK_REALM}`
                 });
                 payload.token = data.access_token;
                 context.locals.user = payload;
