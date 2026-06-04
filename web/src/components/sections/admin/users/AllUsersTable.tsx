@@ -11,7 +11,7 @@ interface UserData {
     email: string;
     phone: string;
     status: "ACTIVE" | "INACTIVE" | "BLOCKED";
-    activeRole: "CUSTOMER" | "DRIVER" | "DISPATCHER";
+    activeRole: "CLIENT" | "DRIVER" | "DISPATCHER";
     createdAt: string;
 }
 
@@ -160,7 +160,7 @@ export function AllUsersTable() {
                             onChange={(e) => setRoleFilter(e.target.value)}
                         >
                             <option value="">All Roles</option>
-                            <option value="CUSTOMER">Customers</option>
+                            <option value="CLIENT">Clients</option>
                             <option value="DRIVER">Drivers</option>
                         </select>
                     </div>
