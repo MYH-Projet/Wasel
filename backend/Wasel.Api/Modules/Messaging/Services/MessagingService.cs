@@ -7,6 +7,9 @@ using Wasel.Api.Modules.Users.Repositories;
 using Wasel.Api.Modules.Drivers.Repositories;
 using Wasel.Api.Modules.Notifications.Enums;
 using Wasel.Api.Modules.Notifications.Services;
+using Microsoft.Extensions.Options;
+using Wasel.Api.Shared.EventBus;
+using Wasel.Api.Shared.EventBus.IntegrationEvents;
 
 namespace Wasel.Api.Modules.Messaging.Services;
 
@@ -17,19 +20,24 @@ public class MessagingService : IMessagingService
     private readonly IUserRepository _userRepository;
     private readonly IDriverRepository _driverRepository;
     private readonly INotificationService _notificationService;
-
+    private readonly IEventBus _eventBus;
+    private readonly RabbitMqOptions _rabbitMqOptions;
     public MessagingService(
-        IMessageRepository messageRepository,
-        IDeliveryRepository deliveryRepository,
-        IUserRepository userRepository,
-        IDriverRepository driverRepository,
-        INotificationService notificationService)
+    IMessageRepository messageRepository,
+    IDeliveryRepository deliveryRepository,
+    IUserRepository userRepository,
+    IDriverRepository driverRepository,
+    INotificationService notificationService,
+    IEventBus eventBus,
+    IOptions<RabbitMqOptions> rabbitMqOptions)
     {
         _messageRepository = messageRepository;
         _deliveryRepository = deliveryRepository;
         _userRepository = userRepository;
         _driverRepository = driverRepository;
         _notificationService = notificationService;
+        _eventBus = eventBus;
+        _rabbitMqOptions = rabbitMqOptions.Value;
     }
 
     public async Task<object> SendMessageAsync(SendMessageRequestDto request, string keycloakId)
@@ -104,6 +112,17 @@ public class MessagingService : IMessagingService
                     NotificationType.NEW_MESSAGE,
                     "Nouveau message",
                     "Vous avez reçu un nouveau message.");
+                await _eventBus.PublishAsync(
+                new NotificationRequestedEvent
+                {
+                    RecipientUserId = recipientUserId.Value,
+                    Type = NotificationType.NEW_MESSAGE.ToString(),
+                    Title = "Nouveau message",
+                    Message = "Vous avez reçu un nouveau message.",
+                    RelatedEntityType = "MESSAGE",
+                    RelatedEntityId = message.Id
+                },
+                _rabbitMqOptions.NotificationRoutingKey);
             }
         }
         catch { /* notification failure must not affect message creation */ }

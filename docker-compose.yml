@@ -29,6 +29,12 @@ services:
       - Keycloak__Realm=${KEYCLOAK_REALM}
       - Keycloak__ClientId=${KEYCLOAK_CLIENT_ID}
       - Keycloak__RequireHttpsMetadata=false
+      - RabbitMQ__Host=wasel-rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=wasel
+      - RabbitMQ__Password=wasel
+      - RabbitMQ__ExchangeName=wasel.events
+      - RabbitMQ__NotificationRoutingKey=notification.requested
     depends_on:
       wasel-postgres:
         condition: service_healthy
@@ -37,6 +43,8 @@ services:
       wasel-minio:
         condition: service_healthy
       wasel-keycloak:
+        condition: service_healthy
+      wasel-rabbitmq:
         condition: service_healthy
     networks:
       - wasel-network
@@ -170,11 +178,12 @@ services:
     ports:
       - "8080:8080"
     environment:
+      KC_DB: ${KC_DB}
+      KC_DB_URL: ${KC_DB_URL}
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_HEALTH_ENABLED: "true"
-      KC_HTTP_RELATIVE_PATH: /auth
-      KC_PROXY_HEADERS: xforwarded
     volumes:
       - wasel-keycloak-data:/opt/keycloak/data:z
       - ./infra/keycloak/my-theme:/opt/keycloak/themes/my-theme:ro,z
@@ -245,7 +254,28 @@ services:
     networks:
       - wasel-network
     restart: unless-stopped
-
+    # ──────────────────────────────────────────────
+  # RabbitMQ (Event Bus)
+  # ──────────────────────────────────────────────
+  wasel-rabbitmq:
+    image: rabbitmq:3-management
+    container_name: wasel-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: wasel
+      RABBITMQ_DEFAULT_PASS: wasel
+    volumes:
+      - wasel-rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wasel-network
+    restart: unless-stopped
 # ──────────────────────────────────────────────
 # Volumes
 # ──────────────────────────────────────────────
@@ -253,6 +283,7 @@ volumes:
   wasel-postgres-data:
   wasel-minio-data:
   wasel-keycloak-data:
+  wasel-rabbitmq-data:
 
     # ──────────────────────────────────────────────
     # Network
