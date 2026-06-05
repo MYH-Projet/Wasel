@@ -2,6 +2,8 @@ using Wasel.Api.Modules.Users.DTOs;
 using Wasel.Api.Modules.Users.Entities;
 using Wasel.Api.Modules.Users.Enums;
 using Wasel.Api.Modules.Users.Repositories;
+using Wasel.Api.Modules.Drivers.Entities; // Adds the Driver class
+using Wasel.Api.Modules.Drivers.Enums;    // Adds the DriverStatus enum
 
 
 namespace Wasel.Api.Modules.Users.Services;

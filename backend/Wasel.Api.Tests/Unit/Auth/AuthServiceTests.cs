@@ -46,7 +46,8 @@ public class AuthServiceTests
         };
 
         _userServiceMock
-            .Setup(x => x.FindOrCreateFromKeycloakAsync(keycloakId, email, "John", "Doe"))
+            // ✅ ADDED 5TH PARAMETER: It.IsAny<List<string>>()
+            .Setup(x => x.FindOrCreateFromKeycloakAsync(keycloakId, email, "John", "Doe", It.IsAny<List<string>>()))
             .ReturnsAsync(userResponse);
 
         // Act
@@ -58,7 +59,8 @@ public class AuthServiceTests
         result.Email.Should().Be(email);
         result.Roles.Should().Contain("ADMIN");
         
-        _userServiceMock.Verify(x => x.FindOrCreateFromKeycloakAsync(keycloakId, email, "John", "Doe"), Times.Once);
+        // ✅ ADDED 5TH PARAMETER: It.IsAny<List<string>>()
+        _userServiceMock.Verify(x => x.FindOrCreateFromKeycloakAsync(keycloakId, email, "John", "Doe", It.IsAny<List<string>>()), Times.Once);
     }
 
     [Fact]
@@ -67,6 +69,7 @@ public class AuthServiceTests
         // Arrange
         _currentUserServiceMock.Setup(x => x.KeycloakId).Returns((string?)null);
         _currentUserServiceMock.Setup(x => x.Email).Returns("test@test.com");
+        _currentUserServiceMock.Setup(x => x.Roles).Returns(new List<string>());
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ApiException>(() => _sut.EnsureCurrentUserExistsAsync());
@@ -79,6 +82,7 @@ public class AuthServiceTests
         // Arrange
         _currentUserServiceMock.Setup(x => x.KeycloakId).Returns("kc-123");
         _currentUserServiceMock.Setup(x => x.Email).Returns((string?)null);
+        _currentUserServiceMock.Setup(x => x.Roles).Returns(new List<string>());
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ApiException>(() => _sut.EnsureCurrentUserExistsAsync());
@@ -91,9 +95,11 @@ public class AuthServiceTests
         // Arrange
         _currentUserServiceMock.Setup(x => x.KeycloakId).Returns("kc-123");
         _currentUserServiceMock.Setup(x => x.Email).Returns("test@test.com");
+        _currentUserServiceMock.Setup(x => x.Roles).Returns(new List<string>()); 
 
         _userServiceMock
-            .Setup(x => x.FindOrCreateFromKeycloakAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            // ✅ ADDED 5TH PARAMETER: It.IsAny<List<string>>()
+            .Setup(x => x.FindOrCreateFromKeycloakAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<List<string>>()))
             .ThrowsAsync(new InvalidOperationException("DB Failure"));
 
         // Act & Assert

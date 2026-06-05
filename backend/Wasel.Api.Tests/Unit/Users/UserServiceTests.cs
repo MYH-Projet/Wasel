@@ -35,8 +35,8 @@ public class UserServiceTests
 
         _userRepositoryMock.Setup(x => x.GetByKeycloakIdAsync(keycloakId)).ReturnsAsync(existingUser);
 
-        // Act
-        var result = await _sut.FindOrCreateFromKeycloakAsync(keycloakId, "new@test.com", "NewName", "NewLastName");
+        // Act - ✅ ADDED 5TH PARAMETER: new List<string>()
+        var result = await _sut.FindOrCreateFromKeycloakAsync(keycloakId, "new@test.com", "NewName", "NewLastName", new List<string>());
 
         // Assert
         result.Email.Should().Be("new@test.com");
@@ -64,11 +64,11 @@ public class UserServiceTests
             LastName = "LastName"
         };
 
-        _userRepositoryMock.Setup(x => x.GetByKeycloakIdAsync(keycloakId)).ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(x => x.GetByKeycloakIdAsync(keycloakId)).ReturnsAsync((User)null!); // Fixed Warning
         _userRepositoryMock.Setup(x => x.GetByEmailAsync(email)).ReturnsAsync(existingUser);
 
-        // Act
-        var result = await _sut.FindOrCreateFromKeycloakAsync(keycloakId, email, "NewName", "NewLastName");
+        // Act - ✅ ADDED 5TH PARAMETER: new List<string>()
+        var result = await _sut.FindOrCreateFromKeycloakAsync(keycloakId, email, "NewName", "NewLastName", new List<string>());
 
         // Assert
         result.KeycloakId.Should().Be(keycloakId);
@@ -84,11 +84,11 @@ public class UserServiceTests
         var keycloakId = "kc-new";
         var email = "new@test.com";
 
-        _userRepositoryMock.Setup(x => x.GetByKeycloakIdAsync(keycloakId)).ReturnsAsync((User?)null);
-        _userRepositoryMock.Setup(x => x.GetByEmailAsync(email)).ReturnsAsync((User?)null);
+        _userRepositoryMock.Setup(x => x.GetByKeycloakIdAsync(keycloakId)).ReturnsAsync((User)null!); // Fixed Warning
+        _userRepositoryMock.Setup(x => x.GetByEmailAsync(email)).ReturnsAsync((User)null!); // Fixed Warning
 
-        // Act
-        var result = await _sut.FindOrCreateFromKeycloakAsync(keycloakId, email, "NewName", "NewLastName");
+        // Act - ✅ ADDED 5TH PARAMETER: new List<string>()
+        var result = await _sut.FindOrCreateFromKeycloakAsync(keycloakId, email, "NewName", "NewLastName", new List<string>());
 
         // Assert
         result.KeycloakId.Should().Be(keycloakId);
