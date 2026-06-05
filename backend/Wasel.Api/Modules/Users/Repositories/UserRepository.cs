@@ -33,6 +33,7 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .IgnoreQueryFilters()
             .Include(u => u.Preference)
+            .Include(u => u.Driver)
             .FirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
     }
 
@@ -50,6 +51,7 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .IgnoreQueryFilters()
             .Include(u => u.Preference)
+            .Include(u => u.Driver)
             .FirstOrDefaultAsync(u => u.Email == email);
     }
 
