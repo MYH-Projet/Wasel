@@ -5,6 +5,7 @@ const INTERNAL_API_URL = import.meta.env.INTERNAL_API_URL;
 export const GET: APIRoute = async (context) => {
     try {
         const user = context.locals.user;
+        console.log(user?.token);
         const queryParams = new URL(context.request.url).search;
         const response = await fetch(
             `${INTERNAL_API_URL}/api/admin/drivers/pending?${queryParams}`,
@@ -81,7 +82,7 @@ export const PATCH: APIRoute = async (context) => {
                     "Authorization": `Bearer ${user?.token}`,
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({ status: body.action, reason: body.payload?.reason })
+                body: JSON.stringify({ status: body.action, rejectionReason: body.reason })
             }
         )
         if (!operation.ok) {

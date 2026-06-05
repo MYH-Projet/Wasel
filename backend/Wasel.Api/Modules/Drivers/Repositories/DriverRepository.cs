@@ -51,6 +51,7 @@ public class DriverRepository : IDriverRepository
     {
         return await _context.Drivers
             .Include(d => d.User)
+            .Include(d => d.Vehicle)
             .Include(d => d.Dossier)
                 .ThenInclude(dossier => dossier!.Documents)
             .FirstOrDefaultAsync(d => d.Id == driverId);
@@ -158,6 +159,23 @@ public class DriverRepository : IDriverRepository
     public async Task<bool> ExistsByPermitNumberAsync(string permitNumber)
     {
         return await _context.Drivers.AnyAsync(d => d.PermitNumber == permitNumber);
+    }
+
+    public async Task<(int TotalDeliveries, double Rating, double CompletionRate)> GetDriverStatsAsync(Guid driverId)
+    {
+        var totalDeliveries = await _context.Deliveries.CountAsync(d => d.DriverId == driverId);
+        
+        var completedDeliveries = await _context.Deliveries.CountAsync(d => d.DriverId == driverId && d.Status == Wasel.Api.Modules.Deliveries.Enums.DeliveryStatus.DELIVERED);
+        
+        var completionRate = totalDeliveries > 0 
+            ? Math.Round((double)completedDeliveries / totalDeliveries * 100, 1) 
+            : 100.0;
+
+        var avgRating = await _context.Reviews
+            .Where(r => r.ReviewedDriverId == driverId)
+            .AverageAsync(r => (double?)r.Rating) ?? 5.0;
+
+        return (totalDeliveries, Math.Round(avgRating, 1), completionRate);
     }
 
     public async Task AddAsync(Driver driver)

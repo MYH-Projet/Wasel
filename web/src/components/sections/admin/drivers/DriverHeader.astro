@@ -9,10 +9,6 @@ interface Props {
 
 const { driverData } = Astro.props;
 const fullName = `${driverData.firstName} ${driverData.lastName}`;
-const joinDate = new Date(driverData.createdAt).toLocaleDateString("en-US", {
-    month: "short",
-    year: "numeric",
-});
 
 const statusColors: Record<string, string> = {
     Approved: "bg-green-100 text-green-700",
@@ -55,11 +51,6 @@ const statusClass =
                     class={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wider ${statusClass}`}
                 >
                     {driverData.driverStatus}
-                </span>
-                <span
-                    class="text-muted-foreground text-sm flex items-center gap-1"
-                >
-                    🗓 Joined {joinDate}
                 </span>
             </div>
         </div>

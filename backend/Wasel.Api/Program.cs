@@ -15,6 +15,7 @@ using Wasel.Api.Modules.Users.Repositories;
 using Wasel.Api.Modules.Users.Services;
 using Wasel.Api.Modules.Drivers.Repositories;
 using Wasel.Api.Modules.Drivers.Services;
+using Wasel.Api.Modules.Drivers.Seeders;
 using Wasel.Api.Modules.Documents.Repositories;
 using Wasel.Api.Modules.Documents.Services;
 using Wasel.Api.Modules.Auth.Services;
@@ -23,6 +24,7 @@ using Wasel.Api.Modules.Tracking.Repositories;
 using Wasel.Api.Modules.Tracking.Services;
 using Wasel.Api.Modules.Deliveries.Repositories;
 using Wasel.Api.Modules.Deliveries.Services;
+using Wasel.Api.Modules.Deliveries.Seeders;
 using System.Text.Json.Serialization;
 using Wasel.Api.Modules.Complaints.Repositories;
 using Wasel.Api.Modules.Complaints.Services;
@@ -38,6 +40,7 @@ using Wasel.Api.Modules.Reviews.Services;
 using Wasel.Api.Modules.Notifications.Repositories;
 using Wasel.Api.Modules.Notifications.Services;
 using Wasel.Api.Infrastructure.Firebase;
+using Wasel.Api.Shared.EventBus;
 var builder = WebApplication.CreateBuilder(args);
 
 // ──────────────────────────────────────────────
@@ -47,7 +50,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+builder.Services.Configure<RabbitMqOptions>(
+    builder.Configuration.GetSection("RabbitMQ"));
 
+builder.Services.AddSingleton<IEventBus, RabbitMqEventBus>();
 // PostgreSQL with EF Core
 builder.Services.AddDbContext<WaselDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -202,6 +208,19 @@ if (app.Environment.IsDevelopment())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<WaselDbContext>();
         dbContext.Database.Migrate();
+    }
+}
+
+//
+// seeders
+// 
+if (app.Environment.IsDevelopment())
+{
+    await using (var serviceScope = app.Services.CreateAsyncScope())
+    await using (var dbContext = serviceScope.ServiceProvider.GetRequiredService<WaselDbContext>())
+    {
+        await DriverSeeder.SeedAsync(dbContext);
+        await DeliverySeeder.SeedAsync(dbContext);
     }
 }
 

@@ -89,5 +89,7 @@ jobs:
             "${COMPOSE[@]}" logs --tail=80 wasel-nginx-staging
             "${COMPOSE[@]}" logs --tail=80 wasel-api-staging
             "${COMPOSE[@]}" logs --tail=80 wasel-keycloak-staging
+            "${COMPOSE[@]}" logs --tail=80 wasel-rabbitmq-staging
+            "${COMPOSE[@]}" logs --tail=80 wasel-notification-service-staging
             exit 1
           EOF

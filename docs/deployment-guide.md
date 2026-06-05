@@ -352,3 +352,29 @@ Vous pouvez utiliser `grep` directement à l'intérieur du conteneur frontend su
 docker exec wasel-frontend-staging sh -c "grep -R 'localhost:8000' -n /app 2>/dev/null || true"
 ```
 Si cette commande retourne des occurrences dans les fichiers JavaScript générés (dans `/app/dist`), c'est que l'image a été mal construite et qu'elle provoquera des erreurs 502 Bad Gateway.
+
+---
+
+## 10. RabbitMQ and NotificationService on staging
+
+Dans le cadre de la migration vers les microservices, RabbitMQ et le NotificationService ont été ajoutés à l'environnement de staging.
+
+### Configuration
+- **RabbitMQ interne uniquement** : Le service RabbitMQ en staging (`wasel-rabbitmq-staging`) n'expose intentionnellement pas ses ports (5672, 15672) à l'extérieur. L'accès reste interne au réseau Docker (`wasel-staging-network`) pour la sécurité.
+- **NotificationService** : Le service (`wasel-notification-service-staging`) est exécuté à partir de l'image Docker Hub construite par le workflow CI/CD (`myelhadri/wasel-notification-service`).
+
+### Variables requises
+Les variables suivantes doivent être ajoutées à `.env.staging` (déjà présentes dans `.env.staging.example`) :
+- `RABBITMQ_DEFAULT_USER`
+- `RABBITMQ_DEFAULT_PASS`
+- `FIREBASE_ENABLED` (false par défaut)
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CREDENTIALS_PATH`
+- `NOTIFICATION_SERVICE_IMAGE`
+
+### Vérification
+Pour voir les logs et vérifier que le service consomme correctement les événements :
+```bash
+cd /opt/wasel-staging
+docker compose -f docker-compose.staging.yml logs -f wasel-notification-service-staging
+```

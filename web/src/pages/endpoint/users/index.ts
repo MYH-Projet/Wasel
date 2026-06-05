@@ -29,7 +29,24 @@ export const GET: APIRoute = async (context) => {
 
         // 2. Happy Path (2xx)
         const data = await response.json();
-        return new Response(JSON.stringify(data), {
+        console.log(data);
+
+        const mappedItems = (data.items || []).map((item: any) => ({
+            id: item.id,
+            fullName: `${item.firstName || ""} ${item.lastName || ""}`.trim() || "N/A",
+            email: item.email || "N/A",
+            phone: item.phone || "N/A",
+            status: item.status?.toUpperCase() || "PENDING",
+            activeRole: item.activeAppMode || "CLIENT",
+            createdAt: item.createdAt
+        }));
+
+        const mappedData = {
+            ...data,
+            items: mappedItems
+        };
+
+        return new Response(JSON.stringify(mappedData), {
             status: 200,
             headers: { "Content-Type": "application/json" },
         });
