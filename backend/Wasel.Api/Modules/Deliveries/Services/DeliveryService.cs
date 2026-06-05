@@ -377,17 +377,17 @@ public class DeliveryService : IDeliveryService
 
         if (accept)
         {
-            if (delivery.Status == DeliveryStatus.ASSIGNED)
-                return (false, "Delivery already assigned", delivery.Status);
+            if (delivery.Status == DeliveryStatus.ACCEPTED)
+                return (false, "Delivery already accepted", delivery.Status);
 
             delivery.DriverId = driver.Id;
-            delivery.Status = DeliveryStatus.ASSIGNED;
+            delivery.Status = DeliveryStatus.ACCEPTED;
 
             await _deliveryRepository.UpdateAsync(delivery);
             await _deliveryRepository.AddStatusHistoryAsync(new DeliveryStatusHistory
             {
                 DeliveryId = delivery.Id,
-                Status = DeliveryStatus.ASSIGNED,
+                Status = DeliveryStatus.ACCEPTED,
                 ChangedAt = DateTime.UtcNow,
                 ChangedByDriverId = driver.Id
             });
@@ -499,7 +499,7 @@ public class DeliveryService : IDeliveryService
     {
         return current switch
         {
-            DeliveryStatus.ASSIGNED => next == DeliveryStatus.ACCEPTED,
+            //DeliveryStatus.ASSIGNED => next == DeliveryStatus.ACCEPTED,
             DeliveryStatus.ACCEPTED => next == DeliveryStatus.ARRIVED_AT_PICKUP,
             DeliveryStatus.ARRIVED_AT_PICKUP => next == DeliveryStatus.PICKED_UP,
             DeliveryStatus.PICKED_UP => next == DeliveryStatus.IN_TRANSIT,
