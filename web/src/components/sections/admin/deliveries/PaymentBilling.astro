@@ -22,7 +22,7 @@ const getPaymentIcon = (method: string) => {
     }
 };
 
-const PaymentIcon = getPaymentIcon(payment?.method || '');
+const PaymentIcon = getPaymentIcon(payment?.method || payment?.paymentMethod || '');
 ---
 
 <div class="bg-card rounded-xl shadow-sm p-6 border border-border">
@@ -37,8 +37,8 @@ const PaymentIcon = getPaymentIcon(payment?.method || '');
         <div class="flex items-center gap-2 font-bold text-foreground">
             <PaymentIcon className="w-5 h-5 text-muted-foreground/60" />
             <div class="text-right leading-tight">
-                <p>{payment?.method || "Unknown"}</p>
-                <p class="text-xs text-muted-foreground">{payment?.status || "Pending"}</p>
+                <p>{payment?.method || payment?.paymentMethod || "Unknown"}</p>
+                <p class="text-xs text-muted-foreground">{payment?.status || payment?.paymentStatus || "Pending"}</p>
             </div>
         </div>
     </div>

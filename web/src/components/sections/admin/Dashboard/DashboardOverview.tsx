@@ -17,6 +17,12 @@ export function DashboardOverview() {
         );
     }
 
+    const activeDiff = (metrics.activeDeliveries || 0) - (metrics.activeDeliveriesLastHour || 0);
+    const activeTrendPercent = metrics.activeDeliveriesLastHour > 0 ? (activeDiff / metrics.activeDeliveriesLastHour) * 100 : (activeDiff > 0 ? 100 : 0);
+    
+    const signupsDiff = (metrics.newSignupsToday || 0) - (metrics.newSignupsYesterday || 0);
+    const signupsTrendPercent = metrics.newSignupsYesterday > 0 ? (signupsDiff / metrics.newSignupsYesterday) * 100 : (signupsDiff > 0 ? 100 : 0);
+
     return (
         <div className="space-y-6">
 
@@ -39,7 +45,11 @@ export function DashboardOverview() {
                     title="Active Deliveries"
                     value={metrics.activeDeliveries}
                     icon={Truck} iconBgColor="bg-yellow-50" iconTextColor="text-yellow-700"
-                    trend={{ value: "12%", isPositive: true, label: "vs last hour" }}
+                    trend={{ 
+                        value: `${Math.abs(activeTrendPercent).toFixed(1)}%`, 
+                        isPositive: activeDiff >= 0, 
+                        label: "vs last hour" 
+                    }}
                 />
 
                 <MetricCard
@@ -83,12 +93,20 @@ export function DashboardOverview() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <MetricCard
                             title="New Sign-ups (Today)"
-                            value={metrics.newSignups}
+                            value={metrics.newSignupsToday}
                             icon={Users} iconBgColor="bg-purple-50" iconTextColor="text-purple-700"
-                            trend={{ value: "12.5%", isPositive: true, label: "vs yesterday" }}
+                            trend={{ 
+                                value: `${Math.abs(signupsTrendPercent).toFixed(1)}%`, 
+                                isPositive: signupsDiff >= 0, 
+                                label: "vs yesterday" 
+                            }}
                         />
-                        {/* We pass fake breakdown data to the Fleet component for now, but you would normally get this from `metrics` */}
-                        <FleetStatus onDelivery={64} available={28} inactive={8} />
+                        
+                        <FleetStatus 
+                            onDelivery={metrics.fleetStatus?.onDelivery || 0} 
+                            available={metrics.fleetStatus?.available || 0} 
+                            inactive={metrics.fleetStatus?.inactive || 0} 
+                        />
                     </div>
                 </div>
 

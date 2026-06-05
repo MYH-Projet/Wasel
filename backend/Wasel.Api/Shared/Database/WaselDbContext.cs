@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Wasel.Api.Modules.Deliveries.Entities;
 using Wasel.Api.Modules.Drivers.Entities;
+using Wasel.Api.Modules.Drivers.Seeders;
 using Wasel.Api.Modules.Users.Entities;
 using Wasel.Api.Modules.Tracking.Entities;
 using Wasel.Api.Modules.Documents.Entities;
@@ -77,6 +78,7 @@ public class WaselDbContext : DbContext
             entity.ToTable("users");
             entity.HasIndex(e => e.Email).IsUnique();
             entity.HasIndex(e => e.KeycloakId).IsUnique();
+            entity.HasQueryFilter(e => e.Email != "admin@wasel.ma");
         });
 
         modelBuilder.Entity<User>()
@@ -87,23 +89,23 @@ public class WaselDbContext : DbContext
         
         // Drivers
         // Drivers
-    modelBuilder.Entity<Driver>(entity =>
-    {
-        entity.ToTable("drivers");
-        entity.HasIndex(e => e.PermitNumber).IsUnique();
+        modelBuilder.Entity<Driver>(entity =>
+        {
+            entity.ToTable("drivers");
+            entity.HasIndex(e => e.PermitNumber).IsUnique();
 
-        // Relation 1 : Driver → User (1-1)
-        entity.HasOne(d => d.User)
-            .WithOne(u => u.Driver)
-            .HasForeignKey<Driver>(d => d.UserId)
-            .OnDelete(DeleteBehavior.Cascade);
+            // Relation 1 : Driver → User (1-1)
+            entity.HasOne(d => d.User)
+                .WithOne(u => u.Driver)
+                .HasForeignKey<Driver>(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-        // Relation 2 : Driver → Vehicle (1-1)
-        entity.HasOne(d => d.Vehicle)
-            .WithOne(v => v.Driver)
-            .HasForeignKey<Vehicle>(v => v.DriverId)
-            .OnDelete(DeleteBehavior.Cascade);
-    });
+            // Relation 2 : Driver → Vehicle (1-1)
+            entity.HasOne(d => d.Vehicle)
+                .WithOne(v => v.Driver)
+                .HasForeignKey<Vehicle>(v => v.DriverId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
         // Driver dossiers
         modelBuilder.Entity<DriverDossier>(entity =>
@@ -426,4 +428,19 @@ public class WaselDbContext : DbContext
 
         return await base.SaveChangesAsync(cancellationToken);
     }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder
+            .UseAsyncSeeding(async (context, _, cancellationToken) =>
+            {
+                // Execute separate seeders sequentially
+                await DriverSeeder.SeedAsync(context, cancellationToken);
+            })
+            .UseSeeding((context, _) =>
+            {
+                // Synchronous fallback pipeline for CLI engine
+                DriverSeeder.Seed(context);
+            });
+    }
 }
+

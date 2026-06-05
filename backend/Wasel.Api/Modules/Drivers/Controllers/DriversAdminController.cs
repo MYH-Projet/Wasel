@@ -70,5 +70,4 @@ public class DriversAdminController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
-    
 }

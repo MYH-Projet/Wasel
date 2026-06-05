@@ -65,6 +65,8 @@ public class DriverService : IDriverService
             return null;
         }
 
+        var stats = await _driverRepository.GetDriverStatsAsync(driverId);
+
         return new DriverDossierDto
         {
             DriverId = driver.Id,
@@ -85,6 +87,10 @@ public class DriverService : IDriverService
             VerificationDate = driver.Dossier?.VerificationDate,
             RejectionReason = driver.Dossier?.RejectionReason,
 
+            TotalDeliveries = stats.TotalDeliveries,
+            Rating = stats.Rating,
+            CompletionRate = stats.CompletionRate,
+
             Documents = driver.Dossier?.Documents.Select(document => new DocumentResponseDto
             {
                 DocumentId = document.Id,
@@ -94,7 +100,15 @@ public class DriverService : IDriverService
                 RejectionReason = document.RejectionReason,
                 UploadedAt = document.UploadedAt,
                 VerifiedAt = document.VerifiedAt
-            }).ToList() ?? new List<DocumentResponseDto>()
+            }).ToList() ?? new List<DocumentResponseDto>(),
+
+            Vehicle = driver.Vehicle is not null ? new VehicleResponseDto
+            {
+                Type = driver.Vehicle.Type,
+                Matricule = driver.Vehicle.Matricule,
+                Marque = driver.Vehicle.Marque,
+                Model = driver.Vehicle.Model
+            } : null
         };
     }
     

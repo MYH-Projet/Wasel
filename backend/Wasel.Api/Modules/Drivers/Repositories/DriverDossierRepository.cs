@@ -16,6 +16,7 @@ public class DriverDossierRepository : IDriverDossierRepository
     public async Task<DriverDossier?> GetByIdAsync(Guid dossierId)
     {
         return await _context.DriverDossiers
+            .Include(d => d.Driver)
             .FirstOrDefaultAsync(d => d.Id == dossierId);
     }
 

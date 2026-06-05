@@ -17,7 +17,7 @@ export function DriverReviewActions({ driverId, dossierId, currentStatus }: Prop
     const handleAction = async (endpoint: string, payload?: any) => {
         setIsSubmitting(true);
         try {
-            const response = await fetch(`/endpoint/requests/DriversRequest`, {
+            const response = await fetch(`/endpoint/drivers/DriversRequest`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -62,7 +62,7 @@ export function DriverReviewActions({ driverId, dossierId, currentStatus }: Prop
                 {/* Bouton Mettre en révision */}
                 {currentStatus !== "UNDER_REVIEW" && (
                     <button
-                        onClick={() => handleAction("under-review")}
+                        onClick={() => handleAction("UnderReview")}
                         disabled={isSubmitting}
                         className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-md font-medium hover:bg-blue-200 transition"
                     >
@@ -88,7 +88,7 @@ export function DriverReviewActions({ driverId, dossierId, currentStatus }: Prop
                         <p className="text-muted-foreground mt-2">Are you sure you want to approve this driver ? He will receive immediate access to the platform.</p>
                         <div className="mt-6 flex justify-end gap-3">
                             <button onClick={() => setShowApproveModal(false)} className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-md">Cancel</button>
-                            <button onClick={() => handleAction("approve")} className="px-4 py-2 bg-green-600 text-secondary-foreground rounded-md hover:bg-green-700">Yes, Approve</button>
+                            <button onClick={() => handleAction("Approved")} className="px-4 py-2 bg-green-600 text-secondary-foreground rounded-md hover:bg-green-700">Yes, Approve</button>
                         </div>
                     </div>
                 </div>
@@ -112,7 +112,7 @@ export function DriverReviewActions({ driverId, dossierId, currentStatus }: Prop
                         <div className="mt-6 flex justify-end gap-3">
                             <button onClick={() => setShowRejectModal(false)} className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-md">Annuler</button>
                             <button
-                                onClick={() => handleAction("reject", { reason: rejectionReason })}
+                                onClick={() => handleAction("Rejected", { reason: rejectionReason })}
                                 disabled={rejectionReason.trim().length < 10}
                                 className="px-4 py-2 bg-red-600 text-secondary-foreground rounded-md hover:bg-red-700 disabled:opacity-50"
                             >
