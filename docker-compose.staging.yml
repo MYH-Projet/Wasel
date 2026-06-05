@@ -207,9 +207,9 @@ services:
       - RabbitMQ__ExchangeName=wasel.events
       - RabbitMQ__QueueName=notification.requested
       - RabbitMQ__RoutingKey=notification.requested
-      - Firebase__Enabled=${FIREBASE_ENABLED:-false}
-      - Firebase__ProjectId=${FIREBASE_PROJECT_ID:-}
-      - Firebase__CredentialsPath=${FIREBASE_CREDENTIALS_PATH:-}
+      - Firebase__Enabled=false
+      - Firebase__ProjectId=
+      - Firebase__CredentialsPath=
     depends_on:
       wasel-postgres-staging:
         condition: service_healthy
