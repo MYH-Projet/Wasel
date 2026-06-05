@@ -18,12 +18,20 @@ services:
       - Keycloak__Realm=${KEYCLOAK_REALM}
       - Keycloak__ClientId=${KEYCLOAK_CLIENT_ID}
       - Keycloak__RequireHttpsMetadata=false
+      - RabbitMQ__Host=wasel-rabbitmq-staging
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=${RABBITMQ_DEFAULT_USER}
+      - RabbitMQ__Password=${RABBITMQ_DEFAULT_PASS}
+      - RabbitMQ__ExchangeName=wasel.events
+      - RabbitMQ__NotificationRoutingKey=notification.requested
     depends_on:
       wasel-postgres-staging:
         condition: service_healthy
       wasel-redis-staging:
         condition: service_healthy
       wasel-keycloak-staging:
+        condition: service_healthy
+      wasel-rabbitmq-staging:
         condition: service_healthy
     networks:
       - wasel-staging-network
@@ -164,10 +172,58 @@ services:
     networks:
       - wasel-staging-network
 
+  # ──────────────────────────────────────────────
+  # RabbitMQ (Internal Event Bus)
+  # ──────────────────────────────────────────────
+  wasel-rabbitmq-staging:
+    image: rabbitmq:3-management
+    container_name: wasel-rabbitmq-staging
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+    volumes:
+      - wasel-rabbitmq-data-staging:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wasel-staging-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # Wasel Notification Service (Microservice)
+  # ──────────────────────────────────────────────
+  wasel-notification-service-staging:
+    image: ${NOTIFICATION_SERVICE_IMAGE:-myelhadri/wasel-notification-service:latest}
+    container_name: wasel-notification-service-staging
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=wasel-postgres-staging;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - RabbitMQ__Host=wasel-rabbitmq-staging
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=${RABBITMQ_DEFAULT_USER}
+      - RabbitMQ__Password=${RABBITMQ_DEFAULT_PASS}
+      - RabbitMQ__ExchangeName=wasel.events
+      - RabbitMQ__QueueName=notification.requested
+      - RabbitMQ__RoutingKey=notification.requested
+      - Firebase__Enabled=${FIREBASE_ENABLED:-false}
+      - Firebase__ProjectId=${FIREBASE_PROJECT_ID:-}
+      - Firebase__CredentialsPath=${FIREBASE_CREDENTIALS_PATH:-}
+    depends_on:
+      wasel-postgres-staging:
+        condition: service_healthy
+      wasel-rabbitmq-staging:
+        condition: service_healthy
+    networks:
+      - wasel-staging-network
+    restart: unless-stopped
+
 volumes:
   wasel-postgres-data-staging:
   wasel-minio-data-staging:
   wasel-keycloak-data-staging:
+  wasel-rabbitmq-data-staging:
   letsencrypt-staging:
   certbot-www-staging:
 

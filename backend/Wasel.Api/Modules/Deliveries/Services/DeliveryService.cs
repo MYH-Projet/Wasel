@@ -10,6 +10,9 @@ using Wasel.Api.Modules.Drivers.Entities;
 using Wasel.Api.Modules.Drivers.Repositories;
 using Wasel.Api.Modules.Notifications.Enums;
 using Wasel.Api.Modules.Notifications.Services;
+using Microsoft.Extensions.Options;
+using Wasel.Api.Shared.EventBus;
+using Wasel.Api.Shared.EventBus.IntegrationEvents;
 using Wasel.Api.Modules.Payments.Entities;
 
 namespace Wasel.Api.Modules.Deliveries.Services;
@@ -20,17 +23,23 @@ public class DeliveryService : IDeliveryService
     private readonly WaselDbContext _context;
     private readonly IDriverRepository _driverRepository;
     private readonly INotificationService _notificationService;
+    private readonly IEventBus _eventBus;
+    private readonly RabbitMqOptions _rabbitMqOptions;
 
     public DeliveryService(
     IDeliveryRepository deliveryRepository,
     IDriverRepository driverRepository,
     WaselDbContext context,
-    INotificationService notificationService)
+    INotificationService notificationService,
+    IEventBus eventBus,
+    IOptions<RabbitMqOptions> rabbitMqOptions)
     {
         _deliveryRepository = deliveryRepository;
         _driverRepository = driverRepository;
         _context = context;
         _notificationService = notificationService;
+        _eventBus = eventBus;
+        _rabbitMqOptions = rabbitMqOptions.Value;
     }
 
     public async Task<CreateDeliveryResponseDto> CreateDeliveryAsync(
@@ -382,6 +391,17 @@ public class DeliveryService : IDeliveryService
                     NotificationType.DELIVERY_ASSIGNED,
                     "Livreur assigné",
                     "Un livreur a accepté votre livraison.");
+                await _eventBus.PublishAsync(
+                new NotificationRequestedEvent
+                {
+                    RecipientUserId = delivery.ClientId,
+                    Type = NotificationType.DELIVERY_ASSIGNED.ToString(),
+                    Title = "Livreur assigné",
+                    Message = "Un livreur a accepté votre livraison.",
+                    RelatedEntityType = "DELIVERY",
+                    RelatedEntityId = delivery.Id
+                },
+                _rabbitMqOptions.NotificationRoutingKey);
             }
             catch { /* notification failure must not affect delivery */ }
 
@@ -446,6 +466,17 @@ public class DeliveryService : IDeliveryService
                     NotificationType.DRIVER_ARRIVING,
                     "Livreur en approche",
                     "Votre livreur est arrivé au point de retrait.");
+                await _eventBus.PublishAsync(
+                new NotificationRequestedEvent
+                {
+                    RecipientUserId = delivery.ClientId,
+                    Type = NotificationType.DRIVER_ARRIVING.ToString(),
+                    Title = "Livreur en approche",
+                    Message = "Votre livreur est arrivé au point de retrait.",
+                    RelatedEntityType = "DELIVERY",
+                    RelatedEntityId = delivery.Id
+                },
+                _rabbitMqOptions.NotificationRoutingKey);
             }
             catch { /* notification failure must not affect delivery */ }
         }
