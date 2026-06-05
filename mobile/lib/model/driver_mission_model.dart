@@ -118,7 +118,7 @@ class DriverMission {
     return DriverMission(
       id: json['deliveryId']?.toString() ?? json['id']?.toString() ?? '',
       pickupLabel: buildLabel(pickup),
-      dropoffLabel: buildLabel(dropoff),
+      dropoffLabel: buildLabel(dropoff?? json['dropoffAddress']),
       status:
           json['finalStatus']?.toString() ??
           json['deliveryStatus']?.toString() ??

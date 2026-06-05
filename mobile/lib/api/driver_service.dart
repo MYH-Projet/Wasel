@@ -54,7 +54,7 @@ class DriverService {
 
     try {
       final uri = Uri.parse(
-        '$API/api/deliveries/available?latitude=$latitude&longitude=$longitude&radiusKm=10&page=$page&pageSize=$pageSize',
+        '$API/api/deliveries/available?latitude=$latitude&longitude=$longitude&radiusKm=1000&page=$page&pageSize=$pageSize',
       );
       final response = await http.get(uri, headers: _headers(token));
       // print the reselt to console
@@ -208,6 +208,8 @@ class DriverService {
         '$API/api/notifications/my?page=$page&pageSize=$pageSize',
       );
       final response = await http.get(uri, headers: _headers(token));
+
+      print('Response: ${response.body}');
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -582,6 +584,8 @@ class DriverService {
       final uri = Uri.parse('$API/api/deliveries/$deliveryId');
       final response = await http.get(uri, headers: _headers(token));
 
+      print('Response: ${response.body}');
+
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
         final mission = DriverMission.fromJson(body);
@@ -629,6 +633,8 @@ class DriverService {
         headers: _headers(token),
         body: jsonEncode(body),
       );
+
+      print('Response: ${response.body}');
 
       if (response.statusCode == 200) {
         final responseBody = jsonDecode(response.body) as Map<String, dynamic>;
