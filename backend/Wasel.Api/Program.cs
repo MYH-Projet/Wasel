@@ -15,6 +15,7 @@ using Wasel.Api.Modules.Users.Repositories;
 using Wasel.Api.Modules.Users.Services;
 using Wasel.Api.Modules.Drivers.Repositories;
 using Wasel.Api.Modules.Drivers.Services;
+using Wasel.Api.Modules.Drivers.Seeders;
 using Wasel.Api.Modules.Documents.Repositories;
 using Wasel.Api.Modules.Documents.Services;
 using Wasel.Api.Modules.Auth.Services;
@@ -23,6 +24,7 @@ using Wasel.Api.Modules.Tracking.Repositories;
 using Wasel.Api.Modules.Tracking.Services;
 using Wasel.Api.Modules.Deliveries.Repositories;
 using Wasel.Api.Modules.Deliveries.Services;
+using Wasel.Api.Modules.Deliveries.Seeders;
 using System.Text.Json.Serialization;
 using Wasel.Api.Modules.Complaints.Repositories;
 using Wasel.Api.Modules.Complaints.Services;
@@ -206,6 +208,19 @@ if (app.Environment.IsDevelopment())
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<WaselDbContext>();
         dbContext.Database.Migrate();
+    }
+}
+
+//
+// seeders
+// 
+if (app.Environment.IsDevelopment())
+{
+    await using (var serviceScope = app.Services.CreateAsyncScope())
+    await using (var dbContext = serviceScope.ServiceProvider.GetRequiredService<WaselDbContext>())
+    {
+        await DriverSeeder.SeedAsync(dbContext);
+        await DeliverySeeder.SeedAsync(dbContext);
     }
 }
 

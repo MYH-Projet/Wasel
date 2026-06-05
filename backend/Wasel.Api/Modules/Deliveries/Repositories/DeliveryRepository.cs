@@ -21,6 +21,7 @@ public class DeliveryRepository : IDeliveryRepository
     public async Task<User?> GetUserByKeycloakIdAsync(string keycloakId)
     {
         return await _context.Users
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
     }
 

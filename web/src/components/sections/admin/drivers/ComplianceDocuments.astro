@@ -63,7 +63,7 @@ const docs = driverData.documents || [];
                                 <td class="py-4 text-right">
                                     <DocumentViewerModal
                                         client:load
-                                        docUrl={`https://placehold.co/600x400/e2e8f0/475569?text=${encodeURIComponent(doc.documentType)}`}
+                                        objectKey={doc.objectKey}
                                         documentType={doc.documentType}
                                     />
                                 </td>

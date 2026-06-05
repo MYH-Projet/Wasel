@@ -4,9 +4,10 @@ import type { DeliveryDetails } from "@/types/delivery";
 
 interface Props {
     deliveryData: DeliveryDetails;
+    token: string;
 }
 
-const { deliveryData } = Astro.props;
+const { deliveryData, token } = Astro.props;
 
 const pickup = deliveryData?.pickupAddress;
 const delivery = deliveryData?.deliveryAddress;
@@ -20,9 +21,9 @@ const trackingData = {
     currentLocation: locationFallback,
     heading:
         deliveryData?.deliveryStatus === "IN_TRANSIT"
-            ? "Tracking..."
+            ? "Waiting for driver..."
             : deliveryData?.deliveryStatus?.replace(/_/g, " ") || "Pending",
-    lastUpdated: "Just now",
+    lastUpdated: "Not connected",
 };
 ---
 
@@ -37,9 +38,9 @@ const trackingData = {
         >
             <MapPin className="w-5 h-5 text-primary" /> Live Tracking Map
         </h2>
-        <div class="flex items-center gap-2 text-sm text-slate-300 font-medium">
-            <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-            Last updated {trackingData.lastUpdated}
+        <div id="tracking-status-badge" class="flex items-center gap-2 text-sm text-slate-300 font-medium pointer-events-auto bg-slate-900/60 px-3 py-1.5 rounded-full backdrop-blur-xs">
+            <span id="tracking-status-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+            <span id="tracking-status-text">Offline</span>
         </div>
     </div>
 
@@ -51,20 +52,24 @@ const trackingData = {
         data-dlat={delivery?.latitude}
         data-dlng={delivery?.longitude}
         data-dname={delivery?.label}
+        data-token={token}
+        data-deliveryid={deliveryData?.id}
+        data-status={deliveryData?.deliveryStatus}
+        data-drivername={deliveryData?.assignedDriver?.name}
     >
         <div id="map" class="w-full h-full z-0"></div>
     </delivery-map>
 
     <div
-        class="absolute bottom-6 left-6 bg-card p-4 rounded-lg shadow-xl border border-border min-w-[280px] z-[1000] pointer-events-auto"
+        class="absolute bottom-6 left-6 bg-card p-4 rounded-lg shadow-xl border border-border min-w-[280px] z-3 pointer-events-auto"
     >
         <p
             class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1"
         >
-            Current Location
+            Driver Information
         </p>
-        <p class="font-bold text-foreground">{trackingData.currentLocation}</p>
-        <p class="text-sm text-muted-foreground/90 mt-1">
+        <p id="live-driver-name" class="font-bold text-foreground">{deliveryData?.assignedDriver?.name || "No driver assigned"}</p>
+        <p id="live-tracking-details" class="text-sm text-muted-foreground/90 mt-1">
             {trackingData.heading}
         </p>
     </div>
@@ -73,23 +78,56 @@ const trackingData = {
 <script>
     import L from "leaflet";
     import "leaflet/dist/leaflet.css";
+    import { HubConnectionBuilder, HttpTransportType, LogLevel } from "@microsoft/signalr";
 
     class DeliveryMap extends HTMLElement {
-        connectedCallback() {
+        private connection: any = null;
+        private driverMarker: L.Marker | null = null;
+        private map: L.Map | null = null;
+
+        async connectedCallback() {
             const mapContainer = this.querySelector("#map") as HTMLElement;
             // Prevent double initialization during HMR (Hot Module Replacement) in dev mode
             if (!mapContainer || (mapContainer as any)._leaflet_id) return;
 
-            // 1. Grab coordinates from the data attributes
+            // 1. Grab attributes
             const pLat = parseFloat(this.dataset.plat || "");
             const pLng = parseFloat(this.dataset.plng || "");
             const dLat = parseFloat(this.dataset.dlat || "");
             const dLng = parseFloat(this.dataset.dlng || "");
+            const token = this.dataset.token || "";
+            const deliveryId = this.dataset.deliveryid || "";
+            const status = this.dataset.status || "";
+            const driverName = this.dataset.drivername || "Driver";
 
-            if (isNaN(pLat) || isNaN(pLng)) return;
+            const statusDot = document.getElementById("tracking-status-dot");
+            const statusText = document.getElementById("tracking-status-text");
+            const trackingDetails = document.getElementById("live-tracking-details");
+
+            const updateStatusUI = (type: "connecting" | "live" | "offline" | "no-driver") => {
+                if (!statusDot || !statusText) return;
+                if (type === "connecting") {
+                    statusDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+                    statusText.innerText = "Connecting to GPS...";
+                } else if (type === "live") {
+                    statusDot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                    statusText.innerText = "Live tracking";
+                } else if (type === "offline") {
+                    statusDot.className = "w-2 h-2 rounded-full bg-slate-400";
+                    statusText.innerText = "Driver offline";
+                } else if (type === "no-driver") {
+                    statusDot.className = "w-2 h-2 rounded-full bg-slate-400";
+                    statusText.innerText = "No driver assigned";
+                }
+            };
+
+            if (isNaN(pLat) || isNaN(pLng)) {
+                updateStatusUI("offline");
+                return;
+            }
 
             // 2. Initialize the Map
-            const map = L.map(mapContainer, {
+            this.map = L.map(mapContainer, {
                 zoomControl: false, // Hiding default zoom controls for a cleaner dashboard look
             }).setView([pLat, pLng], 13);
 
@@ -100,7 +138,7 @@ const trackingData = {
                     attribution:
                         "&copy; OpenStreetMap contributors &copy; CARTO",
                 },
-            ).addTo(map);
+            ).addTo(this.map);
 
             // 4. Create custom HTML markers (Avoids missing image bugs in Vite/Astro)
             const createDotIcon = (colorClass: string) =>
@@ -112,35 +150,160 @@ const trackingData = {
                 });
 
             // 5. Place the Pickup and Delivery markers
-            const pickupMarker = L.marker([pLat, pLng], {
+            L.marker([pLat, pLng], {
                 icon: createDotIcon("bg-slate-900"),
             })
-                .addTo(map)
+                .addTo(this.map)
                 .bindPopup(this.dataset.pname || "Pickup");
 
             if (!isNaN(dLat) && !isNaN(dLng)) {
-                const deliveryMarker = L.marker([dLat, dLng], {
+                L.marker([dLat, dLng], {
                     icon: createDotIcon("bg-primary"),
                 })
-                    .addTo(map)
+                    .addTo(this.map)
                     .bindPopup(this.dataset.dname || "Delivery");
 
-                // 6. Draw a dashed route line between them using Shadcn CSS variables!
+                // Draw route line
                 const routeLine = L.polyline(
                     [
                         [pLat, pLng],
                         [dLat, dLng],
                     ],
                     {
-                        color: "hsl(var(--primary))", // Dynamically uses your Shadcn primary color
+                        color: "hsl(var(--primary))",
                         weight: 3,
                         dashArray: "5, 10",
                     },
-                ).addTo(map);
+                ).addTo(this.map);
 
-                // 7. Auto-zoom the map so both points fit perfectly on the screen
-                map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+                // Auto-zoom the map
+                this.map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
             }
+
+            // 6. Check if delivery is active for tracking
+            const isActiveStatus = ["ACCEPTED", "PICKED_UP", "IN_TRANSIT"].includes(status);
+            if (!isActiveStatus) {
+                updateStatusUI(status === "CREATED" ? "no-driver" : "offline");
+                if (trackingDetails) {
+                    trackingDetails.innerText = status.replace(/_/g, " ");
+                }
+                return;
+            }
+
+            updateStatusUI("connecting");
+
+            // 7. Get last known position of the driver (if any)
+            try {
+                const res = await fetch(`/api/tracking/deliveries/${deliveryId}/last-position`, {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                if (res.ok) {
+                    const lastPos = await res.json();
+                    if (lastPos && lastPos.latitude && lastPos.longitude) {
+                        this.updateDriverMarker(lastPos.latitude, lastPos.longitude, driverName, lastPos.heading);
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to fetch last known position:", e);
+            }
+
+            // 8. Connect to SignalR GpsHub
+            try {
+                // Connect via proxy port 8000
+                const hubUrl = `${window.location.protocol}//${window.location.host}/api/hubs/gps?access_token=${token}`;
+                this.connection = new HubConnectionBuilder()
+                    .withUrl(hubUrl, {
+                        skipNegotiation: true,
+                        transport: HttpTransportType.WebSockets
+                    })
+                    .withAutomaticReconnect()
+                    .configureLogging(LogLevel.Warning)
+                    .build();
+
+                this.connection.on("ReceivePosition", (pos: any) => {
+                    if (pos && pos.latitude && pos.longitude) {
+                        updateStatusUI("live");
+                        if (trackingDetails) {
+                            const speed = pos.speedKmh ? ` · ${Math.round(pos.speedKmh)} km/h` : "";
+                            trackingDetails.innerText = `In Transit${speed}`;
+                        }
+                        this.updateDriverMarker(pos.latitude, pos.longitude, driverName, pos.heading);
+                    }
+                });
+
+                this.connection.onreconnecting(() => {
+                    updateStatusUI("connecting");
+                });
+
+                this.connection.onreconnected(() => {
+                    updateStatusUI("live");
+                    this.connection.invoke("JoinDeliveryGroup", deliveryId).catch(console.error);
+                });
+
+                this.connection.onclose(() => {
+                    updateStatusUI("offline");
+                });
+
+                await this.connection.start();
+                updateStatusUI("live");
+                await this.connection.invoke("JoinDeliveryGroup", deliveryId);
+
+            } catch (err) {
+                console.error("SignalR Connection Error:", err);
+                updateStatusUI("offline");
+            }
+        }
+
+        disconnectedCallback() {
+            if (this.connection) {
+                this.connection.stop().catch(console.error);
+            }
+        }
+
+        private updateDriverMarker(lat: number, lng: number, driverName: string, heading?: number) {
+            if (!this.map) return;
+
+            // Custom HTML marker for driver (Green arrow or pulse)
+            const angle = heading || 0;
+            const iconHtml = `
+                <div class="relative flex items-center justify-center">
+                    <div class="absolute w-8 h-8 bg-emerald-500/30 rounded-full animate-ping"></div>
+                    <div class="relative w-6 h-6 bg-emerald-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white" style="transform: rotate(${angle}deg)">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-3.5 h-3.5"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                    </div>
+                </div>
+            `;
+
+            const driverIcon = L.divIcon({
+                className: "custom-leaflet-icon",
+                html: iconHtml,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16],
+            });
+
+            if (this.driverMarker) {
+                this.driverMarker.setLatLng([lat, lng]);
+                this.driverMarker.setIcon(driverIcon);
+            } else {
+                this.driverMarker = L.marker([lat, lng], { icon: driverIcon })
+                    .addTo(this.map)
+                    .bindPopup(`${driverName} (Driver)`);
+            }
+
+            // Adjust map bounds to include driver
+            const bounds = [];
+            const pLat = parseFloat(this.dataset.plat || "");
+            const pLng = parseFloat(this.dataset.plng || "");
+            const dLat = parseFloat(this.dataset.dlat || "");
+            const dLng = parseFloat(this.dataset.dlng || "");
+
+            if (!isNaN(pLat) && !isNaN(pLng)) bounds.push([pLat, pLng]);
+            if (!isNaN(dLat) && !isNaN(dLng)) bounds.push([dLat, dLng]);
+            bounds.push([lat, lng]);
+
+            this.map.fitBounds(L.latLngBounds(bounds as [number, number][]), { padding: [50, 50] });
         }
     }
 

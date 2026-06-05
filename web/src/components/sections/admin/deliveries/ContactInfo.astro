@@ -1,6 +1,7 @@
 ---
 import { Phone, MessageSquare, Mail } from "lucide-react";
 import type { DeliveryDetails } from "@/types/delivery";
+import { custom } from "astro:schema";
 
 interface Props {
     deliveryData: DeliveryDetails;
@@ -8,8 +9,20 @@ interface Props {
 
 const { deliveryData } = Astro.props;
 
-const driver = deliveryData?.assignedDriver;
-// Note: Customer data is not returned by the backend yet, using placeholders for now.
+const driverRaw = deliveryData?.assignedDriver;
+const driver = driverRaw
+    ? {
+          name:
+              (driverRaw as any).name ||
+              (driverRaw as any).fullName ||
+              "Unknown Driver",
+          phone:
+              (driverRaw as any).phone || (driverRaw as any).phoneNumber || "",
+          vehicle: (driverRaw as any).vehicle,
+      }
+    : null;
+
+const customer = deliveryData.client;
 ---
 
 <div class="bg-card rounded-xl shadow-sm p-6 border border-border">
@@ -43,7 +56,10 @@ const driver = deliveryData?.assignedDriver;
                                     </span>
                                 </div>
                             )}
-                            <MessageSquare className="w-4 h-4 hover:text-foreground cursor-pointer transition-colors" />
+                            <div class="flex items-center gap-2">
+                                <MessageSquare className="w-4 h-4 cursor-pointer hover:text-foreground transition-colors" />
+                                <span class="text-xs">Chat</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -64,30 +80,66 @@ const driver = deliveryData?.assignedDriver;
             )
         }
 
-        <div class="bg-muted/30 rounded-xl p-4 flex items-center gap-4">
-            <img
-                src="https://ui-avatars.com/api/?name=Customer&background=random"
-                alt="Customer"
-                class="w-12 h-12 rounded-full object-cover shadow-sm border border-border"
-            />
-            <div class="flex-1">
-                <p
-                    class="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5"
-                >
-                    Customer
-                </p>
-                <p class="font-bold text-foreground italic">
-                    Details pending...
-                </p>
-                <div class="flex gap-3 mt-1.5 text-muted-foreground">
-                    <Phone
-                        className="w-4 h-4 hover:text-foreground cursor-pointer transition-colors"
+        {
+            customer ? (
+                <div class="bg-muted/30 rounded-xl p-4 flex items-center gap-4">
+                    <img
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(customer.fullName || "Customer")}&background=random`}
+                        alt="Customer"
+                        class="w-12 h-12 rounded-full object-cover shadow-sm border border-border"
                     />
-                    <Mail
-                        className="w-4 h-4 hover:text-foreground cursor-pointer transition-colors"
-                    />
+                    <div class="flex-1">
+                        <p class="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5">
+                            Customer
+                        </p>
+                        <p class="font-bold text-foreground">
+                            {customer.fullName || "Unknown Customer"}
+                        </p>
+                        <div class="flex flex-col gap-3 mt-1.5 text-muted-foreground">
+                            {customer.phoneNumber && (
+                                <div class="flex items-center gap-2">
+                                    <Phone className="w-4 h-4" />
+                                    <span
+                                        class="hover:text-foreground transition-colors"
+                                        title={`Call ${customer.phoneNumber}`}
+                                    >
+                                        {customer.phoneNumber}
+                                    </span>
+                                </div>
+                            )}
+                            {customer.email && (
+                                <div class="flex items-center gap-2">
+                                    <Mail className="w-4 h-4" />
+                                    <span
+                                        class="hover:text-foreground transition-colors"
+                                        title={`Email ${customer.email}`}
+                                    >
+                                        {customer.email}
+                                    </span>
+                                </div>
+                            )}
+                            <div class="flex items-center gap-2">
+                                <MessageSquare className="w-4 h-4 cursor-pointer hover:text-foreground transition-colors" />
+                                <span class="text-xs">Chat</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
+            ) : (
+                <div class="bg-muted/30 rounded-xl p-4 flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-muted shadow-sm border border-border flex items-center justify-center text-muted-foreground font-bold">
+                        ?
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5">
+                            Customer
+                        </p>
+                        <p class="font-bold text-muted-foreground italic">
+                            Unknown Customer
+                        </p>
+                    </div>
+                </div>
+            )
+        }
     </div>
 </div>

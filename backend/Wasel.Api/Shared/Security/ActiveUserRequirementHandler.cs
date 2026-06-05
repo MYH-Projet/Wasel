@@ -18,6 +18,12 @@ public class ActiveUserRequirementHandler : AuthorizationHandler<ActiveUserRequi
         AuthorizationHandlerContext context, 
         ActiveUserRequirement requirement)
     {
+        if (context.User?.IsInRole("ADMIN") == true)
+        {
+            context.Succeed(requirement);
+            return;
+        }
+
         var keycloakId = context.User?.FindFirstValue("sub") 
                       ?? context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
                       ?? context.User?.Claims.FirstOrDefault(c => c.Type.EndsWith("/nameidentifier"))?.Value;

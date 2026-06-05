@@ -11,12 +11,18 @@ const { deliveryData } = Astro.props;
 
 
 const history = deliveryData?.statusHistory || [];
-const timeline = history.map((item: any, index: number) => ({
-    title: item.status.replace(/_/g, ' '),
-    date: format(new Date(item.timestamp), "MMM dd, yyyy • hh:mm a"),
-    desc: item.note,
-    status: index === history.length - 1 ? "current" : "completed",
-}));
+const timeline = history.map((item: any, index: number) => {
+    const rawStatus = item.status || item.deliveryStatus || "";
+    const rawTimestamp = item.timestamp || item.changedAt;
+    const rawDesc = item.note || item.comment || "";
+    
+    return {
+        title: rawStatus.replace(/_/g, ' '),
+        date: rawTimestamp ? format(new Date(rawTimestamp), "MMM dd, yyyy • hh:mm a") : "",
+        desc: rawDesc,
+        status: index === history.length - 1 ? "current" : "completed",
+    };
+});
 ---
 
 <div class="bg-card rounded-xl shadow-sm p-6 lg:p-8 border border-border">

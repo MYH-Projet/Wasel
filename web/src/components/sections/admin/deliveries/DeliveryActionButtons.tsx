@@ -4,9 +4,10 @@ import { Modal } from "@/components/ui/Modal";
 
 interface Props {
     deliveryId: string;
+    status: string;
 }
 
-export const DeliveryActionButtons: React.FC<Props> = ({ deliveryId }) => {
+export const DeliveryActionButtons: React.FC<Props> = ({ deliveryId, status }) => {
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [cancelReason, setCancelReason] = useState("");
     const [isCancelling, setIsCancelling] = useState(false);
@@ -40,12 +41,12 @@ export const DeliveryActionButtons: React.FC<Props> = ({ deliveryId }) => {
 
             toast.success(`Delivery ${deliveryId} cancelled successfully.`);
             setIsCancelModalOpen(false);
-            
+
             // Reload the page to reflect the new state (e.g., status change)
             setTimeout(() => {
                 window.location.reload();
             }, 1000);
-            
+
         } catch (error) {
             toast.error("An unexpected error occurred.");
         } finally {
@@ -62,12 +63,12 @@ export const DeliveryActionButtons: React.FC<Props> = ({ deliveryId }) => {
                 >
                     Print Manifest
                 </button>
-                <button
+                {!(!status || status.toUpperCase().includes("CANCEL") || status.toUpperCase().includes("DELIVERED") || status.toUpperCase().includes("RETURN")) && <button
                     onClick={() => setIsCancelModalOpen(true)}
                     className="px-4 py-2 bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors rounded-md"
                 >
                     Cancel Delivery
-                </button>
+                </button>}
             </div>
 
             <Modal

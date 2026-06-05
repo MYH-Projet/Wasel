@@ -4,10 +4,13 @@ export const GET: APIRoute = async ({ request, cookies, redirect }) => {
     // 1. Grab the "code" from the URL
     const url = new URL(request.url);
     const code = url.searchParams.get("code");
+    console.log("🚀 ~ code:", code)
 
     if (!code) {
         return new Response("Missing authorization code", { status: 400 });
     }
+    console.log("🚀 ~ url:", url)
+
 
     // 2. Setup our secrets to talk to Keycloak directly from the server
     // Note: We use the internal Docker name 'wasel-keycloak' here!

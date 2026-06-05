@@ -44,10 +44,13 @@ export function AllDeliveriesTable() {
         setIsCancelling(true);
         try {
             const response = await fetch(
-                `/endpoint/deliveries/${cancelModalData.deliveryId}`,
+                `/endpoint/deliveries`,
                 {
                     method: "POST",
-                    body: JSON.stringify({ status: "CANCELLED", cancelReason }),
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ id: cancelModalData.deliveryId, reason: cancelReason }),
                 },
             );
 
@@ -90,7 +93,7 @@ export function AllDeliveriesTable() {
     };
 
     const columns = [
-        { header: "Tracking ID", render: (row: Delivery) => <span className="font-bold text-foreground">{row.id}</span> },
+        { header: "Tracking ID", render: (row: Delivery) => <span className="font-bold text-foreground">{row.id.slice(0, 8) + "...." + row.id.slice(-3)}</span> },
         {
             header: "Customer",
             render: (row: Delivery) => <span className="font-medium text-foreground/90">{row.customer.name}</span>
