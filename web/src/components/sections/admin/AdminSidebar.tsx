@@ -33,7 +33,7 @@ const mainNavItems = [
 
 const bottomNavItems = [
     { title: "Settings", icon: Settings, url: "/admin/settings" },
-    { title: "Logout", icon: LogOut, url: "/logout" },
+    { title: "Logout", icon: LogOut, url: null },
 ]
 
 export function AdminSidebar({ admin, url }: { admin: KeycloakPayload, url: string }) {
@@ -102,10 +102,19 @@ export function AdminSidebar({ admin, url }: { admin: KeycloakPayload, url: stri
                                 tooltip={item.title}
                                 className="h-11 px-4 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium transition-all duration-200 rounded-md"
                             >
-                                <a href={item.url}>
-                                    <item.icon className="size-5 mr-3 text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground transition-colors" />
-                                    <span className="text-[15px]">{item.title}</span>
-                                </a>
+                                {item.url ? (
+                                    <a href={item.url}>
+                                        <item.icon className="size-5 mr-3 text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground transition-colors" />
+                                        <span className="text-[15px]">{item.title}</span>
+                                    </a>
+                                ) : (
+                                    <form action="/endpoint/logout" method="POST" className="w-full">
+                                        <button type="submit" className="flex items-center w-full">
+                                            <item.icon className="size-5 mr-3 text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground transition-colors" />
+                                            <span className="text-[15px]">{item.title}</span>
+                                        </button>
+                                    </form>
+                                )}
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     ))}
