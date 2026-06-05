@@ -7,7 +7,6 @@ using Wasel.Api.Modules.Tracking.Entities;
 using Wasel.Api.Modules.Documents.Entities;
 using Wasel.Api.Shared.Common;
 using Wasel.Api.Modules.Complaints.Entities;
-using Wasel.Api.Modules.Complaints.Entities;
 using Wasel.Api.Modules.Messaging.Entities;
 using Wasel.Api.Modules.Payments.Entities;
 using Wasel.Api.Modules.Wallets.Entities;

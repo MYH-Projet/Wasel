@@ -13,6 +13,7 @@ using Wasel.Api.Modules.Notifications.Services;
 using Microsoft.Extensions.Options;
 using Wasel.Api.Shared.EventBus;
 using Wasel.Api.Shared.EventBus.IntegrationEvents;
+using Wasel.Api.Modules.Payments.Entities;
 
 namespace Wasel.Api.Modules.Deliveries.Services;
 

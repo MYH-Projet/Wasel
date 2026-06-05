@@ -24,3 +24,6 @@ jobs:
 
       - name: Lancement des Tests Backend
         run: dotnet test backend/Wasel.Api.Tests/Wasel.Api.Tests.csproj --configuration Release --no-build --verbosity normal
+
+      - name: Lancement des Tests NotificationService
+        run: dotnet test services/Wasel.NotificationService.Tests/Wasel.NotificationService.Tests.csproj --configuration Release --no-build --verbosity normal

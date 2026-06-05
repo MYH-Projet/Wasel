@@ -28,12 +28,16 @@ jobs:
       - name: Lancement des Tests Backend
         run: dotnet test backend/Wasel.Api.Tests/Wasel.Api.Tests.csproj --configuration Release --no-build --verbosity normal
 
+      - name: Lancement des Tests NotificationService
+        run: dotnet test services/Wasel.NotificationService.Tests/Wasel.NotificationService.Tests.csproj --configuration Release --no-build --verbosity normal
+
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
     env:
       IMAGE_BACKEND: ${{ secrets.DOCKERHUB_USERNAME }}/wasel-api
       IMAGE_FRONTEND: ${{ secrets.DOCKERHUB_USERNAME }}/wasel-frontend
+      IMAGE_NOTIFICATION: ${{ secrets.DOCKERHUB_USERNAME }}/wasel-notification-service
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -70,3 +74,13 @@ jobs:
           tags: |
             ${{ env.IMAGE_FRONTEND }}:latest
             ${{ env.IMAGE_FRONTEND }}:${{ github.sha }}
+
+      - name: Build and push Notification Service image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./services/Wasel.NotificationService/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NOTIFICATION }}:latest
+            ${{ env.IMAGE_NOTIFICATION }}:${{ github.sha }}
