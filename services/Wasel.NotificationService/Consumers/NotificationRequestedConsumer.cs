@@ -30,38 +30,70 @@ public class NotificationRequestedConsumer : BackgroundService
         _serviceProvider = serviceProvider;
     }
 
-    public override async Task StartAsync(CancellationToken cancellationToken)
+    private async Task<bool> ConnectWithRetryAsync(CancellationToken cancellationToken)
     {
-        try
+        var factory = new ConnectionFactory
         {
-            var factory = new ConnectionFactory
+            HostName = _options.Host,
+            Port = _options.Port,
+            UserName = _options.Username,
+            Password = _options.Password
+        };
+
+        int maxAttempts = 10;
+        int[] backoffSeconds = { 1, 2, 5, 10, 10, 10, 10, 10, 10, 10 };
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            if (cancellationToken.IsCancellationRequested)
+                break;
+
+            try
             {
-                HostName = _options.Host,
-                Port = _options.Port,
-                UserName = _options.Username,
-                Password = _options.Password
-            };
+                _logger.LogInformation("Attempt {Attempt}/{MaxAttempts} to connect to RabbitMQ at {Host}:{Port}", attempt, maxAttempts, _options.Host, _options.Port);
+                
+                _connection = await factory.CreateConnectionAsync(cancellationToken);
+                _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
 
-            _connection = await factory.CreateConnectionAsync(cancellationToken);
-            _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
+                await _channel.ExchangeDeclareAsync(exchange: _options.ExchangeName, type: ExchangeType.Direct, durable: true, cancellationToken: cancellationToken);
+                await _channel.QueueDeclareAsync(queue: _options.QueueName, durable: true, exclusive: false, autoDelete: false, arguments: null, cancellationToken: cancellationToken);
+                await _channel.QueueBindAsync(queue: _options.QueueName, exchange: _options.ExchangeName, routingKey: _options.RoutingKey, cancellationToken: cancellationToken);
 
-            await _channel.ExchangeDeclareAsync(exchange: _options.ExchangeName, type: ExchangeType.Direct, durable: true, cancellationToken: cancellationToken);
-            await _channel.QueueDeclareAsync(queue: _options.QueueName, durable: true, exclusive: false, autoDelete: false, arguments: null, cancellationToken: cancellationToken);
-            await _channel.QueueBindAsync(queue: _options.QueueName, exchange: _options.ExchangeName, routingKey: _options.RoutingKey, cancellationToken: cancellationToken);
+                _logger.LogInformation("Successfully connected to RabbitMQ. Exchange: {Exchange}, Queue: {Queue}", _options.ExchangeName, _options.QueueName);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "RabbitMQ connection attempt {Attempt} failed. Retrying in {Delay}s...", attempt, backoffSeconds[attempt - 1]);
+                
+                if (attempt == maxAttempts)
+                {
+                    _logger.LogError("Max connection attempts ({MaxAttempts}) reached. Could not connect to RabbitMQ.", maxAttempts);
+                    return false;
+                }
 
-            _logger.LogInformation("RabbitMQ Consumer started, listening to queue {QueueName}", _options.QueueName);
+                try 
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(backoffSeconds[attempt - 1]), cancellationToken);
+                }
+                catch (TaskCanceledException) 
+                { 
+                    return false; 
+                }
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Could not initialize RabbitMQ connection. Will retry later or fail if essential.");
-        }
 
-        await base.StartAsync(cancellationToken);
+        return false;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (_channel == null) return;
+        var connected = await ConnectWithRetryAsync(stoppingToken);
+        if (!connected || _channel == null)
+        {
+            _logger.LogCritical("Failed to connect to RabbitMQ after retries. Consumer will not start.");
+            return;
+        }
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += async (model, ea) =>
@@ -106,6 +138,7 @@ public class NotificationRequestedConsumer : BackgroundService
         };
 
         await _channel.BasicConsumeAsync(queue: _options.QueueName, autoAck: false, consumer: consumer, cancellationToken: stoppingToken);
+        _logger.LogInformation("RabbitMQ Consumer started, listening to queue {QueueName}", _options.QueueName);
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
