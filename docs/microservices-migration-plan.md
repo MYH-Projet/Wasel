@@ -20,6 +20,8 @@ Le `Wasel.NotificationService` est un Worker Service .NET conçu pour :
 - Envoyer ou simuler l'envoi des notifications Push via Firebase.
 - Envoyer des notifications par Email (actuellement préparé mais configuré en `Noop`).
 
+*Note : NotificationService inclut une stratégie de retry au démarrage pour attendre RabbitMQ et éviter BrokerUnreachableException lors des redéploiements.*
+
 ## 5. Environnement Local
 Pour développer et tester localement :
 - Les services Docker nécessaires sont gérés via `docker-compose.yml`.

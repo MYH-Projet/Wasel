@@ -2,6 +2,8 @@ using Wasel.Api.Modules.Users.DTOs;
 using Wasel.Api.Modules.Users.Entities;
 using Wasel.Api.Modules.Users.Enums;
 using Wasel.Api.Modules.Users.Repositories;
+using Wasel.Api.Modules.Drivers.Entities; // Adds the Driver class
+using Wasel.Api.Modules.Drivers.Enums;    // Adds the DriverStatus enum
 
 
 namespace Wasel.Api.Modules.Users.Services;
@@ -47,12 +49,15 @@ public class UserService : IUserService
     }
 
     public async Task<UserResponseDto> FindOrCreateFromKeycloakAsync(
-    string keycloakId,
-    string email,
-    string firstName,
-    string lastName)
+        string keycloakId,
+        string email,
+        string firstName,
+        string lastName,
+        List<string> roles) // ✅ FIXED: Added roles parameter here!
     {
         var user = await _userRepository.GetByKeycloakIdAsync(keycloakId);
+
+        bool isDriver = roles.Contains("DRIVER");
 
         if (user is null)
         {
@@ -60,6 +65,7 @@ public class UserService : IUserService
 
             if (user is not null)
             {
+                // EXISTING USER BY EMAIL
                 user.KeycloakId = keycloakId;
                 user.FirstName = firstName;
                 user.LastName = lastName;
@@ -73,10 +79,24 @@ public class UserService : IUserService
                     };
                 }
 
+                // ✅ FIXED: Safely upgrade to Driver BEFORE updating
+                if (isDriver)
+                {
+                    if (user.Driver is null)
+                    {
+                        user.Driver = new Driver { Status = DriverStatus.Approved, PermitNumber = string.Empty };
+                    }
+                    else if (user.Driver.Status != DriverStatus.Approved)
+                    {
+                        user.Driver.Status = DriverStatus.Approved;
+                    }
+                }
+
                 await _userRepository.UpdateAsync(user);
             }
             else
             {
+                // BRAND NEW USER
                 user = new User
                 {
                     KeycloakId = keycloakId,
@@ -90,30 +110,27 @@ public class UserService : IUserService
                     }
                 };
 
+                // ✅ FIXED: Attach Driver profile BEFORE calling AddAsync
+                if (isDriver)
+                {
+                    user.Driver = new Driver
+                    {
+                        Status = DriverStatus.Approved,
+                        PermitNumber = string.Empty
+                    };
+                }
+
                 await _userRepository.AddAsync(user);
             }
         }
         else
         {
+            // EXISTING USER BY KEYCLOAK ID
             bool updated = false;
 
-            if (user.Email != email)
-            {
-                user.Email = email;
-                updated = true;
-            }
-
-            if (user.FirstName != firstName)
-            {
-                user.FirstName = firstName;
-                updated = true;
-            }
-
-            if (user.LastName != lastName)
-            {
-                user.LastName = lastName;
-                updated = true;
-            }
+            if (user.Email != email) { user.Email = email; updated = true; }
+            if (user.FirstName != firstName) { user.FirstName = firstName; updated = true; }
+            if (user.LastName != lastName) { user.LastName = lastName; updated = true; }
 
             if (user.Preference is null)
             {
@@ -122,8 +139,22 @@ public class UserService : IUserService
                     Id = Guid.Empty,
                     ActiveAppMode = ActiveAppMode.CLIENT
                 };
-
                 updated = true;
+            }
+
+            // ✅ Auto-Approve existing users if they gained the role
+            if (isDriver)
+            {
+                if (user.Driver is null)
+                {
+                    user.Driver = new Driver { Status = DriverStatus.Approved, PermitNumber = string.Empty };
+                    updated = true;
+                }
+                else if (user.Driver.Status != DriverStatus.Approved)
+                {
+                    user.Driver.Status = DriverStatus.Approved;
+                    updated = true;
+                }
             }
 
             if (updated)

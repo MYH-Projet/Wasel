@@ -112,7 +112,7 @@
         }
       ],
       "realmRoles": [
-        "DRIVER"
+        "DRIVER", "CLIENT"
       ]
     }
   ]

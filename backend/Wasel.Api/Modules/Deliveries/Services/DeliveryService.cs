@@ -101,11 +101,22 @@ public class DeliveryService : IDeliveryService
             Instructions = request.Parcel.Instructions
         };
 
+        var distanceKm = CalculateDistanceKm(
+            request.PickupAddress.Latitude ?? 0.0, request.PickupAddress.Longitude ?? 0.0,
+            request.DropoffAddress.Latitude ?? 0.0, request.DropoffAddress.Longitude ?? 0.0);
+
+        decimal baseFee = 10m;
+        decimal distanceFee = (decimal)distanceKm * 2.5m;
+        decimal weightFee = (decimal)request.Parcel.Weight * 2m;
+        decimal fragileFee = request.Parcel.IsFragile ? 5m : 0m;
+        decimal totalPrice = Math.Round(baseFee + distanceFee + weightFee + fragileFee, 2);
+
         var delivery = new Delivery
         {
             ClientId = client.Id,
             Status = DeliveryStatus.CREATED,
-            PaymentMethod = request.PaymentMethod
+            PaymentMethod = request.PaymentMethod,
+            Price = totalPrice,
         };
 
         var histories = new List<DeliveryStatusHistory>

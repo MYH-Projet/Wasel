@@ -186,6 +186,9 @@ services:
       KC_DB_PASSWORD: ${KC_DB_PASSWORD}
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HTTP_RELATIVE_PATH: /auth
+      KC_PROXY_HEADERS: xforwarded
+      KC_HOSTNAME_STRICT: "false"
     volumes:
       - wasel-keycloak-data:/opt/keycloak/data:z
       - ./infra/keycloak/my-theme:/opt/keycloak/themes/my-theme:ro,z

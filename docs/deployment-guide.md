@@ -378,3 +378,5 @@ Pour voir les logs et vérifier que le service consomme correctement les événe
 cd /opt/wasel-staging
 docker compose -f docker-compose.staging.yml logs -f wasel-notification-service-staging
 ```
+
+*Note : NotificationService inclut une stratégie de retry au démarrage pour attendre RabbitMQ et éviter BrokerUnreachableException lors des redéploiements.*
