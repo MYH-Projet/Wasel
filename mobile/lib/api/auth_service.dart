@@ -140,7 +140,6 @@ class AuthService {
               '$API/auth/realms/wasel/.well-known/openid-configuration',
           promptValues: actions,
           scopes: ['openid', 'profile', 'email'],
-          allowInsecureConnections: true,
         ),
       );
 
