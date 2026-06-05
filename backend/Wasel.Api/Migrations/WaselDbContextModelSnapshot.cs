@@ -17,7 +17,7 @@ namespace Wasel.Api.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -492,10 +492,29 @@ namespace Wasel.Api.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FirebaseMessageId")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RelatedEntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RelatedEntityType")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("SentAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
@@ -526,6 +545,47 @@ namespace Wasel.Api.Migrations
                     b.HasIndex("UserId", "Status");
 
                     b.ToTable("notifications", (string)null);
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Notifications.Entities.UserDeviceToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Platform")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "IsActive");
+
+                    b.ToTable("user_device_tokens", (string)null);
                 });
 
             modelBuilder.Entity("Wasel.Api.Modules.Payments.Entities.Payment", b =>
@@ -1104,6 +1164,17 @@ namespace Wasel.Api.Migrations
                 });
 
             modelBuilder.Entity("Wasel.Api.Modules.Notifications.Entities.Notification", b =>
+                {
+                    b.HasOne("Wasel.Api.Modules.Users.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Wasel.Api.Modules.Notifications.Entities.UserDeviceToken", b =>
                 {
                     b.HasOne("Wasel.Api.Modules.Users.Entities.User", "User")
                         .WithMany()

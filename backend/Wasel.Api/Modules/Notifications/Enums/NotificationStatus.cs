@@ -3,5 +3,9 @@ namespace Wasel.Api.Modules.Notifications.Enums;
 public enum NotificationStatus
 {
     UNREAD,
-    READ
+    READ,
+    CREATED,
+    SENT,
+    FAILED,
+    NO_DEVICE_TOKEN
 }

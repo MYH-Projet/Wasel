@@ -7,6 +7,9 @@ using Wasel.Api.Modules.Deliveries.Repositories;
 using Wasel.Api.Modules.Users.Repositories;
 using Wasel.Api.Modules.Notifications.Enums;
 using Wasel.Api.Modules.Notifications.Services;
+using Microsoft.Extensions.Options;
+using Wasel.Api.Shared.EventBus;
+using Wasel.Api.Shared.EventBus.IntegrationEvents;
 
 namespace Wasel.Api.Modules.Complaints.Services;
 
@@ -16,17 +19,22 @@ public class ComplaintService : IComplaintService
     private readonly IDeliveryRepository _deliveryRepository;
     private readonly IUserRepository _userRepository;
     private readonly INotificationService _notificationService;
-
+    private readonly IEventBus _eventBus;
+    private readonly RabbitMqOptions _rabbitMqOptions;
     public ComplaintService(
-        IComplaintRepository complaintRepository,
-        IDeliveryRepository deliveryRepository,
-        IUserRepository userRepository,
-        INotificationService notificationService)
+    IComplaintRepository complaintRepository,
+    IDeliveryRepository deliveryRepository,
+    IUserRepository userRepository,
+    INotificationService notificationService,
+    IEventBus eventBus,
+    IOptions<RabbitMqOptions> rabbitMqOptions)
     {
         _complaintRepository = complaintRepository;
         _deliveryRepository = deliveryRepository;
         _userRepository = userRepository;
         _notificationService = notificationService;
+        _eventBus = eventBus;
+        _rabbitMqOptions = rabbitMqOptions.Value;
     }
 
     public async Task<object> CreateComplaintAsync(CreateComplaintRequestDto request, string keycloakId)
@@ -388,6 +396,17 @@ public class ComplaintService : IComplaintService
                     NotificationType.COMPLAINT_RESOLVED,
                     "Réclamation résolue",
                     $"Votre réclamation \"{complaint.Title}\" a été résolue.");
+                await _eventBus.PublishAsync(
+                new NotificationRequestedEvent
+                {
+                    RecipientUserId = delivery.ClientId,
+                    Type = NotificationType.COMPLAINT_RESOLVED.ToString(),
+                    Title = "Réclamation résolue",
+                    Message = $"Votre réclamation \"{complaint.Title}\" a été résolue.",
+                    RelatedEntityType = "COMPLAINT",
+                    RelatedEntityId = complaint.Id
+                },
+                _rabbitMqOptions.NotificationRoutingKey);
             }
         }
         catch { /* notification failure must not affect complaint resolution */ }

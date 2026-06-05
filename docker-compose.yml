@@ -29,6 +29,12 @@ services:
       - Keycloak__Realm=${KEYCLOAK_REALM}
       - Keycloak__ClientId=${KEYCLOAK_CLIENT_ID}
       - Keycloak__RequireHttpsMetadata=false
+      - RabbitMQ__Host=wasel-rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=wasel
+      - RabbitMQ__Password=wasel
+      - RabbitMQ__ExchangeName=wasel.events
+      - RabbitMQ__NotificationRoutingKey=notification.requested
     depends_on:
       wasel-postgres:
         condition: service_healthy
@@ -37,6 +43,37 @@ services:
       wasel-minio:
         condition: service_healthy
       wasel-keycloak:
+        condition: service_healthy
+      wasel-rabbitmq:
+        condition: service_healthy
+    networks:
+      - wasel-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # Wasel Notification Service (.NET 10 Worker)
+  # ──────────────────────────────────────────────
+  wasel-notification-service:
+    build:
+      context: .
+      dockerfile: services/Wasel.NotificationService/Dockerfile
+    container_name: wasel-notification-service
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=wasel-postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}
+      - RabbitMQ__Host=wasel-rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__Username=${RABBITMQ_DEFAULT_USER:-wasel}
+      - RabbitMQ__Password=${RABBITMQ_DEFAULT_PASS:-wasel}
+      - RabbitMQ__ExchangeName=wasel.events
+      - RabbitMQ__QueueName=notification.requested
+      - RabbitMQ__RoutingKey=notification.requested
+      - Firebase__Enabled=${FIREBASE_ENABLED:-false}
+      - Firebase__ProjectId=${FIREBASE_PROJECT_ID}
+      - Firebase__CredentialsPath=${FIREBASE_CREDENTIALS_PATH}
+    depends_on:
+      wasel-postgres:
+        condition: service_healthy
+      wasel-rabbitmq:
         condition: service_healthy
     networks:
       - wasel-network
@@ -58,6 +95,29 @@ services:
       - wasel-postgres-data:/var/lib/postgresql:z
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - wasel-network
+    restart: unless-stopped
+
+  # ──────────────────────────────────────────────
+  # RabbitMQ
+  # ──────────────────────────────────────────────
+  wasel-rabbitmq:
+    image: rabbitmq:3-management
+    container_name: wasel-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-wasel}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-wasel}
+    volumes:
+      - wasel-rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -120,11 +180,12 @@ services:
     ports:
       - "8080:8080"
     environment:
+      KC_DB: ${KC_DB}
+      KC_DB_URL: ${KC_DB_URL}
+      KC_DB_USERNAME: ${KC_DB_USERNAME}
+      KC_DB_PASSWORD: ${KC_DB_PASSWORD}
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
-      KC_HEALTH_ENABLED: "true"
-      KC_HTTP_RELATIVE_PATH: /auth
-      KC_PROXY_HEADERS: xforwarded
     volumes:
       - wasel-keycloak-data:/opt/keycloak/data:z
       - ./infra/keycloak/my-theme:/opt/keycloak/themes/my-theme:ro,z
@@ -195,7 +256,6 @@ services:
     networks:
       - wasel-network
     restart: unless-stopped
-
 # ──────────────────────────────────────────────
 # Volumes
 # ──────────────────────────────────────────────
@@ -203,6 +263,7 @@ volumes:
   wasel-postgres-data:
   wasel-minio-data:
   wasel-keycloak-data:
+  wasel-rabbitmq-data:
 
     # ──────────────────────────────────────────────
     # Network
