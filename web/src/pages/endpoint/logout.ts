@@ -33,6 +33,11 @@ export const POST: APIRoute = async ({ cookies, redirect }) => {
     cookies.delete("access_token", { path: "/" });
     cookies.delete("refresh_token", { path: "/" });
 
-    // 3. Redirect to login
-    return redirect("/login");
+    // 3. Redirect the browser to Keycloak's front-channel logout so the SSO session is also destroyed
+    const PUBLIC_KEYCLOAK_URL = import.meta.env.PUBLIC_KEYCLOAK_URL || "http://localhost:8000/auth";
+    const APP_URL = (typeof process !== 'undefined' ? process.env.PUBLIC_APP_URL : undefined) || import.meta.env.PUBLIC_APP_URL || Astro.url.origin;
+    
+    const frontChannelLogoutUrl = `${PUBLIC_KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/logout?client_id=${CLIENT_ID}&post_logout_redirect_uri=${encodeURIComponent(APP_URL + "/login")}`;
+    
+    return redirect(frontChannelLogoutUrl);
 };

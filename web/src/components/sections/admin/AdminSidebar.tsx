@@ -97,25 +97,29 @@ export function AdminSidebar({ admin, url }: { admin: KeycloakPayload, url: stri
                 <SidebarMenu className="gap-2">
                     {bottomNavItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
-                            <SidebarMenuButton
-                                asChild
-                                tooltip={item.title}
-                                className="h-11 px-4 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium transition-all duration-200 rounded-md"
-                            >
-                                {item.url ? (
+                            {item.url ? (
+                                <SidebarMenuButton
+                                    asChild
+                                    tooltip={item.title}
+                                    className="h-11 px-4 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium transition-all duration-200 rounded-md"
+                                >
                                     <a href={item.url}>
                                         <item.icon className="size-5 mr-3 text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground transition-colors" />
                                         <span className="text-[15px]">{item.title}</span>
                                     </a>
-                                ) : (
-                                    <form action="/endpoint/logout" method="POST" className="w-full">
-                                        <button type="submit" className="flex items-center w-full">
-                                            <item.icon className="size-5 mr-3 text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground transition-colors" />
-                                            <span className="text-[15px]">{item.title}</span>
-                                        </button>
-                                    </form>
-                                )}
-                            </SidebarMenuButton>
+                                </SidebarMenuButton>
+                            ) : (
+                                <form action="/endpoint/logout" method="POST" className="w-full">
+                                    <SidebarMenuButton
+                                        type="submit"
+                                        tooltip={item.title}
+                                        className="h-11 px-4 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground font-medium transition-all duration-200 rounded-md w-full"
+                                    >
+                                        <item.icon className="size-5 mr-3 text-sidebar-foreground/60 group-hover:text-sidebar-accent-foreground transition-colors" />
+                                        <span className="text-[15px]">{item.title}</span>
+                                    </SidebarMenuButton>
+                                </form>
+                            )}
                         </SidebarMenuItem>
                     ))}
                 </SidebarMenu>
