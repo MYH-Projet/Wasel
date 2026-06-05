@@ -140,7 +140,6 @@ class AuthService {
               '$API/auth/realms/wasel/.well-known/openid-configuration',
           promptValues: actions,
           scopes: ['openid', 'profile', 'email'],
-          allowInsecureConnections: true,
         ),
       );
 
@@ -152,14 +151,17 @@ class AuthService {
       // before we consider the login successful.
       final isSynced = await _syncUserWithBackend(result!.accessToken!);
       if (!isSynced) {
+        print('🚨 AUTH ERROR: Backend Sync Failed (returned false)');
         return false; // Fails the login if backend database sync fails
       }
 
       await _persistTokens(result.accessToken!, result.refreshToken!);
       return true;
-    } on PlatformException catch (_) {
+    } on PlatformException catch (e) {
+      print('🚨 PLATFORM ERROR: ${e.message} | ${e.details}');
       return false;
     } catch (e) {
+      print('🚨 AUTH EXCEPTION: $e');
       return false;
     }
   }
@@ -179,9 +181,11 @@ class AuthService {
           )
           .timeout(const Duration(seconds: 10));
 
+      print('🚨 SYNC STATUS CODE: ${response.statusCode}');
       // Consider it a success if we get a 200 OK, 201 Created, or 204 No Content
       return response.statusCode >= 200 && response.statusCode < 300;
-    } catch (_) {
+    } catch (e) {
+      print('🚨 SYNC EXCEPTION: $e');
       return false;
     }
   }

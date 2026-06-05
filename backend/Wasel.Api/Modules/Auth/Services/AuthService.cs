@@ -28,6 +28,7 @@ public class AuthService : IAuthService
         var email = _currentUserService.Email;
         var firstName = _currentUserService.FirstName;
         var lastName = _currentUserService.LastName;
+        var roles = _currentUserService.Roles.ToList();
 
         if (string.IsNullOrEmpty(keycloakId) || string.IsNullOrEmpty(email))
         {
@@ -40,7 +41,7 @@ public class AuthService : IAuthService
             keycloakId,
             email,
             firstName ?? string.Empty,
-            lastName ?? string.Empty);
+            lastName ?? string.Empty, roles);
 
         return new CurrentUserResponseDto
         {
@@ -68,6 +69,7 @@ public class AuthService : IAuthService
         var email = _currentUserService.Email;
         var firstName = _currentUserService.FirstName;
         var lastName = _currentUserService.LastName;
+        var roles = _currentUserService.Roles.ToList();
 
         if (string.IsNullOrEmpty(keycloakId) || string.IsNullOrEmpty(email))
         {
@@ -78,7 +80,7 @@ public class AuthService : IAuthService
             keycloakId, 
             email, 
             firstName ?? string.Empty, 
-            lastName ?? string.Empty);
+            lastName ?? string.Empty, roles);
     }
 
     public async Task<CurrentUserResponseDto> UpdateProfileAsync(UpdateCurrentUserProfileRequestDto request)
