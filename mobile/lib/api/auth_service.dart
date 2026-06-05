@@ -3,6 +3,7 @@ import 'package:flutter_appauth/flutter_appauth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:wasel/config.dart';
+import 'dart:convert';
 
 enum UserMode { client, driver }
 
@@ -110,7 +111,6 @@ class AuthService {
           discoveryUrl:
               '$API/auth/realms/wasel/.well-known/openid-configuration',
           refreshToken: refreshToken,
-          allowInsecureConnections: true,
         ),
       );
 
@@ -140,6 +140,7 @@ class AuthService {
               '$API/auth/realms/wasel/.well-known/openid-configuration',
           promptValues: actions,
           scopes: ['openid', 'profile', 'email'],
+          allowInsecureConnections: true,
         ),
       );
 
@@ -186,6 +187,44 @@ class AuthService {
       return response.statusCode >= 200 && response.statusCode < 300;
     } catch (e) {
       print('🚨 SYNC EXCEPTION: $e');
+      return false;
+    }
+  }
+
+  Future<bool> switchAppMode(bool toDriver) async {
+    try {
+      // 1. Get the current token
+      final token = await getAccessToken();
+      if (token == null) return false;
+
+      // 2. 0 = CLIENT, 1 = DRIVER
+      final int targetMode = toDriver ? 1 : 0;
+      final url = Uri.parse('$API/api/users/me/preferences');
+
+      // 3. Make the PATCH request
+      final response = await http.patch(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'activeAppMode': targetMode,
+          'preferredMode': targetMode,
+        }),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        print('✅ Mode switched successfully on backend!');
+        return true;
+      } else {
+        print(
+          '🚨 Failed to switch mode: ${response.statusCode} - ${response.body}',
+        );
+        return false;
+      }
+    } catch (e) {
+      print('🚨 Exception switching mode: $e');
       return false;
     }
   }

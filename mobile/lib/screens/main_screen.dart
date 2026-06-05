@@ -19,6 +19,8 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   bool _isDriver = false;
   bool _loading = true;
+  bool _isSwitchingMode =
+      false; // Added to prevent double-clicks during API call
 
   @override
   void initState() {
@@ -37,14 +39,49 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _switchMode() async {
-    final authService = InheritedAuth.of(context).authService;
-    final newMode = _isDriver ? UserMode.client : UserMode.driver;
-    await authService.setMode(newMode);
-    if (!context.mounted) return;
+    if (_isSwitchingMode) return; // Guard against multiple taps
+
     setState(() {
-      _isDriver = newMode == UserMode.driver;
-      _currentIndex = 0;
+      _isSwitchingMode = true;
     });
+
+    try {
+      final authService = InheritedAuth.of(context).authService;
+      final targetIsDriver = !_isDriver;
+
+      // 1. Fire the request to the C# Backend
+      final success = await authService.switchAppMode(targetIsDriver);
+
+      if (success) {
+        // 2. Update local secure storage
+        final newMode = targetIsDriver ? UserMode.driver : UserMode.client;
+        await authService.setMode(newMode);
+
+        // 3. Update UI and jump back to the Home tab
+        if (mounted) {
+          setState(() {
+            _isDriver = targetIsDriver;
+            _currentIndex = 0;
+          });
+        }
+      } else {
+        // 4. Handle API Failure
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to switch modes. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSwitchingMode = false;
+        });
+      }
+    }
   }
 
   @override
@@ -56,6 +93,7 @@ class _MainScreenState extends State<MainScreen> {
     final screens = [
       _isDriver ? const DriverHomeScreen() : const ClientHomeScreen(),
       _isDriver ? const DriverRequestsScreen() : const ClientRequestsScreen(),
+      // You can pass _isSwitchingMode down here if you want to show a spinner on the button!
       SettingsScreen(isDriver: _isDriver, onModeSwitch: _switchMode),
     ];
 
